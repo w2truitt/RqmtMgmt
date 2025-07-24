@@ -1,24 +1,31 @@
-namespace backend.DTOs
+using System;
+
+namespace backend.Models
 {
     /// <summary>
-    /// Data transfer object for test cases.
+    /// Represents a historical version of a test case for version tracking and redline comparison.
     /// </summary>
-    public class TestCaseDto
+    public class TestCaseVersion
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the test case.
+        /// Gets or sets the unique identifier for this version entry.
         /// </summary>
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the test suite ID this test case belongs to, if any.
+        /// Gets or sets the test case ID this version belongs to.
         /// </summary>
-        public int? SuiteId { get; set; }
+        public int TestCaseId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version number (incrementing integer or timestamp).
+        /// </summary>
+        public int Version { get; set; }
 
         /// <summary>
         /// Gets or sets the title of the test case.
         /// </summary>
-        public required string Title { get; set; }
+        public string Title { get; set; }
 
         /// <summary>
         /// Gets or sets the description of the test case.
@@ -36,13 +43,13 @@ namespace backend.DTOs
         public string? ExpectedResult { get; set; }
 
         /// <summary>
-        /// Gets or sets the user ID of the creator.
+        /// Gets or sets the user who made this version.
         /// </summary>
-        public int CreatedBy { get; set; }
+        public int ModifiedBy { get; set; }
 
         /// <summary>
-        /// Gets or sets the creation timestamp (UTC).
+        /// Gets or sets the timestamp when this version was created.
         /// </summary>
-        public DateTime CreatedAt { get; set; }
+        public DateTime ModifiedAt { get; set; }
     }
 }

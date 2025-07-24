@@ -7,8 +7,8 @@ namespace backend.DTOs
         public int? TestPlanId { get; set; }
         public int RunBy { get; set; }
         public DateTime RunAt { get; set; }
-        public string Result { get; set; }
-        public string Notes { get; set; }
-        public string EvidenceUrl { get; set; }
+        public required string Result { get; set; }
+        public string? Notes { get; set; }
+        public string? EvidenceUrl { get; set; }
     }
 }

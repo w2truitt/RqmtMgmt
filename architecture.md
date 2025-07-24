@@ -56,8 +56,10 @@ This document outlines the software architecture decisions for developing a web-
 +----------------------+
 | Tables:              |
 | - Requirements       |
-| - TestSuites         |
+| - RequirementVersions|
 | - TestCases          |
+| - TestCaseVersions   |
+| - TestSuites         |
 | - TestRuns           |
 | - Users/Roles        |
 | - AuditLogs          |
@@ -80,6 +82,8 @@ This document outlines the software architecture decisions for developing a web-
 - All communication will be over HTTPS.
 - Audit logs will be maintained for compliance and traceability.
 - Error handling and logging will use cloud-native monitoring (e.g., Azure Monitor).
+- All requirements and test cases will be versioned in append-only version/history tables (e.g., RequirementVersions, TestCaseVersions), supporting comparison, rollback, and export of any historical version.
+- The system will provide APIs and UI for generating redline documents that highlight the differences between any two versions or releases of requirements or test cases, supporting regulatory and quality audits.
 
 ---
 
@@ -93,7 +97,44 @@ This document outlines the software architecture decisions for developing a web-
 
 ---
 
-## 7. Diagrams
+## 7. Architectural Review & Recommendations (2025)
+
+### Strategic Improvements (Critical & High Priority)
+
+1. **Domain Model Relationships**
+   - Add navigation properties to all models (e.g., TestSuite in TestCase, Requirement in RequirementLink) and configure them in EF Core for better maintainability, easier queries, and data integrity.
+   - Use value objects or enums for fields like Status, Type, and Result to enforce valid values and improve code safety.
+
+2. **Service/Repository Layer & Separation of Concerns**
+   - Implement a true repository/service pattern, separating business logic from controllers and data access. This enables easier testing, future data store changes, and aligns with clean/hexagonal architecture.
+
+3. **Security & Identity**
+   - Integrate Azure AD/OIDC authentication and policy-based authorization as soon as possible.
+   - Extend AuditLog to capture the authenticated user’s claims principal.
+   - Start enforcing role-based access control (RBAC) in your API endpoints.
+
+### Medium-Priority Improvements
+
+4. **Versioning & History**
+   - Move beyond a simple Version integer for requirements and test cases—use append-only version/history tables (RequirementVersions, TestCaseVersions) to track all changes, enable redline comparison, rollback, and satisfy audit/compliance needs.
+   - Implement API endpoints and UI features for generating redline documents showing the differences between any two versions or releases of requirements and test cases.
+
+5. **DevOps & Cloud Readiness**
+   - Add a Dockerfile and sample CI/CD pipeline (GitHub Actions or Azure DevOps).
+   - Provide infrastructure-as-code (IaC) templates for cloud resources (SQL, Blob, App Service).
+   - Add structured logging (Serilog, Application Insights) and API versioning (Swashbuckle, Microsoft.AspNetCore.Mvc.Versioning).
+
+6. **Multi-Tenancy**
+   - Document your multi-tenancy approach (row-level security, separate schema, or DB-per-tenant) or defer until a real need is validated, to avoid unnecessary complexity.
+
+### Quick Wins
+- Enable EF Core navigation properties and foreign key constraints.
+- Add XML comments and enable Swagger documentation.
+- Add .editorconfig and Prettier/ESLint to the frontend for code consistency.
+
+---
+
+## 8. Diagrams
 
 ### High-Level Architecture
 
@@ -111,7 +152,7 @@ This document outlines the software architecture decisions for developing a web-
 
 ---
 
-## 8. Summary Table
+## 9. Summary Table
 
 | Layer       | Technology         | Cloud Service      |
 |-------------|-------------------|--------------------|
@@ -123,7 +164,7 @@ This document outlines the software architecture decisions for developing a web-
 
 ---
 
-## 9. References
+## 10. References
 - [React Documentation](https://reactjs.org/)
 - [.NET 8 Documentation](https://docs.microsoft.com/dotnet/)
 - [Azure SQL Database](https://azure.microsoft.com/en-us/products/azure-sql-database/)

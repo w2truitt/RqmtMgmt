@@ -26,6 +26,9 @@ This document outlines the requirements for a web-based tool designed to manage 
 - The tool shall support requirement status tracking (e.g., Draft, Approved, Implemented, Verified).
 - The tool shall allow users to add comments and attachments to requirements.
 - The tool shall provide search and filter capabilities for all requirement types.
+- The tool shall store a full version history for all requirements, recording every change as a new version.
+- The tool shall allow users to view, compare, and export redline documents showing the differences between any two versions or releases of a requirement or requirements document.
+- The tool shall support rollback to previous versions or the ability to reference and export any historical version.
 
 ### 3.2 Test Management
 - The tool shall allow creation, editing, and deletion of Test Suites.
@@ -40,6 +43,9 @@ This document outlines the requirements for a web-based tool designed to manage 
     - Software Verification Test Plans: For tests linked to Software Requirements.
 - The tool shall provide reporting and dashboard features for test execution status, coverage, and defect tracking.
 - The tool shall support generation of test reports that provide the test results for the last execution of the tests.
+- The tool shall store a full version history for all test cases, recording every change as a new version.
+- The tool shall allow users to view, compare, and export redline documents showing the differences between any two versions or releases of a test case or test document.
+- The tool shall support rollback to previous versions or the ability to reference and export any historical version.
 
 ### 3.3 Traceability
 - The tool shall allow creation of trace documents that visualize and document the linkages between requirements (e.g., CRS to PRS, SRS to PRS) and between requirements and test cases.
@@ -75,3 +81,4 @@ This document outlines the requirements for a web-based tool designed to manage 
 - **Test Run**: Execution instance of a test case or suite
 - **Test Plan**: Document grouping a set of test cases for a specific validation or verification purpose
 - **Trace Document**: Document or report showing linkages between requirements and test cases
+- **Redline Document**: A document showing the differences between two versions or releases of requirements or test cases.
