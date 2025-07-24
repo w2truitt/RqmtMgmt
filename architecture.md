@@ -1,6 +1,7 @@
 # Software Architecture Decisions for Requirements and Test Management Tool
 
 ## 1. Overview
+
 This document outlines the software architecture decisions for developing a web-based requirements and test management tool. It covers the front-end and back-end technology choices, database selection, deployment considerations, and provides guidance for developers.
 
 ---
@@ -15,16 +16,12 @@ This document outlines the software architecture decisions for developing a web-
 - Authentication will use OAuth 2.0 / OpenID Connect (OIDC) via a cloud identity provider (e.g., Azure AD, Okta).
 - Responsive design will be ensured for desktop and tablet use.
 
-```
-+-----------------------+
-|  Browser (React SPA)  |
-+-----------------------+
-            |
-      REST APIs (HTTPS)
-            |
-+-----------------------+
-|    Cloud Back-End     |
-+-----------------------+
+```mermaid
+flowchart LR
+    Browser["Web Browser"] <--> React["React Frontend"]
+    React <--> API[".NET 8 API"]
+    API --> SQL["Azure SQL DB"]
+    API --> Blob["Blob Storage"]
 ```
 
 ---
@@ -43,33 +40,18 @@ This document outlines the software architecture decisions for developing a web-
 ## 4. Database/Data Store Decision
 
 - The system will use Microsoft Azure SQL Database as the primary data store for:
-    - Enterprise-grade reliability, scalability, and security
-    - ACID compliance and strong consistency for requirements and test data
-    - Support for relational data, versioning, and complex queries
-    - Integration with enterprise authentication and backup solutions
+  - Enterprise-grade reliability, scalability, and security
+  - ACID compliance and strong consistency for requirements and test data
+  - Support for relational data, versioning, and complex queries
+  - Integration with enterprise authentication and backup solutions
 - Entity relationships (requirements, test cases, users, audit logs) will be modeled in normalized relational tables.
 - Attachments (e.g., screenshots, logs) will be stored in Azure Blob Storage, referenced by URLs in the database.
 
-```
-+----------------------+
-| Azure SQL Database   |
-+----------------------+
-| Tables:              |
-| - Requirements       |
-| - RequirementVersions|
-| - TestCases          |
-| - TestCaseVersions   |
-| - TestSuites         |
-| - TestRuns           |
-| - Users/Roles        |
-| - AuditLogs          |
-+----------------------+
-         |
-+-----------------------+
-| Azure Blob Storage    |
-+-----------------------+
-| For attachments, logs |
-+-----------------------+
+```mermaid
+flowchart TD
+    SQLDB["Azure SQL Database\nTables:\n- Requirements\n- RequirementVersions\n- TestCases\n- TestCaseVersions\n- TestSuites\n- TestRuns\n- Users/Roles\n- AuditLogs"]
+    Blob["Azure Blob Storage\nFor attachments, logs"]
+    SQLDB --> Blob
 ```
 
 ---
@@ -128,6 +110,7 @@ This document outlines the software architecture decisions for developing a web-
    - Document your multi-tenancy approach (row-level security, separate schema, or DB-per-tenant) or defer until a real need is validated, to avoid unnecessary complexity.
 
 ### Quick Wins
+
 - Enable EF Core navigation properties and foreign key constraints.
 - Add XML comments and enable Swagger documentation.
 - Add .editorconfig and Prettier/ESLint to the frontend for code consistency.
@@ -138,23 +121,19 @@ This document outlines the software architecture decisions for developing a web-
 
 ### High-Level Architecture
 
-```
-+-------------------+       +-------------------+       +-------------------+
-|   Web Browser     | <---> |   React Frontend  | <---> |   .NET 8 API      |
-+-------------------+       +-------------------+       +-------------------+
-                                                    |
-                                             +-------------------+
-                                             |   Azure SQL DB    |
-                                             +-------------------+
-                                             |   Blob Storage    |
-                                             +-------------------+
+```mermaid
+flowchart LR
+    Browser["Web Browser"] <--> React["React Frontend"]
+    React <--> API[".NET 8 API"]
+    API --> SQL["Azure SQL DB"]
+    API --> Blob["Blob Storage"]
 ```
 
 ---
 
 ## 9. Summary Table
 
-| Layer       | Technology         | Cloud Service      |
+| Layer       | Technology        | Cloud Service      |
 |-------------|-------------------|--------------------|
 | Front-End   | React, MUI        | Azure Static Web Apps / CDN |
 | Back-End    | .NET 8 Web API    | Azure App Service  |
@@ -165,6 +144,7 @@ This document outlines the software architecture decisions for developing a web-
 ---
 
 ## 10. References
+
 - [React Documentation](https://reactjs.org/)
 - [.NET 8 Documentation](https://docs.microsoft.com/dotnet/)
 - [Azure SQL Database](https://azure.microsoft.com/en-us/products/azure-sql-database/)
