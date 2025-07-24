@@ -1,3 +1,4 @@
+using System;
 using backend.Controllers;
 using backend.DTOs;
 using backend.Models;
@@ -35,8 +36,8 @@ namespace backend.Tests
         {
             var users = new List<User>
             {
-                new User { Id = 1, UserName = "alice", Email = "alice@example.com", Role = UserRole.Admin },
-                new User { Id = 2, UserName = "bob", Email = "bob@example.com", Role = UserRole.Developer }
+                new User { Id = 1, UserName = "alice", Email = "alice@example.com", Role = "Admin" },
+                new User { Id = 2, UserName = "bob", Email = "bob@example.com", Role = "Developer" }
             };
             _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(users);
             var result = await _controller.GetAll();

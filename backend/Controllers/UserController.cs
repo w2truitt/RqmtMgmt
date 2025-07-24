@@ -62,14 +62,14 @@ namespace backend.Controllers
             Id = u.Id,
             UserName = u.UserName,
             Email = u.Email,
-            Role = u.Role.ToString()
+            Role = u.Role
         };
         private static User FromDto(UserDto dto) => new User
         {
             Id = dto.Id,
             UserName = dto.UserName,
             Email = dto.Email,
-            Role = Enum.Parse<UserRole>(dto.Role)
+            Role = dto.Role
         };
     }
 }

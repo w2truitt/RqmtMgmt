@@ -30,7 +30,7 @@ namespace backend.Models
         /// <summary>
         /// Gets or sets the title of the requirement.
         /// </summary>
-        public string Title { get; set; }
+        public required string Title { get; set; }
 
         /// <summary>
         /// Gets or sets the description of the requirement.

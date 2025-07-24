@@ -29,7 +29,7 @@ namespace backend.Services
         }
 
         /// <inheritdoc/>
-        public async Task<Requirement> GetByIdAsync(int id)
+        public async Task<Requirement?> GetByIdAsync(int id)
         {
             return await _context.Requirements.FindAsync(id);
         }

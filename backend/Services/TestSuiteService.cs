@@ -19,7 +19,7 @@ namespace backend.Services
             return await _context.TestSuites.ToListAsync();
         }
 
-        public async Task<TestSuite> GetByIdAsync(int id)
+        public async Task<TestSuite?> GetByIdAsync(int id)
         {
             return await _context.TestSuites.FindAsync(id);
         }

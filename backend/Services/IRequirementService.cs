@@ -16,8 +16,9 @@ namespace backend.Services
 
         /// <summary>
         /// Gets a requirement by its unique identifier asynchronously.
+        /// Returns null if not found.
         /// </summary>
-        Task<Requirement> GetByIdAsync(int id);
+        Task<Requirement?> GetByIdAsync(int id);
 
         /// <summary>
         /// Creates a new requirement asynchronously.

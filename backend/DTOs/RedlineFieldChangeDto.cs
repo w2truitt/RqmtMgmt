@@ -5,9 +5,9 @@ namespace backend.DTOs
     /// </summary>
     public class RedlineFieldChangeDto
     {
-        public string Field { get; set; }
+        public required string Field { get; set; }
         public string? OldValue { get; set; }
         public string? NewValue { get; set; }
-        public string ChangeType { get; set; } // Added, Removed, Modified
+        public required string ChangeType { get; set; } // Added, Removed, Modified
     }
 }
