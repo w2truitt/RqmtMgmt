@@ -6,20 +6,21 @@ This document outlines the software architecture decisions for developing a web-
 
 ---
 
+
 ## 2. Front-End Architecture
 
 - The front-end shall be a Single Page Application (SPA) accessible via modern web browsers (Chrome, Edge, Firefox, Safari).
-- The front-end will be developed using React.js for its robust ecosystem and enterprise support.
-- UI state management will use Redux Toolkit for scalability and maintainability.
-- UI components will be based on Material-UI (MUI) for consistency and accessibility.
+- The front-end will be developed using Blazor WebAssembly for its seamless .NET integration and modern SPA capabilities.
+- UI state management will use built-in .NET/Blazor patterns (e.g., cascading parameters, dependency injection, or Fluxor if needed) for scalability and maintainability.
+- UI components will be based on MudBlazor (or another Blazor component library) for consistency and accessibility.
 - The front-end will communicate with the back-end via RESTful APIs (JSON over HTTPS).
 - Authentication will use OAuth 2.0 / OpenID Connect (OIDC) via a cloud identity provider (e.g., Azure AD, Okta).
 - Responsive design will be ensured for desktop and tablet use.
 
 ```mermaid
 flowchart LR
-    Browser["Web Browser"] <--> React["React Frontend"]
-    React <--> API[".NET 8 API"]
+    Browser["Web Browser"] <--> Blazor["Blazor Frontend"]
+    Blazor <--> API[".NET 8 API"]
     API --> SQL["Azure SQL DB"]
     API --> Blob["Blob Storage"]
 ```
@@ -97,16 +98,16 @@ flowchart TD
 
 ### Medium-Priority Improvements
 
-4. **Versioning & History**
+1. **Versioning & History**
    - Move beyond a simple Version integer for requirements and test cases—use append-only version/history tables (RequirementVersions, TestCaseVersions) to track all changes, enable redline comparison, rollback, and satisfy audit/compliance needs.
    - Implement API endpoints and UI features for generating redline documents showing the differences between any two versions or releases of requirements and test cases.
 
-5. **DevOps & Cloud Readiness**
+2. **DevOps & Cloud Readiness**
    - Add a Dockerfile and sample CI/CD pipeline (GitHub Actions or Azure DevOps).
    - Provide infrastructure-as-code (IaC) templates for cloud resources (SQL, Blob, App Service).
    - Add structured logging (Serilog, Application Insights) and API versioning (Swashbuckle, Microsoft.AspNetCore.Mvc.Versioning).
 
-6. **Multi-Tenancy**
+3. **Multi-Tenancy**
    - Document your multi-tenancy approach (row-level security, separate schema, or DB-per-tenant) or defer until a real need is validated, to avoid unnecessary complexity.
 
 ### Quick Wins
@@ -123,8 +124,8 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Browser["Web Browser"] <--> React["React Frontend"]
-    React <--> API[".NET 8 API"]
+    Browser["Web Browser"] <--> Blazor["Blazor Frontend"]
+    Blazor <--> API[".NET 8 API"]
     API --> SQL["Azure SQL DB"]
     API --> Blob["Blob Storage"]
 ```
@@ -135,7 +136,7 @@ flowchart LR
 
 | Layer       | Technology        | Cloud Service      |
 |-------------|-------------------|--------------------|
-| Front-End   | React, MUI        | Azure Static Web Apps / CDN |
+| Front-End   | Blazor, MudBlazor | Azure Static Web Apps / CDN |
 | Back-End    | .NET 8 Web API    | Azure App Service  |
 | Database    | Azure SQL         | Azure SQL Database |
 | Attachments | Blob Storage      | Azure Blob Storage |
@@ -145,7 +146,7 @@ flowchart LR
 
 ## 10. References
 
-- [React Documentation](https://reactjs.org/)
+- [Blazor Documentation](https://learn.microsoft.com/aspnet/core/blazor/)
 - [.NET 8 Documentation](https://docs.microsoft.com/dotnet/)
 - [Azure SQL Database](https://azure.microsoft.com/en-us/products/azure-sql-database/)
 - [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs/)
