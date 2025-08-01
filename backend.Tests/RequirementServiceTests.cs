@@ -16,3 +16,5 @@ namespace backend.Tests
     public class RequirementServiceTests
     {
         // ... (rest of the code unchanged)
+    }
+}

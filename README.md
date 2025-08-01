@@ -8,21 +8,21 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
 
 ## Projects in the Solution
 
-### 1. Front-End (React)
+
+### 1. Front-End (Blazor WebAssembly)
 
 - **Location:** `frontend/`
 - **Description:**
-  - Single Page Application (SPA) built with React.js and Material-UI.
+  - Single Page Application (SPA) built with C# and Blazor WebAssembly.
   - Provides user interfaces for requirements management, test management, traceability, and reporting.
   - Communicates with the back-end via RESTful APIs.
-  - Uses Redux Toolkit for state management.
 - **Key Folders:**
-  - `src/components/`: Reusable UI components
-  - `src/pages/`: Route-based page components
-  - `src/state/`: Redux store and slices
-  - `src/services/`: API calls and utilities
-  - `src/assets/`: Static files and images
-  - `public/`: Static public assets
+  - `Pages/`: Blazor route-based pages
+  - `wwwroot/`: Static assets (CSS, JS, images)
+  - `Components/`: Reusable Blazor components
+  - `Layout/`: Shared layouts and nav menus
+  - `Properties/`: Project properties
+  - `public/`: (Legacy, safe to delete)
 
 ### 2. Back-End (.NET 8 Web API)
 
@@ -42,9 +42,10 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
 
 ---
 
+
 ## Architecture
 
-- Modern SPA front-end (React)
+- Modern SPA front-end (C# Blazor WebAssembly)
 - Cloud-hosted RESTful API back-end (.NET 8)
 - Azure SQL Database for enterprise-grade data storage
 - Azure Blob Storage for attachments
@@ -56,17 +57,19 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 
 ## Getting Started
 
+
 ### Prerequisites
 
-- Node.js (for front-end)
-- .NET 8 SDK (for back-end)
+- .NET 8 SDK (for both front-end and back-end)
 - Access to Azure (for cloud deployment)
 
-### Front-End Setup
+
+
+### Front-End Setup (Blazor)
 
 1. Navigate to `frontend/`
-2. Install dependencies: `npm install`
-3. Start development server: `npm run dev` (or as specified by chosen tooling)
+2. Restore dependencies: `dotnet restore`
+3. Start development server: `dotnet run` (or use Visual Studio/VS Code launch)
 
 ### Back-End Setup
 
@@ -74,9 +77,41 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 2. Restore dependencies: `dotnet restore`
 3. Build and run: `dotnet run`
 
+### Prerequisites
+
+- Node.js (for front-end)
+- .NET 8 SDK (for back-end)
+- Access to Azure (for cloud deployment)
+
 ### Environment Configuration
 
 - Use environment variables or `.env` files to configure API URLs, database connections, authentication, and secrets.
+
+
+#### Example `wwwroot/appsettings.json` for Front-End
+```json
+{
+  "ApiUrl": "http://localhost:5000"
+}
+```
+
+#### Example `appsettings.Development.json` for Back-End
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=RqmtMgmtDb;Trusted_Connection=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+```
+
+> **Note:** Update connection strings and API URLs as needed for your dev, test, or production environments.
 
 ---
 

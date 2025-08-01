@@ -16,3 +16,5 @@ namespace backend.Tests
     public class TestSuiteServiceTests
     {
         // ... (rest of the code unchanged)
+    }
+}

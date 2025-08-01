@@ -16,3 +16,5 @@ namespace backend.Tests
     public class UserServiceTests
     {
         // ... (rest of the code unchanged)
+    }
+}
