@@ -49,7 +49,6 @@ namespace backend.Tests
             var result = await controller.GetRequirementVersions(reqId);
             var ok = Assert.IsType<OkObjectResult>(result);
             var versions = Assert.IsAssignableFrom<List<RequirementVersion>>(ok.Value);
-            Assert.Single(versions);
             Assert.Equal(2, versions.Count);
         }
 
@@ -97,7 +96,6 @@ namespace backend.Tests
             var result = await controller.GetTestCaseVersions(tcId);
             var ok = Assert.IsType<OkObjectResult>(result);
             var versions = Assert.IsAssignableFrom<List<TestCaseVersion>>(ok.Value);
-            Assert.Single(versions);
             Assert.Equal(2, versions.Count);
         }
 

@@ -1,3 +1,14 @@
+## Epic 6: Automated Testing & Coverage
+### User Stories
+- As a developer or architect, I want comprehensive unit and integration tests for all backend features, so that I can be confident in the stability and correctness of the system as it evolves.
+
+#### Tasks
+- [ ] Ensure all CRUD endpoints for Requirements, Test Cases, Test Plans, Test Suites, and Users have positive and negative unit tests.
+- [ ] Add tests for linkage APIs (Requirement-TestCase, Requirement-TestPlan): create, retrieve, and delete links.
+- [ ] Add tests for version history and redline endpoints, including edge/error cases.
+- [ ] Add tests for user and role management, including authorization/permission logic (if applicable).
+- [ ] Integrate code coverage tooling (e.g., Coverlet, ReportGenerator) and monitor in CI.
+- [ ] (Future) Add frontend/component tests for Blazor UI using bUnit or similar.
 # Frontend Development Plan (Blazor WebAssembly)
 
 ## Epic 1: Application Shell & Navigation

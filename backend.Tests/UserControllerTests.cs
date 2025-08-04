@@ -11,26 +11,17 @@ using Xunit;
 
 namespace backend.Tests
 {
-    /// <summary>
-    /// Unit tests for <see cref="UserController"/>.
-    /// </summary>
     public class UserControllerTests
     {
         private readonly Mock<IUserService> _mockService;
         private readonly UserController _controller;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserControllerTests"/> class.
-        /// </summary>
         public UserControllerTests()
         {
             _mockService = new Mock<IUserService>();
             _controller = new UserController(_mockService.Object);
         }
 
-        /// <summary>
-        /// Verifies that GetAll returns OkResult with a list of users.
-        /// </summary>
         [Fact]
         public async Task GetAll_ReturnsOk_WithListOfUsers()
         {
@@ -48,15 +39,62 @@ namespace backend.Tests
                 item => Assert.Equal("bob", item.UserName));
         }
 
-        /// <summary>
-        /// Verifies that GetById returns NotFound when the user does not exist.
-        /// </summary>
         [Fact]
         public async Task GetById_ReturnsNotFound_WhenNotExists()
         {
             _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((User)null);
             var result = await _controller.GetById(42);
             Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Create_ReturnsCreated_WithUser()
+        {
+            var dto = new UserDto { UserName = "alice", Email = "alice@example.com", Role = "Admin" };
+            var entity = new User { Id = 1, UserName = "alice", Email = "alice@example.com", Role = "Admin" };
+            _mockService.Setup(s => s.CreateAsync(It.IsAny<User>())).ReturnsAsync(entity);
+            var result = await _controller.Create(dto);
+            var created = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var value = Assert.IsAssignableFrom<UserDto>(created.Value);
+            Assert.Equal("alice", value.UserName);
+        }
+
+        [Fact]
+        public async Task Update_ReturnsOk_WithUser()
+        {
+            var dto = new UserDto { Id = 1, UserName = "updated", Email = "updated@example.com", Role = "User" };
+            var entity = new User { Id = 1, UserName = "updated", Email = "updated@example.com", Role = "User" };
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(entity);
+            _mockService.Setup(s => s.UpdateAsync(It.IsAny<User>())).ReturnsAsync(entity);
+            var result = await _controller.Update(1, dto);
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsAssignableFrom<UserDto>(ok.Value);
+            Assert.Equal("updated", value.UserName);
+        }
+
+        [Fact]
+        public async Task Update_ReturnsNotFound_WhenNotExists()
+        {
+            var dto = new UserDto { Id = 99, UserName = "notfound", Email = "notfound@example.com", Role = "User" };
+            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((User)null);
+            var result = await _controller.Update(99, dto);
+            Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsNoContent_WhenDeleted()
+        {
+            _mockService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
+            var result = await _controller.Delete(1);
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsNotFound_WhenNotExists()
+        {
+            _mockService.Setup(s => s.DeleteAsync(99)).ReturnsAsync(false);
+            var result = await _controller.Delete(99);
+            Assert.IsType<NotFoundResult>(result);
         }
     }
 }

@@ -11,26 +11,17 @@ using Xunit;
 
 namespace backend.Tests
 {
-    /// <summary>
-    /// Unit tests for <see cref="TestPlanController"/>.
-    /// </summary>
     public class TestPlanControllerTests
     {
         private readonly Mock<ITestPlanService> _mockService;
         private readonly TestPlanController _controller;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TestPlanControllerTests"/> class.
-        /// </summary>
         public TestPlanControllerTests()
         {
             _mockService = new Mock<ITestPlanService>();
             _controller = new TestPlanController(_mockService.Object);
         }
 
-        /// <summary>
-        /// Verifies that GetAll returns OkResult with a list of test plans.
-        /// </summary>
         [Fact]
         public async Task GetAll_ReturnsOk_WithListOfTestPlans()
         {
@@ -48,15 +39,62 @@ namespace backend.Tests
                 item => Assert.Equal("Plan2", item.Name));
         }
 
-        /// <summary>
-        /// Verifies that GetById returns NotFound when the test plan does not exist.
-        /// </summary>
         [Fact]
         public async Task GetById_ReturnsNotFound_WhenNotExists()
         {
             _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((TestPlan)null);
             var result = await _controller.GetById(42);
             Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Create_ReturnsCreated_WithTestPlan()
+        {
+            var dto = new TestPlanDto { Name = "Plan1", Type = "UserValidation" };
+            var entity = new TestPlan { Id = 1, Name = "Plan1", Type = TestPlanType.UserValidation, CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            _mockService.Setup(s => s.CreateAsync(It.IsAny<TestPlan>())).ReturnsAsync(entity);
+            var result = await _controller.Create(dto);
+            var created = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var value = Assert.IsAssignableFrom<TestPlanDto>(created.Value);
+            Assert.Equal("Plan1", value.Name);
+        }
+
+        [Fact]
+        public async Task Update_ReturnsOk_WithTestPlan()
+        {
+            var dto = new TestPlanDto { Id = 1, Name = "Updated", Type = "UserValidation" };
+            var entity = new TestPlan { Id = 1, Name = "Updated", Type = TestPlanType.UserValidation, CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(entity);
+            _mockService.Setup(s => s.UpdateAsync(It.IsAny<TestPlan>())).ReturnsAsync(entity);
+            var result = await _controller.Update(1, dto);
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsAssignableFrom<TestPlanDto>(ok.Value);
+            Assert.Equal("Updated", value.Name);
+        }
+
+        [Fact]
+        public async Task Update_ReturnsNotFound_WhenNotExists()
+        {
+            var dto = new TestPlanDto { Id = 99, Name = "NotFound", Type = "UserValidation" };
+            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((TestPlan)null);
+            var result = await _controller.Update(99, dto);
+            Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsNoContent_WhenDeleted()
+        {
+            _mockService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
+            var result = await _controller.Delete(1);
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsNotFound_WhenNotExists()
+        {
+            _mockService.Setup(s => s.DeleteAsync(99)).ReturnsAsync(false);
+            var result = await _controller.Delete(99);
+            Assert.IsType<NotFoundResult>(result);
         }
     }
 }
