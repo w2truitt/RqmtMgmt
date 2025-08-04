@@ -1,11 +1,22 @@
 services:
+  frontend:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    working_dir: /src
+    volumes:
+      - ../frontend:/src
+    ports:
+      - "5001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    command: ["dotnet", "run", "--urls", "http://0.0.0.0:80", "--project", "/src/frontend.csproj"]
+    depends_on:
+      - backend
+
   backend:
     image: mcr.microsoft.com/dotnet/sdk:8.0
     working_dir: /src
     volumes:
       - ../backend:/src
-      - ../backend/local_nuget:/src/local_nuget
-      - ../backend/NuGet.Config:/src/NuGet.Config
     ports:
       - "5000:80"
     environment:

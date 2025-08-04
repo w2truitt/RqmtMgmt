@@ -159,5 +159,25 @@ namespace backend.Tests
             var result = await controller.RemoveRole(1, "QA");
             Assert.IsType<NotFoundResult>(result);
         }
+
+        [Fact]
+        public async Task AssignRoles_AddsToExistingRoles()
+        {
+            // User already has "Admin", assign "QA"
+            var user = new User { Id = 1, UserName = "alice", Email = "alice@example.com", UserRoles = new List<UserRole> {
+                new UserRole { Role = new Role { Name = "Admin" } }
+            } };
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(user);
+            _mockService.Setup(s => s.AssignRolesAsync(1, It.Is<List<string>>(l => l.Contains("QA")))).Callback<int, List<string>>((id, roles) =>
+            {
+                user.UserRoles.Add(new UserRole { Role = new Role { Name = "QA" } });
+            }).ReturnsAsync(true);
+
+            var controller = new UserController(_mockService.Object);
+            var result = await controller.AssignRoles(1, new List<string> { "QA" });
+            Assert.IsType<NoContentResult>(result);
+            Assert.Contains(user.UserRoles, ur => ur.Role.Name == "Admin");
+            Assert.Contains(user.UserRoles, ur => ur.Role.Name == "QA");
+        }
     }
 }

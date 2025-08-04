@@ -5,6 +5,7 @@ obj/
 *.suo
 *.userosscache
 *.sln.docstates
+*.nupkg
 
 # Visual Studio Code settings
 .vscode/
