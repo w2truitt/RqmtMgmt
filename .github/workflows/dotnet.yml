@@ -17,7 +17,7 @@ jobs:
         dotnet-version: '9.0.x'
     - name: Pack RqmtMgmtShared
       run: |
-        mkdir -p ${{ github.workspace }}
+        mkdir -p ${{ github.workspace }}/local_nuget
         dotnet pack RqmtMgmtShared/RqmtMgmtShared.csproj -o ${{ github.workspace }}/local_nuget
     - name: Add Local NuGet Source
       run: dotnet nuget add source ${{ github.workspace }}/local_nuget --name local
