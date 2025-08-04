@@ -46,5 +46,36 @@ namespace backend.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> AssignRolesAsync(int userId, List<string> roles)
+        {
+            var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return false;
+            var roleEntities = new List<Role>();
+            foreach (var roleName in roles.Distinct())
+            {
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+                if (role == null)
+                {
+                    role = new Role { Name = roleName };
+                    _context.Roles.Add(role);
+                    await _context.SaveChangesAsync();
+                }
+                roleEntities.Add(role);
+            }
+            user.UserRoles = roleEntities.Select(r => new UserRole { UserId = userId, RoleId = r.Id }).ToList();
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveRoleAsync(int userId, string roleName)
+        {
+            var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) return false;
+            var userRole = user.UserRoles.FirstOrDefault(ur => ur.Role.Name == roleName);
+            if (userRole == null) return false;
+            _context.UserRoles.Remove(userRole);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

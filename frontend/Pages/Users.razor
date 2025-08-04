@@ -17,7 +17,7 @@ else
                 <th>ID</th>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Role</th>
+                <th>Roles</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -28,7 +28,7 @@ else
                     <td>@user.Id</td>
                     <td>@user.UserName</td>
                     <td>@user.Email</td>
-                    <td>@user.Role</td>
+                    <td>@string.Join(", ", user.Roles ?? new List<string>())</td>
                     <td>
                         <button class="btn btn-sm btn-primary" @onclick="() => Edit(user)">Edit</button>
                         <button class="btn btn-sm btn-danger" @onclick="() => Delete(user.Id)">Delete</button>
@@ -60,8 +60,8 @@ else
                         <input class="form-control" @bind="formModel.Email" />
                     </div>
                     <div class="form-group">
-                        <label>Role</label>
-                        <input class="form-control" @bind="formModel.Role" />
+                        <label>Roles (comma-separated)</label>
+                        <input class="form-control" @bind="rolesString" />
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -76,7 +76,8 @@ else
 
 @code {
     List<UserDto>? users;
-    UserDto formModel = new() { UserName = string.Empty, Email = string.Empty, Role = string.Empty };
+    UserDto formModel = new() { UserName = string.Empty, Email = string.Empty, Roles = new List<string>() };
+    string rolesString = string.Empty;
     UserDto? editUser = null;
     bool showForm = false;
 
@@ -98,15 +99,17 @@ else
             Id = user.Id,
             UserName = user.UserName,
             Email = user.Email,
-            Role = user.Role
+            Roles = user.Roles != null ? new List<string>(user.Roles) : new List<string>()
         };
+        rolesString = string.Join(", ", formModel.Roles);
         editUser = user;
         showForm = true;
     }
 
     void ShowAddForm()
     {
-        formModel = new UserDto { UserName = string.Empty, Email = string.Empty, Role = string.Empty };
+        formModel = new UserDto { UserName = string.Empty, Email = string.Empty, Roles = new List<string>() };
+        rolesString = string.Empty;
         editUser = null;
         showForm = true;
     }
@@ -118,6 +121,8 @@ else
 
     async Task SaveUser()
     {
+        formModel.Roles = rolesString.Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+            .Select(r => r.Trim()).Where(r => !string.IsNullOrEmpty(r)).ToList();
         if (editUser != null)
         {
             await UserService.UpdateAsync(formModel);

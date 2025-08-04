@@ -16,6 +16,8 @@ namespace backend.Data
 
         /// <summary>Gets or sets the users table.</summary>
         public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
         /// <summary>Gets or sets the requirements table.</summary>
         public DbSet<Requirement> Requirements { get; set; }
         /// <summary>Gets or sets the requirement links table.</summary>
@@ -152,6 +154,18 @@ namespace backend.Data
             modelBuilder.Entity<RequirementVersion>()
                 .Property(v => v.Status)
                 .HasConversion<string>();
+
+            // (removed misplaced declarations)
+            // User <-> Role many-to-many
+            modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId);
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId);
         }
     }
 }

@@ -2,6 +2,9 @@ using RqmtMgmtShared;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
@@ -57,19 +60,43 @@ namespace backend.Controllers
             return NoContent();
         }
 
+        [HttpGet("{id}/roles")]
+        public async Task<ActionResult<List<string>>> GetRoles(int id)
+        {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null) return NotFound();
+            return Ok(user.UserRoles.Select(ur => ur.Role.Name).ToList());
+        }
+
+        [HttpPost("{id}/roles")]
+        public async Task<IActionResult> AssignRoles(int id, [FromBody] List<string> roles)
+        {
+            var result = await _userService.AssignRolesAsync(id, roles);
+            if (!result) return NotFound();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}/roles/{roleName}")]
+        public async Task<IActionResult> RemoveRole(int id, string roleName)
+        {
+            var result = await _userService.RemoveRoleAsync(id, roleName);
+            if (!result) return NotFound();
+            return NoContent();
+        }
+
         private static UserDto ToDto(User u) => new UserDto
         {
             Id = u.Id,
             UserName = u.UserName,
             Email = u.Email,
-            Role = u.Role
+            Roles = u.UserRoles?.Select(ur => ur.Role.Name).ToList() ?? new List<string>()
         };
         private static User FromDto(UserDto dto) => new User
         {
             Id = dto.Id,
             UserName = dto.UserName,
             Email = dto.Email,
-            Role = dto.Role
+            UserRoles = dto.Roles?.Select(r => new UserRole { Role = new Role { Name = r } }).ToList() ?? new List<UserRole>()
         };
     }
 }

@@ -22,10 +22,11 @@ namespace backend.Models
         /// </summary>
         public required string Email { get; set; }
 
+
         /// <summary>
-        /// Gets or sets the role of the user (e.g., Admin, QA, Developer).
+        /// Gets or sets the roles associated with this user.
         /// </summary>
-        public required string Role { get; set; }
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
         /// <summary>
         /// Gets or sets the creation timestamp (UTC).

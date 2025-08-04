@@ -11,5 +11,8 @@ namespace backend.Services
         Task<User> CreateAsync(User user);
         Task<User> UpdateAsync(User user);
         Task<bool> DeleteAsync(int id);
+
+        Task<bool> AssignRolesAsync(int userId, List<string> roles);
+        Task<bool> RemoveRoleAsync(int userId, string roleName);
     }
 }
