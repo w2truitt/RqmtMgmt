@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -5,7 +6,6 @@ using backend.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 // Add services
 builder.Services.AddControllers();
@@ -18,11 +18,7 @@ builder.Services.AddScoped<backend.Services.ITestPlanService, backend.Services.T
 builder.Services.AddScoped<backend.Services.ITestSuiteService, backend.Services.TestSuiteService>();
 builder.Services.AddScoped<backend.Services.IUserService, backend.Services.UserService>();
 builder.Services.AddScoped<backend.Services.IRedlineService, backend.Services.RedlineService>();
-builder.Services.AddScoped<backend.Services.ITestCaseService, backend.Services.TestCaseService>();
-builder.Services.AddScoped<backend.Services.ITestPlanService, backend.Services.TestPlanService>();
-builder.Services.AddScoped<backend.Services.ITestSuiteService, backend.Services.TestSuiteService>();
-builder.Services.AddScoped<backend.Services.IUserService, backend.Services.UserService>();
-builder.Services.AddScoped<backend.Services.IRedlineService, backend.Services.RedlineService>();
+builder.Services.AddScoped<backend.Services.IRequirementTestCaseLinkService, backend.Services.RequirementTestCaseLinkService>();
 // Register DbContext with connection string from configuration
 builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
