@@ -19,10 +19,6 @@ jobs:
       run: |
         mkdir -p ${{ github.workspace }}/local_nuget
         dotnet pack RqmtMgmtShared/RqmtMgmtShared.csproj -o ${{ github.workspace }}/local_nuget
-    - name: Add Local NuGet Source
-      run: |
-        dotnet nuget remove source local || true
-        dotnet nuget add source ${{ github.workspace }}/local_nuget --name local
     - name: Restore dependencies
       run: dotnet restore RqmtMgmt.sln
     - name: Build
