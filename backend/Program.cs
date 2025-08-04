@@ -4,7 +4,23 @@ using Microsoft.Extensions.Hosting;
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Add authentication (JWT Bearer for OAuth2/OIDC)
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.Authority = builder.Configuration["Authentication:Authority"];
+        options.Audience = builder.Configuration["Authentication:Audience"];
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true
+        };
+    });
 
 // Add services
 builder.Services.AddControllers();
@@ -24,6 +40,7 @@ builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add our DbContext and DI registrations later
 
+
 var app = builder.Build();
 
 
@@ -37,7 +54,11 @@ else
     app.UseExceptionHandler("/error");
 }
 
+
 app.UseHttpsRedirection();
+
+// Enable authentication and authorization middleware
+app.UseAuthentication();
 
 // Impersonation Middleware
 app.Use(async (context, next) =>

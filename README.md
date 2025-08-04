@@ -8,7 +8,6 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
 
 ## Projects in the Solution
 
-
 ### 1. Front-End (Blazor WebAssembly)
 
 - **Location:** `frontend/`
@@ -42,14 +41,13 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
 
 ---
 
-
 ## Architecture
 
 - Modern SPA front-end (C# Blazor WebAssembly)
 - Cloud-hosted RESTful API back-end (.NET 8)
 - Azure SQL Database for enterprise-grade data storage
 - Azure Blob Storage for attachments
-- OAuth 2.0 / OpenID Connect authentication (e.g., Azure AD)
+- OAuth 2.0 / OpenID Connect authentication (e.g., Azure AD, Okta, Google, IdentityServer)
 
 See `architecture.md` for detailed architecture decisions and diagrams.
 
@@ -57,13 +55,9 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 
 ## Getting Started
 
-
 ### Prerequisites
-
 - .NET 8 SDK (for both front-end and back-end)
 - Access to Azure (for cloud deployment)
-
-
 
 ### Front-End Setup (Blazor)
 
@@ -71,13 +65,11 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 2. Restore dependencies: `dotnet restore`
 3. Start development server: `dotnet run` (or use Visual Studio/VS Code launch)
 
-
 ### Back-End Setup
 
 1. Navigate to `backend/`
 2. Restore dependencies: `dotnet restore`
 3. Build and run: `dotnet run`
-
 
 ### Database Schema Setup (Entity Framework Migrations)
 
@@ -107,41 +99,43 @@ The recommended way to create and update your database schema is with Entity Fra
 
 **Legacy:** If you need to use raw SQL scripts (e.g., for legacy or bulk setup), see `backend/Data/tables.sql`.
 
-### Prerequisites
-
-- Node.js (for front-end)
-- .NET 8 SDK (for back-end)
-- Access to Azure (for cloud deployment)
-
 ### Environment Configuration
 
 - Use environment variables or `.env` files to configure API URLs, database connections, authentication, and secrets.
 
-
-#### Example `wwwroot/appsettings.json` for Front-End
+#### Example `backend/appsettings.json` for Authentication
 ```json
 {
-  "ApiUrl": "http://localhost:5000"
+  "Authentication": {
+    "Authority": "https://YOUR_OIDC_AUTHORITY", // e.g. Azure AD, Okta, Google, or IdentityServer
+    "Audience": "YOUR_API_CLIENT_ID"
+  }
 }
 ```
 
-#### Example `appsettings.Development.json` for Back-End
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=RqmtMgmtDb;Trusted_Connection=True;"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*"
-}
-```
+#### Configuring OIDC Providers
 
-> **Note:** Update connection strings and API URLs as needed for your dev, test, or production environments.
+- **Azure AD**:
+  - Set `Authority` to `https://login.microsoftonline.com/{TENANT_ID}/v2.0`
+  - Set `Audience` to your Azure AD App Registration's Application (client) ID
+  - See [Microsoft Docs](https://docs.microsoft.com/azure/active-directory/develop/v2-protocols-oidc)
+
+- **Okta**:
+  - Set `Authority` to `https://{yourOktaDomain}/oauth2/default`
+  - Set `Audience` to your Okta API audience/client ID
+  - See [Okta OIDC Docs](https://developer.okta.com/docs/guides/implement-auth-code/overview/)
+
+- **Google Identity Platform**:
+  - Set `Authority` to `https://accounts.google.com`
+  - Set `Audience` to your Google OAuth 2.0 Client ID
+  - See [Google OIDC Docs](https://developers.google.com/identity/protocols/oauth2/openid-connect)
+
+- **IdentityServer (Self-hosted)**:
+  - Set `Authority` to your IdentityServer base URL (e.g., `https://identity.example.com`)
+  - Set `Audience` to the API resource name or client ID
+  - See [IdentityServer Docs](https://docs.duendesoftware.com/identityserver/v6/)
+
+> For all providers, you must register your API as an application/client and obtain the correct values for Authority and Audience.
 
 ---
 

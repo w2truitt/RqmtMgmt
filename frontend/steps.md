@@ -6,7 +6,7 @@
 - [x] Ensure all CRUD endpoints for Requirements, Test Cases, Test Plans, Test Suites, and Users have positive and negative unit tests.
 - [x] Add tests for linkage APIs (Requirement-TestCase, Requirement-TestPlan): create, retrieve, and delete links.
 - [x] Add tests for version history and redline endpoints, including edge/error cases.
-- [ ] Add tests for user and role management, including authorization/permission logic (if applicable).
+- [x] Add tests for user and role management, including authorization/permission logic (if applicable).
 - [ ] Integrate code coverage tooling (e.g., Coverlet, ReportGenerator) and monitor in CI.
 - [ ] (Future) Add frontend/component tests for Blazor UI using bUnit or similar.
 # Frontend Development Plan (Blazor WebAssembly)
