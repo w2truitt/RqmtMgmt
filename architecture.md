@@ -17,10 +17,19 @@ This document outlines the software architecture decisions for developing a web-
 - Authentication will use OAuth 2.0 / OpenID Connect (OIDC) via a cloud identity provider (e.g., Azure AD, Okta).
 - Responsive design will be ensured for desktop and tablet use.
 
+
+### Shared Library Organization
+
+- The solution includes a `RqmtMgmtShared` class library project containing all shared DTOs and data contracts.
+- Both the front-end and back-end reference this shared library, ensuring type safety and eliminating duplication.
+- This enables seamless, strongly-typed API integration between Blazor, Web API, and test projects.
+
 ```mermaid
 flowchart LR
     Browser["Web Browser"] <--> Blazor["Blazor Frontend"]
     Blazor <--> API[".NET 8 API"]
+    Blazor <--> Shared["RqmtMgmtShared DTOs"]
+    API <--> Shared
     API --> SQL["Azure SQL DB"]
     API --> Blob["Blob Storage"]
 ```

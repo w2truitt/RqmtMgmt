@@ -59,6 +59,12 @@ This document outlines the requirements for a web-based tool designed to manage 
 ### 3.4 User Management & Security
 
 - The tool shall support user authentication and authorization.
+
+### 3.5 Shared Library Structure
+
+- The system shall use a shared class library (`RqmtMgmtShared`) containing all DTOs and contracts for requirements, tests, users, and traceability.
+- Both the back-end REST API and the front-end Blazor app shall reference this library for type safety and API consistency.
+- Automated tests shall also use these shared definitions for test clarity and maintainability.
 - The tool shall support role-based access control (e.g., Admin, Product Owner, QA, Developer, Viewer).
 - The tool shall log user actions for audit purposes.
 

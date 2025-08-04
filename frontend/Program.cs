@@ -13,4 +13,8 @@ builder.Services.AddMudServices();
 
 builder.Services.AddScoped<RequirementsDataService>();
 builder.Services.AddScoped<TestCasesDataService>();
+builder.Services.AddScoped<TestPlansDataService>();
+builder.Services.AddScoped<TestSuitesDataService>();
+builder.Services.AddScoped<UsersDataService>();
+builder.Services.AddScoped<RequirementTestCaseLinkService>();
 await builder.Build().RunAsync();

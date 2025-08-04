@@ -1,36 +1,132 @@
 @page "/testplans"
+@using RqmtMgmtShared
+@inject frontend.Services.TestPlansDataService TestPlanService
+
 <h3>Test Plans</h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Owner</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>TP-001</td>
-            <td>Authentication Plan</td>
-            <td>Jane Doe</td>
-            <td>Active</td>
-            <td>
-                <button class="btn btn-sm btn-primary">Edit</button>
-                <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>TP-002</td>
-            <td>Reporting Plan</td>
-            <td>John Smith</td>
-            <td>Draft</td>
-            <td>
-                <button class="btn btn-sm btn-primary">Edit</button>
-                <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-<button class="btn btn-success">Add Test Plan</button>
+<button class="btn btn-success" @onclick="ShowAddForm">Add Test Plan</button>
+
+@if (testPlans == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var plan in testPlans)
+            {
+                <tr>
+                    <td>@plan.Id</td>
+                    <td>@plan.Name</td>
+                    <td>@plan.Type</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(plan)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(plan.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@((editTestPlan == null ? "Add" : "Edit")) Test Plan</h5>
+                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input class="form-control" @bind="formModel.Name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input class="form-control" @bind="formModel.Type" />
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input class="form-control" @bind="formModel.Description" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="SaveTestPlan">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    List<TestPlanDto>? testPlans;
+    TestPlanDto formModel = new() { Name = string.Empty, Type = string.Empty };
+    TestPlanDto? editTestPlan = null;
+    bool showForm = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        testPlans = await TestPlanService.GetAllAsync();
+    }
+
+    async Task Delete(int id)
+    {
+        if (await TestPlanService.DeleteAsync(id))
+            testPlans = await TestPlanService.GetAllAsync();
+    }
+
+    void Edit(TestPlanDto plan)
+    {
+        formModel = new TestPlanDto
+        {
+            Id = plan.Id,
+            Name = plan.Name,
+            Type = plan.Type,
+            Description = plan.Description,
+            CreatedBy = plan.CreatedBy,
+            CreatedAt = plan.CreatedAt
+        };
+        editTestPlan = plan;
+        showForm = true;
+    }
+
+    void ShowAddForm()
+    {
+        formModel = new TestPlanDto { Name = string.Empty, Type = string.Empty };
+        editTestPlan = null;
+        showForm = true;
+    }
+
+    void HideForm()
+    {
+        showForm = false;
+    }
+
+    async Task SaveTestPlan()
+    {
+        if (editTestPlan != null)
+        {
+            await TestPlanService.UpdateAsync(formModel);
+        }
+        else
+        {
+            await TestPlanService.CreateAsync(formModel);
+        }
+        testPlans = await TestPlanService.GetAllAsync();
+        showForm = false;
+    }
+}

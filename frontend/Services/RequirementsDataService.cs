@@ -35,5 +35,8 @@ namespace frontend.Services
             var resp = await _http.DeleteAsync($"/api/Requirement/{id}");
             return resp.IsSuccessStatusCode;
         }
+
+        public async Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId)
+            => await _http.GetFromJsonAsync<List<RequirementVersionDto>>($"/api/Redline/RequirementVersions/{requirementId}") ?? new();
     }
 }

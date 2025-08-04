@@ -22,8 +22,8 @@
 - [x] Build Requirements list page (table/grid)
 - [x] Add create/edit requirement form (modal or page)
 - [x] Add delete requirement action
-- [ ] Connect to backend API for CRUD operations
-- [ ] Show requirement details and version history
+- [x] Connect to backend API for CRUD operations
+- [x] Show requirement details and version history
 
 ---
 
@@ -34,10 +34,10 @@
 - As a user, I want to see test case version history and redlines.
 
 #### Tasks
-- [ ] Build Test Suites list & detail pages
-- [ ] Build Test Cases list & detail pages
-- [ ] Build Test Plans list & detail pages
-- [ ] Implement linking between requirements and test cases/plans
+- [x] Build Test Suites list & detail pages
+- [x] Build Test Cases list & detail pages
+- [x] Build Test Plans list & detail pages
+- [x] Implement linking between requirements and test cases/plans
 - [ ] Show test case version history and redline comparisons
 
 ---
@@ -49,7 +49,7 @@
 
 #### Tasks
 - [ ] Add authentication (Azure AD or similar)
-- [ ] Build user list & role assignment page
+- [x] Build user list & role assignment page
 - [ ] Implement authorization checks for UI features
 
 ---

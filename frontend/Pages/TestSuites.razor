@@ -1,36 +1,127 @@
 @page "/testsuites"
+@using RqmtMgmtShared
+@inject frontend.Services.TestSuitesDataService TestSuiteService
+
 <h3>Test Suites</h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Requirement</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>TS-001</td>
-            <td>Authentication Suite</td>
-            <td>REQ-001</td>
-            <td>Active</td>
-            <td>
-                <button class="btn btn-sm btn-primary">Edit</button>
-                <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>TS-002</td>
-            <td>Reporting Suite</td>
-            <td>REQ-002</td>
-            <td>Inactive</td>
-            <td>
-                <button class="btn btn-sm btn-primary">Edit</button>
-                <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-        </tr>
-    </tbody>
-</table>
-<button class="btn btn-success">Add Test Suite</button>
+<button class="btn btn-success" @onclick="ShowAddForm">Add Test Suite</button>
+
+@if (testSuites == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var suite in testSuites)
+            {
+                <tr>
+                    <td>@suite.Id</td>
+                    <td>@suite.Name</td>
+                    <td>@suite.Description</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(suite)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(suite.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@((editTestSuite == null ? "Add" : "Edit")) Test Suite</h5>
+                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input class="form-control" @bind="formModel.Name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input class="form-control" @bind="formModel.Description" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="SaveTestSuite">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    List<TestSuiteDto>? testSuites;
+    TestSuiteDto formModel = new() { Name = string.Empty };
+    TestSuiteDto? editTestSuite = null;
+    bool showForm = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        testSuites = await TestSuiteService.GetAllAsync();
+    }
+
+    async Task Delete(int id)
+    {
+        if (await TestSuiteService.DeleteAsync(id))
+            testSuites = await TestSuiteService.GetAllAsync();
+    }
+
+    void Edit(TestSuiteDto suite)
+    {
+        formModel = new TestSuiteDto
+        {
+            Id = suite.Id,
+            Name = suite.Name,
+            Description = suite.Description,
+            CreatedBy = suite.CreatedBy,
+            CreatedAt = suite.CreatedAt
+        };
+        editTestSuite = suite;
+        showForm = true;
+    }
+
+    void ShowAddForm()
+    {
+        formModel = new TestSuiteDto { Name = string.Empty };
+        editTestSuite = null;
+        showForm = true;
+    }
+
+    void HideForm()
+    {
+        showForm = false;
+    }
+
+    async Task SaveTestSuite()
+    {
+        if (editTestSuite != null)
+        {
+            await TestSuiteService.UpdateAsync(formModel);
+        }
+        else
+        {
+            await TestSuiteService.CreateAsync(formModel);
+        }
+        testSuites = await TestSuiteService.GetAllAsync();
+        showForm = false;
+    }
+}

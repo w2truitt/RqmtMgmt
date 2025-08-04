@@ -1,4 +1,9 @@
 @page "/requirements"
+@using RqmtMgmtShared
+@inject RequirementsDataService ReqService
+@inject frontend.Services.RequirementTestCaseLinkService LinkService
+@inject frontend.Services.TestCasesDataService TestCaseService
+
 <h3>Requirements</h3>
 <table class="table">
     <thead>
@@ -6,7 +11,6 @@
             <th>ID</th>
             <th>Title</th>
             <th>Status</th>
-            <!-- <th>Owner</th> -->
             <th>Actions</th>
         </tr>
     </thead>
@@ -17,8 +21,9 @@
                 <td>@req.Id</td>
                 <td>@req.Title</td>
                 <td>@req.Status</td>
-                <!-- <td>@req.Owner</td> -->
                 <td>
+                    <button class="btn btn-sm btn-secondary" @onclick="() => ShowLinkModal(req.Id)">Link Test Cases</button>
+                    <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(req.Id)">Details</button>
                     <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
                     <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
                 </td>
@@ -27,6 +32,65 @@
     </tbody>
 </table>
 <button class="btn btn-success" @onclick="ShowAddForm">Add Requirement</button>
+
+@if (showLinkModal)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Link Test Cases to Requirement</h5>
+                    <button type="button" class="close" @onclick="HideLinkModal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @foreach (var tc in allTestCases)
+                    {
+                        <div>
+                            <input type="checkbox"
+                                   checked="@linkedTestCaseIds.Contains(tc.Id)"
+                                   @onchange="e => ToggleLink(tc.Id, (e.Value as bool?) == true)" /> @tc.Title
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideLinkModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@if (showDetails && selectedRequirement != null)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Requirement Details</h5>
+                    <button type="button" class="close" @onclick="HideDetails" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p><b>Title:</b> @selectedRequirement.Title</p>
+                    <p><b>Description:</b> @selectedRequirement.Description</p>
+                    <p><b>Status:</b> @selectedRequirement.Status</p>
+                    <h6>Version History</h6>
+                    <ul>
+                        @foreach (var v in versionHistory)
+                        {
+                            <li>Version @v.Version: @v.Title (@v.ModifiedAt)</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
 
 @if (showForm)
 {
@@ -51,7 +115,6 @@
                             <option>Approved</option>
                         </select>
                     </div>
-                    <!-- Owner field removed -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @onclick="SaveRequirement">Save</button>
@@ -64,68 +127,116 @@
 }
 
 @code {
-    // Updated for shared DTO and service usage
-@using RqmtMgmtShared
-@inject RequirementsDataService ReqService
+    List<RequirementDto> requirements = new();
+    RequirementDto formModel = new() { Type = "CRS", Title = string.Empty, Status = "Draft" };
+    RequirementDto? editRequirement = null;
+    bool showForm = false;
 
-List<RequirementDto> requirements = new();
-RequirementDto formModel = new() { Type = "CRS", Title = string.Empty, Status = "Draft" };
-RequirementDto? editRequirement = null;
-bool showForm = false;
+    RequirementDto? selectedRequirement = null;
+    List<RequirementVersionDto> versionHistory = new();
+    bool showDetails = false;
 
-protected override async Task OnInitializedAsync()
-{
-    requirements = await ReqService.GetAllAsync();
-}
+    // Linking logic
+    bool showLinkModal = false;
+    int linkRequirementId;
+    List<TestCaseDto> allTestCases = new();
+    HashSet<int> linkedTestCaseIds = new();
 
-async Task DeleteRequirement(RequirementDto req)
-{
-    if (await ReqService.DeleteAsync(req.Id))
+    protected override async Task OnInitializedAsync()
+    {
         requirements = await ReqService.GetAllAsync();
-}
-
-void ShowAddForm()
-{
-    formModel = new RequirementDto { Type = "CRS", Title = string.Empty, Status = "Draft" };
-    editRequirement = null;
-    showForm = true;
-}
-
-void HideForm()
-{
-    showForm = false;
-}
-
-void EditRequirement(RequirementDto req)
-{
-    formModel = new RequirementDto
-    {
-        Id = req.Id,
-        Type = req.Type,
-        Title = req.Title,
-        Description = req.Description,
-        ParentId = req.ParentId,
-        Status = req.Status,
-        Version = req.Version,
-        CreatedBy = req.CreatedBy,
-        CreatedAt = req.CreatedAt,
-        UpdatedAt = req.UpdatedAt
-    };
-    editRequirement = req;
-    showForm = true;
-}
-
-async Task SaveRequirement()
-{
-    if (editRequirement != null)
-    {
-        await ReqService.UpdateAsync(formModel);
     }
-    else
+
+    async Task DeleteRequirement(RequirementDto req)
     {
-        await ReqService.CreateAsync(formModel);
+        if (await ReqService.DeleteAsync(req.Id))
+            requirements = await ReqService.GetAllAsync();
     }
-    requirements = await ReqService.GetAllAsync();
-    showForm = false;
-}
+
+    void ShowAddForm()
+    {
+        formModel = new RequirementDto { Type = "CRS", Title = string.Empty, Status = "Draft" };
+        editRequirement = null;
+        showForm = true;
+    }
+
+    void HideForm()
+    {
+        showForm = false;
+    }
+
+    void EditRequirement(RequirementDto req)
+    {
+        formModel = new RequirementDto
+        {
+            Id = req.Id,
+            Type = req.Type,
+            Title = req.Title,
+            Description = req.Description,
+            ParentId = req.ParentId,
+            Status = req.Status,
+            Version = req.Version,
+            CreatedBy = req.CreatedBy,
+            CreatedAt = req.CreatedAt,
+            UpdatedAt = req.UpdatedAt
+        };
+        editRequirement = req;
+        showForm = true;
+    }
+
+    async Task SaveRequirement()
+    {
+        if (editRequirement != null)
+        {
+            await ReqService.UpdateAsync(formModel);
+        }
+        else
+        {
+            await ReqService.CreateAsync(formModel);
+        }
+        requirements = await ReqService.GetAllAsync();
+        showForm = false;
+    }
+
+    async Task ShowDetails(int id)
+    {
+        selectedRequirement = await ReqService.GetByIdAsync(id);
+        versionHistory = await ReqService.GetVersionsAsync(id);
+        showDetails = true;
+    }
+
+    void HideDetails()
+    {
+        showDetails = false;
+        selectedRequirement = null;
+        versionHistory = new();
+    }
+
+    async Task ShowLinkModal(int requirementId)
+    {
+        showLinkModal = true;
+        linkRequirementId = requirementId;
+        allTestCases = await TestCaseService.GetAllAsync();
+        var links = await LinkService.GetLinksForRequirement(requirementId);
+        linkedTestCaseIds = links.Select(l => l.TestCaseId).ToHashSet();
+    }
+
+    void HideLinkModal()
+    {
+        showLinkModal = false;
+    }
+
+    async Task ToggleLink(int testCaseId, bool linked)
+    {
+        if (linked)
+        {
+            await LinkService.AddLink(linkRequirementId, testCaseId);
+            linkedTestCaseIds.Add(testCaseId);
+        }
+        else
+        {
+            await LinkService.RemoveLink(linkRequirementId, testCaseId);
+            linkedTestCaseIds.Remove(testCaseId);
+        }
+    }
 }

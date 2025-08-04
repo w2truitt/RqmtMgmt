@@ -1,3 +1,132 @@
 @page "/users"
+@using RqmtMgmtShared
+@inject frontend.Services.UsersDataService UserService
+
 <h3>Users</h3>
-<p>User management UI coming soon.</p>
+<button class="btn btn-success" @onclick="ShowAddForm">Add User</button>
+
+@if (users == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.UserName</td>
+                    <td>@user.Email</td>
+                    <td>@user.Role</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(user)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(user.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@((editUser == null ? "Add" : "Edit")) User</h5>
+                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input class="form-control" @bind="formModel.UserName" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input class="form-control" @bind="formModel.Email" />
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <input class="form-control" @bind="formModel.Role" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="SaveUser">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    List<UserDto>? users;
+    UserDto formModel = new() { UserName = string.Empty, Email = string.Empty, Role = string.Empty };
+    UserDto? editUser = null;
+    bool showForm = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await UserService.GetAllAsync();
+    }
+
+    async Task Delete(int id)
+    {
+        if (await UserService.DeleteAsync(id))
+            users = await UserService.GetAllAsync();
+    }
+
+    void Edit(UserDto user)
+    {
+        formModel = new UserDto
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            Email = user.Email,
+            Role = user.Role
+        };
+        editUser = user;
+        showForm = true;
+    }
+
+    void ShowAddForm()
+    {
+        formModel = new UserDto { UserName = string.Empty, Email = string.Empty, Role = string.Empty };
+        editUser = null;
+        showForm = true;
+    }
+
+    void HideForm()
+    {
+        showForm = false;
+    }
+
+    async Task SaveUser()
+    {
+        if (editUser != null)
+        {
+            await UserService.UpdateAsync(formModel);
+        }
+        else
+        {
+            await UserService.CreateAsync(formModel);
+        }
+        users = await UserService.GetAllAsync();
+        showForm = false;
+    }
+}

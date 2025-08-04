@@ -13,6 +13,7 @@ using Xunit;
 
 namespace backend.Tests
 {
+#nullable enable
     public class RedlineControllerTests
     {
         private static RqmtMgmtDbContext GetDbContextWithData(
@@ -48,6 +49,7 @@ namespace backend.Tests
             var result = await controller.GetRequirementVersions(reqId);
             var ok = Assert.IsType<OkObjectResult>(result);
             var versions = Assert.IsAssignableFrom<List<RequirementVersion>>(ok.Value);
+            Assert.Single(versions);
             Assert.Equal(2, versions.Count);
         }
 
@@ -80,7 +82,7 @@ namespace backend.Tests
             var result = await controller.RedlineRequirement(1, 2);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var dto = Assert.IsType<RedlineResultDto>(ok.Value);
-            Assert.Equal(1, dto.Changes.Count); // Title changed
+            Assert.Single(dto.Changes); // Title changed
         }
 
         [Fact]
@@ -95,6 +97,7 @@ namespace backend.Tests
             var result = await controller.GetTestCaseVersions(tcId);
             var ok = Assert.IsType<OkObjectResult>(result);
             var versions = Assert.IsAssignableFrom<List<TestCaseVersion>>(ok.Value);
+            Assert.Single(versions);
             Assert.Equal(2, versions.Count);
         }
 
@@ -127,7 +130,7 @@ namespace backend.Tests
             var result = await controller.RedlineTestCase(1, 2);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var dto = Assert.IsType<RedlineResultDto>(ok.Value);
-            Assert.Equal(1, dto.Changes.Count); // Title changed
+            Assert.Single(dto.Changes); // Title changed
         }
     }
 }
