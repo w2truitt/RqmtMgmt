@@ -1,10 +1,7 @@
 using System.Collections.Generic;
 
-namespace backend.DTOs
+namespace RqmtMgmtShared
 {
-    /// <summary>
-    /// Represents the result of a redline comparison between two versions.
-    /// </summary>
     public class RedlineResultDto
     {
         public int OldVersion { get; set; }

@@ -1,4 +1,4 @@
-namespace backend.DTOs
+namespace RqmtMgmtShared
 {
     public class UserDto
     {

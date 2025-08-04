@@ -1,8 +1,5 @@
-namespace backend.DTOs
+namespace RqmtMgmtShared
 {
-    /// <summary>
-    /// Represents a change in a single field between two versions.
-    /// </summary>
     public class RedlineFieldChangeDto
     {
         public required string Field { get; set; }

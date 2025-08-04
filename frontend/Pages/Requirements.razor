@@ -6,7 +6,7 @@
             <th>ID</th>
             <th>Title</th>
             <th>Status</th>
-            <th>Owner</th>
+            <!-- <th>Owner</th> -->
             <th>Actions</th>
         </tr>
     </thead>
@@ -17,14 +17,10 @@
                 <td>@req.Id</td>
                 <td>@req.Title</td>
                 <td>@req.Status</td>
-                <td>@req.Owner</td>
+                <!-- <td>@req.Owner</td> -->
                 <td>
                     <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
                     <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
-    private void DeleteRequirement(Requirement req)
-    {
-        requirements.Remove(req);
-    }
                 </td>
             </tr>
         }
@@ -55,10 +51,7 @@
                             <option>Approved</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Owner</label>
-                        <input class="form-control" @bind="formModel.Owner" />
-                    </div>
+                    <!-- Owner field removed -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @onclick="SaveRequirement">Save</button>
@@ -71,64 +64,68 @@
 }
 
 @code {
-    private class Requirement
-    {
-        public string Id { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string Status { get; set; } = "Draft";
-        public string Owner { get; set; } = string.Empty;
-    }
+    // Updated for shared DTO and service usage
+@using RqmtMgmtShared
+@inject RequirementsDataService ReqService
 
-    private List<Requirement> requirements = new()
+List<RequirementDto> requirements = new();
+RequirementDto formModel = new() { Type = "CRS", Title = string.Empty, Status = "Draft" };
+RequirementDto? editRequirement = null;
+bool showForm = false;
+
+protected override async Task OnInitializedAsync()
+{
+    requirements = await ReqService.GetAllAsync();
+}
+
+async Task DeleteRequirement(RequirementDto req)
+{
+    if (await ReqService.DeleteAsync(req.Id))
+        requirements = await ReqService.GetAllAsync();
+}
+
+void ShowAddForm()
+{
+    formModel = new RequirementDto { Type = "CRS", Title = string.Empty, Status = "Draft" };
+    editRequirement = null;
+    showForm = true;
+}
+
+void HideForm()
+{
+    showForm = false;
+}
+
+void EditRequirement(RequirementDto req)
+{
+    formModel = new RequirementDto
     {
-        new Requirement { Id = "REQ-001", Title = "User authentication required", Status = "Approved", Owner = "Jane Doe" },
-        new Requirement { Id = "REQ-002", Title = "Export report to PDF", Status = "Draft", Owner = "John Smith" }
+        Id = req.Id,
+        Type = req.Type,
+        Title = req.Title,
+        Description = req.Description,
+        ParentId = req.ParentId,
+        Status = req.Status,
+        Version = req.Version,
+        CreatedBy = req.CreatedBy,
+        CreatedAt = req.CreatedAt,
+        UpdatedAt = req.UpdatedAt
     };
+    editRequirement = req;
+    showForm = true;
+}
 
-    private Requirement formModel = new();
-    private Requirement? editRequirement = null;
-    private bool showForm = false;
-
-    private void ShowAddForm()
+async Task SaveRequirement()
+{
+    if (editRequirement != null)
     {
-        formModel = new Requirement();
-        editRequirement = null;
-        showForm = true;
+        await ReqService.UpdateAsync(formModel);
     }
-
-    private void HideForm()
+    else
     {
-        showForm = false;
+        await ReqService.CreateAsync(formModel);
     }
-
-    private void EditRequirement(Requirement req)
-    {
-        formModel = new Requirement { Id = req.Id, Title = req.Title, Status = req.Status, Owner = req.Owner };
-        editRequirement = req;
-        showForm = true;
-    }
-
-    private void SaveRequirement()
-    {
-        if (editRequirement != null)
-        {
-            // Update existing
-            editRequirement.Title = formModel.Title;
-            editRequirement.Status = formModel.Status;
-            editRequirement.Owner = formModel.Owner;
-        }
-        else
-        {
-            // Add new
-            string newId = $"REQ-{requirements.Count + 1:000}";
-            requirements.Add(new Requirement
-            {
-                Id = newId,
-                Title = formModel.Title,
-                Status = formModel.Status,
-                Owner = formModel.Owner
-            });
-        }
-        showForm = false;
-    }
+    requirements = await ReqService.GetAllAsync();
+    showForm = false;
+}
 }
