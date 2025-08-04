@@ -17,4 +17,5 @@ builder.Services.AddScoped<TestPlansDataService>();
 builder.Services.AddScoped<TestSuitesDataService>();
 builder.Services.AddScoped<UsersDataService>();
 builder.Services.AddScoped<RequirementTestCaseLinkService>();
+builder.Services.AddScoped<RolesDataService>();
 await builder.Build().RunAsync();

@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,6 +18,7 @@ builder.Services.AddScoped<backend.Services.ITestSuiteService, backend.Services.
 builder.Services.AddScoped<backend.Services.IUserService, backend.Services.UserService>();
 builder.Services.AddScoped<backend.Services.IRedlineService, backend.Services.RedlineService>();
 builder.Services.AddScoped<backend.Services.IRequirementTestCaseLinkService, backend.Services.RequirementTestCaseLinkService>();
+builder.Services.AddScoped<backend.Services.IRoleService, backend.Services.RoleService>();
 // Register DbContext with connection string from configuration
 builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -26,10 +26,15 @@ builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
 
 var app = builder.Build();
 
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+else
+{
+    app.UseExceptionHandler("/error");
 }
 
 app.UseHttpsRedirection();
@@ -47,6 +52,11 @@ app.Use(async (context, next) =>
 
 app.UseAuthorization();
 
+
 app.MapControllers();
+app.Map("/error", (HttpContext context) =>
+{
+    return Results.Problem("An unexpected error occurred. Please contact support if the issue persists.");
+});
 
 app.Run();

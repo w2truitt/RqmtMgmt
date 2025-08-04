@@ -4,6 +4,8 @@ services:
     working_dir: /src
     volumes:
       - ../backend:/src
+      - ../backend/local_nuget:/src/local_nuget
+      - ../backend/NuGet.Config:/src/NuGet.Config
     ports:
       - "5000:80"
     environment:
