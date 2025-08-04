@@ -7,7 +7,13 @@ namespace backend.Services
     /// <summary>
     /// Provides redline/diff logic for comparing requirement and test case versions.
     /// </summary>
-    public class RedlineService
+    public interface IRedlineService
+    {
+        RedlineResultDto CompareRequirements(RequirementVersion oldV, RequirementVersion newV);
+        RedlineResultDto CompareTestCases(TestCaseVersion oldV, TestCaseVersion newV);
+    }
+
+    public class RedlineService : IRedlineService
     {
         public RedlineResultDto CompareRequirements(RequirementVersion oldV, RequirementVersion newV)
         {

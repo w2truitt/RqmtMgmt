@@ -1,13 +1,26 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using backend.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Register all services for DI
+builder.Services.AddScoped<backend.Services.IRequirementService, backend.Services.RequirementService>();
+builder.Services.AddScoped<backend.Services.ITestCaseService, backend.Services.TestCaseService>();
+builder.Services.AddScoped<backend.Services.ITestPlanService, backend.Services.TestPlanService>();
+builder.Services.AddScoped<backend.Services.ITestSuiteService, backend.Services.TestSuiteService>();
+builder.Services.AddScoped<backend.Services.IUserService, backend.Services.UserService>();
+builder.Services.AddScoped<backend.Services.IRedlineService, backend.Services.RedlineService>();
+// Register DbContext with connection string from configuration
+builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add our DbContext and DI registrations later
 
 var app = builder.Build();

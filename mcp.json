@@ -1,0 +1,37 @@
+{
+	"servers": {
+		"zen": {
+			"type": "stdio",
+			"command": "C:\\Users\\wtruitt\\tools\\zen-mcp-server\\.zen_venv\\Scripts\\python.exe",
+			"args": [
+				"C:\\Users\\wtruitt\\tools\\zen-mcp-server\\server.py"
+			]
+		},
+		"ado": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"@azure-devops/mcp",
+				"hchb"
+			]
+		},
+		"playwright": {
+			"command": "npx",
+			"args": [
+				"@playwright/mcp@latest"
+			],
+			"type": "stdio"
+		},
+		"markitdown": {
+			"command": "docker",
+			"args": [
+				"run",
+				"--rm",
+				"-i",
+				"markitdown-mcp:latest"
+			]
+	    }
+	},
+	"inputs": []
+}

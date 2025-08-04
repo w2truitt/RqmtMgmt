@@ -71,11 +71,27 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 2. Restore dependencies: `dotnet restore`
 3. Start development server: `dotnet run` (or use Visual Studio/VS Code launch)
 
+
 ### Back-End Setup
 
 1. Navigate to `backend/`
 2. Restore dependencies: `dotnet restore`
 3. Build and run: `dotnet run`
+
+### Database Schema Setup (Docker Compose)
+
+After starting the database service with Docker Compose, run the following commands to initialize the schema:
+
+```sh
+# Copy the schema script into the database container
+docker cp backend/Data/tables.sql docker-compose-db-1:/tmp/tables.sql
+# Run the script using sqlcmd (add -C to trust the self-signed certificate)
+docker exec -it docker-compose-db-1 /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Your_password123 -d master -i /tmp/tables.sql -C
+```
+
+If you encounter SSL/certificate errors, ensure you use the `-C` flag with `sqlcmd` or add `TrustServerCertificate=yes;` to your connection string in the backend configuration.
+
+> **Note:** The connection string in Docker Compose must match the SQL Server credentials above. Edit as needed for your environment.
 
 ### Prerequisites
 

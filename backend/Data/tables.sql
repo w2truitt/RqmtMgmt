@@ -1,4 +1,9 @@
--- Azure SQL Database Table Definitions for Requirements & Test Management Tool
+
+-- Ensure RqmtMgmt database exists (run this part in master, then run schema in RqmtMgmt)
+IF DB_ID('RqmtMgmt') IS NULL
+    CREATE DATABASE RqmtMgmt;
+GO
+
 
 CREATE TABLE Users (
     Id INT IDENTITY(1,1) PRIMARY KEY,

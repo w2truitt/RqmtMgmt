@@ -3,26 +3,180 @@
 <PageTitle>Dashboard</PageTitle>
 
 <h1>Dashboard</h1>
+
 <div class="dashboard-grid">
     <div class="dashboard-card">
         <h3>Requirements</h3>
-        <p>Summary of requirements goes here.</p>
+        <div class="dashboard-card-content">
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@requirementsCount</span>
+                <span class="dashboard-stat-label">Total</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@approvedRequirements</span>
+                <span class="dashboard-stat-label">Approved</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@draftRequirements</span>
+                <span class="dashboard-stat-label">Draft</span>
+            </div>
+        </div>
+        <div class="quick-actions">
+            <a href="/requirements" class="quick-action-btn">View All</a>
+            <a href="/requirements/new" class="quick-action-btn">Create New</a>
+        </div>
     </div>
+
     <div class="dashboard-card">
         <h3>Test Suites</h3>
-        <p>Summary of test suites goes here.</p>
+        <div class="dashboard-card-content">
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@testSuitesCount</span>
+                <span class="dashboard-stat-label">Total</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@activeTestSuites</span>
+                <span class="dashboard-stat-label">Active</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@completedTestSuites</span>
+                <span class="dashboard-stat-label">Completed</span>
+            </div>
+        </div>
+        <div class="quick-actions">
+            <a href="/testsuites" class="quick-action-btn">View All</a>
+            <a href="/testsuites/new" class="quick-action-btn">Create New</a>
+        </div>
     </div>
+
     <div class="dashboard-card">
         <h3>Test Cases</h3>
-        <p>Summary of test cases goes here.</p>
+        <div class="dashboard-card-content">
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@testCasesCount</span>
+                <span class="dashboard-stat-label">Total</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@passedTests</span>
+                <span class="dashboard-stat-label">Passed</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@failedTests</span>
+                <span class="dashboard-stat-label">Failed</span>
+            </div>
+        </div>
+        <div class="quick-actions">
+            <a href="/testcases" class="quick-action-btn">View All</a>
+            <a href="/testcases/new" class="quick-action-btn">Create New</a>
+        </div>
     </div>
+
     <div class="dashboard-card">
         <h3>Test Plans</h3>
-        <p>Summary of test plans goes here.</p>
+        <div class="dashboard-card-content">
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@testPlansCount</span>
+                <span class="dashboard-stat-label">Total</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@executionProgress</span>
+                <span class="dashboard-stat-label">% Complete</span>
+            </div>
+            <div class="dashboard-stat">
+                <span class="dashboard-stat-number">@coveragePercentage</span>
+                <span class="dashboard-stat-label">% Coverage</span>
+            </div>
+        </div>
+        <div class="quick-actions">
+            <a href="/testplans" class="quick-action-btn">View All</a>
+            <a href="/testplans/new" class="quick-action-btn">Create New</a>
+        </div>
     </div>
 </div>
 
-@* Optional: Add quick links or activity feed below *@
 <div class="dashboard-secondary">
-    <!-- Additional widgets or recent activity -->
+    <div class="dashboard-activity">
+        <h4>Recent Activity</h4>
+        @if (recentActivities.Any())
+        {
+            @foreach (var activity in recentActivities)
+            {
+                <div class="activity-item">
+                    <span class="activity-text">@activity.Description</span>
+                    <span class="activity-time">@activity.TimeAgo</span>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="activity-text">No recent activity to display.</p>
+        }
+    </div>
 </div>
+
+@code {
+    // Summary statistics
+    private int requirementsCount = 0;
+    private int approvedRequirements = 0;
+    private int draftRequirements = 0;
+    
+    private int testSuitesCount = 0;
+    private int activeTestSuites = 0;
+    private int completedTestSuites = 0;
+    
+    private int testCasesCount = 0;
+    private int passedTests = 0;
+    private int failedTests = 0;
+    
+    private int testPlansCount = 0;
+    private int executionProgress = 0;
+    private int coveragePercentage = 0;
+    
+    // Recent activity
+    private List<ActivityItem> recentActivities = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO: Replace with actual API calls once backend is available
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // Simulate loading data - replace with actual API calls
+        await Task.Delay(100); // Simulate API delay
+        
+        // Mock data for demonstration
+        requirementsCount = 47;
+        approvedRequirements = 32;
+        draftRequirements = 15;
+        
+        testSuitesCount = 12;
+        activeTestSuites = 8;
+        completedTestSuites = 4;
+        
+        testCasesCount = 156;
+        passedTests = 142;
+        failedTests = 14;
+        
+        testPlansCount = 6;
+        executionProgress = 78;
+        coveragePercentage = 85;
+        
+        // Mock recent activities
+        recentActivities = new List<ActivityItem>
+        {
+            new ActivityItem { Description = "New requirement 'User Authentication' created", TimeAgo = "2 hours ago" },
+            new ActivityItem { Description = "Test suite 'Login Tests' completed", TimeAgo = "4 hours ago" },
+            new ActivityItem { Description = "Requirement 'Data Validation' approved", TimeAgo = "1 day ago" },
+            new ActivityItem { Description = "Test case 'Password Reset' updated", TimeAgo = "2 days ago" },
+            new ActivityItem { Description = "Test plan 'User Validation' created", TimeAgo = "3 days ago" }
+        };
+    }
+
+    private class ActivityItem
+    {
+        public string Description { get; set; } = string.Empty;
+        public string TimeAgo { get; set; } = string.Empty;
+    }
+}

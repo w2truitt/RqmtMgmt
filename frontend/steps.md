@@ -8,7 +8,7 @@
 #### Tasks
 - [x] Create main layout and navigation bar (sidebar or top nav)
 - [x] Implement routing for major sections (Home, Requirements, Test Suites, Test Cases, Test Plans, Users)
-- [ ] Build Home/Dashboard page with summary widgets
+- [x] Build Home/Dashboard page with summary widgets
 
 ---
 
@@ -19,9 +19,9 @@
 - As a user, I want to view details and version history of a requirement.
 
 #### Tasks
-- [ ] Build Requirements list page (table/grid)
-- [ ] Add create/edit requirement form (modal or page)
-- [ ] Add delete requirement action
+- [x] Build Requirements list page (table/grid)
+- [x] Add create/edit requirement form (modal or page)
+- [x] Add delete requirement action
 - [ ] Connect to backend API for CRUD operations
 - [ ] Show requirement details and version history
 

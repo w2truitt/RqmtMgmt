@@ -11,26 +11,124 @@
         </tr>
     </thead>
     <tbody>
-        <tr>
-            <td>REQ-001</td>
-            <td>User authentication required</td>
-            <td>Approved</td>
-            <td>Jane Doe</td>
-            <td>
-                <button class="btn btn-sm btn-primary">Edit</button>
-                <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>REQ-002</td>
-            <td>Export report to PDF</td>
-            <td>Draft</td>
-            <td>John Smith</td>
-            <td>
-                <button class="btn btn-sm btn-primary">Edit</button>
-                <button class="btn btn-sm btn-danger">Delete</button>
-            </td>
-        </tr>
+        @foreach (var req in requirements)
+        {
+            <tr>
+                <td>@req.Id</td>
+                <td>@req.Title</td>
+                <td>@req.Status</td>
+                <td>@req.Owner</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
+                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
+    private void DeleteRequirement(Requirement req)
+    {
+        requirements.Remove(req);
+    }
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
-<button class="btn btn-success">Add Requirement</button>
+<button class="btn btn-success" @onclick="ShowAddForm">Add Requirement</button>
+
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@((editRequirement == null ? "Add" : "Edit")) Requirement</h5>
+                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input class="form-control" @bind="formModel.Title" />
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" @bind="formModel.Status">
+                            <option>Draft</option>
+                            <option>Approved</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Owner</label>
+                        <input class="form-control" @bind="formModel.Owner" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="SaveRequirement">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    private class Requirement
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Status { get; set; } = "Draft";
+        public string Owner { get; set; } = string.Empty;
+    }
+
+    private List<Requirement> requirements = new()
+    {
+        new Requirement { Id = "REQ-001", Title = "User authentication required", Status = "Approved", Owner = "Jane Doe" },
+        new Requirement { Id = "REQ-002", Title = "Export report to PDF", Status = "Draft", Owner = "John Smith" }
+    };
+
+    private Requirement formModel = new();
+    private Requirement? editRequirement = null;
+    private bool showForm = false;
+
+    private void ShowAddForm()
+    {
+        formModel = new Requirement();
+        editRequirement = null;
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+    }
+
+    private void EditRequirement(Requirement req)
+    {
+        formModel = new Requirement { Id = req.Id, Title = req.Title, Status = req.Status, Owner = req.Owner };
+        editRequirement = req;
+        showForm = true;
+    }
+
+    private void SaveRequirement()
+    {
+        if (editRequirement != null)
+        {
+            // Update existing
+            editRequirement.Title = formModel.Title;
+            editRequirement.Status = formModel.Status;
+            editRequirement.Owner = formModel.Owner;
+        }
+        else
+        {
+            // Add new
+            string newId = $"REQ-{requirements.Count + 1:000}";
+            requirements.Add(new Requirement
+            {
+                Id = newId,
+                Title = formModel.Title,
+                Status = formModel.Status,
+                Owner = formModel.Owner
+            });
+        }
+        showForm = false;
+    }
+}
