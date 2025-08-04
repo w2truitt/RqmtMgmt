@@ -15,6 +15,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+    - name: Pack RqmtMgmtShared
+      run: dotnet pack RqmtMgmtShared/RqmtMgmtShared.csproj -o ./local_nuget
+    - name: Add Local NuGet Source
+      run: dotnet nuget add source $(pwd)/local_nuget --name local
     - name: Restore dependencies
       run: dotnet restore RqmtMgmt.sln
     - name: Build
