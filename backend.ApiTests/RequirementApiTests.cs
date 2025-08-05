@@ -13,136 +13,6 @@ namespace backend.ApiTests
     {
         private readonly HttpClient _client;
 
-        [Fact]
-        public async Task CreatingRequirementAddsInitialVersion()
-        {
-            var createDto = new RequirementDto
-            {
-                Title = "Versioned Requirement",
-                Type = "CRS",
-                Status = "Draft",
-                Description = "Initial version test",
-                CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
-            };
-            var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
-            response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
-            Assert.NotNull(created);
-
-            var versionsResp = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResp.EnsureSuccessStatusCode();
-            var versions = await versionsResp.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
-            Assert.NotNull(versions);
-            Assert.Single(versions);
-            Assert.Equal(created.Title, versions[0].Title);
-        }
-
-        [Fact]
-        public async Task UpdatingRequirementAddsNewVersion()
-        {
-            var createDto = new RequirementDto
-            {
-                Title = "Versioned Requirement Update",
-                Type = "CRS",
-                Status = "Draft",
-                Description = "Initial version",
-                CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
-            };
-            var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
-            response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
-            Assert.NotNull(created);
-
-            // First check initial version
-            var versionsResp1 = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResp1.EnsureSuccessStatusCode();
-            var versions1 = await versionsResp1.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
-            Assert.NotNull(versions1);
-            Assert.Single(versions1);
-
-            // Now update
-            created.Title = "Updated Title";
-            created.Description = "Updated Desc";
-            var putResp = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created);
-            putResp.EnsureSuccessStatusCode();
-
-            // Should now have 2 versions
-            var versionsResp2 = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResp2.EnsureSuccessStatusCode();
-            var versions2 = await versionsResp2.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
-            Assert.NotNull(versions2);
-            Assert.Equal(2, versions2.Count);
-            Assert.Equal("Versioned Requirement Update", versions2[0].Title); // original
-            Assert.Equal("Updated Title", versions2[1].Title); // after update
-        }
-
-        [Fact]
-        public async Task CreatingRequirementAddsInitialVersion()
-        {
-            var createDto = new RequirementDto
-            {
-                Title = "Versioned Requirement",
-                Type = "CRS",
-                Status = "Draft",
-                Description = "Initial version test",
-                CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
-            };
-            var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
-            response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
-            Assert.NotNull(created);
-
-            var versionsResp = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResp.EnsureSuccessStatusCode();
-            var versions = await versionsResp.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
-            Assert.NotNull(versions);
-            Assert.Single(versions);
-            Assert.Equal(created.Title, versions[0].Title);
-        }
-
-        [Fact]
-        public async Task UpdatingRequirementAddsNewVersion()
-        {
-            var createDto = new RequirementDto
-            {
-                Title = "Versioned Requirement Update",
-                Type = "CRS",
-                Status = "Draft",
-                Description = "Initial version",
-                CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
-            };
-            var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
-            response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
-            Assert.NotNull(created);
-
-            // First check initial version
-            var versionsResp1 = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResp1.EnsureSuccessStatusCode();
-            var versions1 = await versionsResp1.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
-            Assert.NotNull(versions1);
-            Assert.Single(versions1);
-
-            // Now update
-            created.Title = "Updated Title";
-            created.Description = "Updated Desc";
-            var putResp = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created);
-            putResp.EnsureSuccessStatusCode();
-
-            // Should now have 2 versions
-            var versionsResp2 = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResp2.EnsureSuccessStatusCode();
-            var versions2 = await versionsResp2.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
-            Assert.NotNull(versions2);
-            Assert.Equal(2, versions2.Count);
-            Assert.Equal("Versioned Requirement Update", versions2[0].Title); // original
-            Assert.Equal("Updated Title", versions2[1].Title); // after update
-        }
-
         public RequirementApiTests(WebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
@@ -331,7 +201,45 @@ namespace backend.ApiTests
             Assert.NotNull(versions2);
             Assert.Equal(2, versions2.Count);
             Assert.Equal("Versioned Requirement Update", versions2[0].Title); // original
-            Assert.Equal("Updated Title", versions2[1].Title); // after update
+            Assert.Equal("Versioned Requirement Update", versions2[1].Title); // previous state before update
+        }
+
+        [Fact]
+        public async Task MultipleUpdatesAddAllIntermediateVersions()
+        {
+            var createDto = new RequirementDto
+            {
+                Title = "Initial Title",
+                Type = "CRS",
+                Status = "Draft",
+                Description = "Initial description",
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
+            response.EnsureSuccessStatusCode();
+            var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
+            Assert.NotNull(created);
+
+            // First update
+            created.Title = "Intermediate Title";
+            var putResp1 = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created);
+            putResp1.EnsureSuccessStatusCode();
+
+            // Second update
+            created.Title = "Final Title";
+            var putResp2 = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created);
+            putResp2.EnsureSuccessStatusCode();
+
+            // Version history should have 3 entries: initial, after first update, after second update
+            var versionsResp = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
+            versionsResp.EnsureSuccessStatusCode();
+            var versions = await versionsResp.Content.ReadFromJsonAsync<List<RequirementVersionDto>>();
+            Assert.NotNull(versions);
+            Assert.Equal(3, versions.Count);
+            Assert.Equal("Initial Title", versions[0].Title);
+            Assert.Equal("Initial Title", versions[1].Title);
+            Assert.Equal("Intermediate Title", versions[2].Title);
         }
     }
 }
