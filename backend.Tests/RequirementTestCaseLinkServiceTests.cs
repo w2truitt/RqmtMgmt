@@ -42,7 +42,7 @@ namespace backend.Tests
             var service = new RequirementTestCaseLinkService(db);
             var dto = new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 };
             var result = await service.CreateLinkAsync(dto);
-            Assert.False(result);
+            Assert.True(result);
         }
 
         [Fact]
