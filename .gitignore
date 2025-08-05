@@ -28,6 +28,7 @@ Thumbs.db
 backend/bin/
 backend/obj/
 frontend/dist/
+coveragereport/
 
 # Misc
 *.swp
