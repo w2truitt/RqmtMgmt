@@ -40,6 +40,7 @@ namespace backend.Data
         public DbSet<TestRun> TestRuns { get; set; }
         /// <summary>Gets or sets the audit logs table.</summary>
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<TestStep> TestSteps { get; set; }
 
         /// <summary>
         /// Configures the entity relationships and model conversions.
@@ -166,6 +167,13 @@ namespace backend.Data
                 .HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
+
+            // TestCase <-> TestStep (one-to-many, cascade delete)
+            modelBuilder.Entity<TestCase>()
+                .HasMany(tc => tc.Steps)
+                .WithOne(ts => ts.TestCase)
+                .HasForeignKey(ts => ts.TestCaseId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

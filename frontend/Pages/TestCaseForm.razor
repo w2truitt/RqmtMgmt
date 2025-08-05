@@ -1,0 +1,87 @@
+@using RqmtMgmtShared
+@inject frontend.Services.TestCasesDataService TestCaseService
+
+<EditForm Model="formModel" OnValidSubmit="SaveTestCase">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label>Title</label>
+        <InputText class="form-control" @bind-Value="formModel.Title" />
+    </div>
+    <div class="form-group">
+        <label>Description</label>
+        <InputText class="form-control" @bind-Value="formModel.Description" />
+    </div>
+    <div class="form-group">
+        <label>Steps</label>
+        @for (int i = 0; i < Steps.Count; i++)
+        {
+            var descPlaceholder = $"Step {i + 1} Description";
+            var expPlaceholder = $"Step {i + 1} Expected Result";
+            <div class="input-group mb-2">
+                <InputText class="form-control" @bind-Value="Steps[i].Description" placeholder="@descPlaceholder" />
+                <InputText class="form-control" @bind-Value="Steps[i].ExpectedResult" placeholder="@expPlaceholder" style="margin-left:5px;" />
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveStep(i)">Remove</button>
+                </div>
+            </div>
+        }
+        <button type="button" class="btn btn-secondary" @onclick="AddStep">Add Step</button>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+</EditForm>
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+    [Parameter] public TestCaseDto? EditModel { get; set; }
+
+    TestCaseDto formModel = new() { Title = string.Empty };
+    List<TestStepDto> Steps = new();
+
+    protected override void OnInitialized()
+    {
+        if (EditModel != null)
+        {
+            formModel = new TestCaseDto
+            {
+                Id = EditModel.Id,
+                Title = EditModel.Title,
+                Description = EditModel.Description,
+                Steps = EditModel.Steps != null ? new List<TestStepDto>(EditModel.Steps) : new List<TestStepDto>()
+            };
+            Steps = EditModel.Steps != null ? new List<TestStepDto>(EditModel.Steps) : new List<TestStepDto>();
+        }
+    }
+
+
+    void AddStep()
+    {
+        Steps.Add(new TestStepDto());
+    }
+
+    void RemoveStep(int idx)
+    {
+        if (idx >= 0 && idx < Steps.Count)
+            Steps.RemoveAt(idx);
+    }
+
+    async Task SaveTestCase()
+    {
+        formModel.Steps = Steps;
+        if (formModel.Id == 0)
+            await TestCaseService.CreateAsync(formModel);
+        else
+            await TestCaseService.UpdateAsync(formModel);
+        if (OnSaved.HasDelegate)
+            await OnSaved.InvokeAsync();
+    }
+
+    void OnCancel()
+    {
+        if (OnCancelled.HasDelegate)
+            OnCancelled.InvokeAsync();
+    }
+}

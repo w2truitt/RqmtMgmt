@@ -11,6 +11,28 @@ namespace backend.Services
     /// </summary>
     public class TestCaseService : ITestCaseService
     {
+        public async Task<TestStep> AddStepAsync(int testCaseId, TestStep step)
+        {
+            var testCase = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == testCaseId);
+            if (testCase == null) throw new KeyNotFoundException("Test case not found");
+            // Determine step order (append to end)
+            int order = testCase.Steps.Count > 0 ? testCase.Steps.Max(s => s.Id) + 1 : 1;
+            step.TestCaseId = testCaseId;
+            // step.Order = order; // Uncomment if using explicit ordering
+            _context.TestSteps.Add(step);
+            await _context.SaveChangesAsync();
+            return step;
+        }
+
+        public async Task<bool> RemoveStepAsync(int testCaseId, int stepId)
+        {
+            var step = await _context.TestSteps.FirstOrDefaultAsync(s => s.Id == stepId && s.TestCaseId == testCaseId);
+            if (step == null) return false;
+            _context.TestSteps.Remove(step);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         private readonly RqmtMgmtDbContext _context;
         public TestCaseService(RqmtMgmtDbContext context)
         {
@@ -19,12 +41,12 @@ namespace backend.Services
 
         public async Task<IEnumerable<TestCase>> GetAllAsync()
         {
-            return await _context.TestCases.ToListAsync();
+            return await _context.TestCases.Include(tc => tc.Steps).ToListAsync();
         }
 
         public async Task<TestCase?> GetByIdAsync(int id)
         {
-            return await _context.TestCases.FindAsync(id);
+            return await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == id);
         }
 
         public async Task<TestCase> CreateAsync(TestCase testCase)

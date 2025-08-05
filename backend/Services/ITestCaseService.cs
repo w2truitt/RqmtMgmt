@@ -11,5 +11,8 @@ namespace backend.Services
         Task<TestCase> CreateAsync(TestCase testCase);
         Task<TestCase> UpdateAsync(TestCase testCase);
         Task<bool> DeleteAsync(int id);
+
+        Task<TestStep> AddStepAsync(int testCaseId, TestStep step);
+        Task<bool> RemoveStepAsync(int testCaseId, int stepId);
     }
 }

@@ -1,0 +1,14 @@
+@page "/testcases/new"
+@using RqmtMgmtShared
+@inject frontend.Services.TestCasesDataService TestCaseService
+@inject NavigationManager Navigation
+
+<h3>New Test Case</h3>
+<TestCaseForm OnSaved="OnSaved" />
+
+@code {
+    void OnSaved()
+    {
+        Navigation.NavigateTo("/testcases");
+    }
+}

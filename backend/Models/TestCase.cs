@@ -31,12 +31,7 @@ namespace backend.Models
         /// <summary>
         /// Gets or sets the steps for executing the test case.
         /// </summary>
-        public string? Steps { get; set; }
-
-        /// <summary>
-        /// Gets or sets the expected result for the test case.
-        /// </summary>
-        public string? ExpectedResult { get; set; }
+        public ICollection<TestStep> Steps { get; set; } = new List<TestStep>();
 
         /// <summary>
         /// Gets or sets the user ID of the creator.

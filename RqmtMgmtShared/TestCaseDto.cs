@@ -8,8 +8,7 @@ namespace RqmtMgmtShared
         public int? SuiteId { get; set; }
         public required string Title { get; set; }
         public string? Description { get; set; }
-        public string? Steps { get; set; }
-        public string? ExpectedResult { get; set; }
+        public List<TestStepDto> Steps { get; set; } = new();
         public int CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
     }

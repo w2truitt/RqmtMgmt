@@ -75,12 +75,19 @@ CREATE TABLE TestCases (
     SuiteId INT NULL,
     Title NVARCHAR(200) NOT NULL,
     Description NVARCHAR(MAX),
-    Steps NVARCHAR(MAX),
-    ExpectedResult NVARCHAR(MAX),
     CreatedBy INT NOT NULL,
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     CONSTRAINT FK_TestCases_Suite FOREIGN KEY (SuiteId) REFERENCES TestSuites(Id),
     CONSTRAINT FK_TestCases_User FOREIGN KEY (CreatedBy) REFERENCES Users(Id)
+);
+
+CREATE TABLE TestSteps (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    TestCaseId INT NOT NULL,
+    [Order] INT NOT NULL,
+    Description NVARCHAR(MAX) NOT NULL,
+    ExpectedResult NVARCHAR(MAX) NOT NULL,
+    CONSTRAINT FK_TestSteps_TestCase FOREIGN KEY (TestCaseId) REFERENCES TestCases(Id) ON DELETE CASCADE
 );
 
 -- Link test cases to test plans (many-to-many)

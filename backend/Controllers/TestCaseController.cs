@@ -86,21 +86,67 @@ namespace backend.Controllers
             SuiteId = tc.SuiteId,
             Title = tc.Title,
             Description = tc.Description,
-            Steps = tc.Steps,
-            ExpectedResult = tc.ExpectedResult,
+            Steps = tc.Steps != null
+                ? tc.Steps.Select(s => new TestStepDto
+                {
+                    Description = s.Description,
+                    ExpectedResult = s.ExpectedResult
+                }).ToList()
+                : new List<TestStepDto>(),
             CreatedBy = tc.CreatedBy,
             CreatedAt = tc.CreatedAt
         };
-        private static TestCase FromDto(TestCaseDto dto) => new TestCase
+        // Ensures TestStep navigation property is set for EF tracking
+        private static TestCase FromDto(TestCaseDto dto)
         {
-            Id = dto.Id,
-            SuiteId = dto.SuiteId,
-            Title = dto.Title,
-            Description = dto.Description,
-            Steps = dto.Steps,
-            ExpectedResult = dto.ExpectedResult,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt
-        };
+            var testCase = new TestCase
+            {
+                Id = dto.Id,
+                SuiteId = dto.SuiteId,
+                Title = dto.Title,
+                Description = dto.Description,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                Steps = new List<TestStep>()
+            };
+            if (dto.Steps != null)
+            {
+                foreach (var s in dto.Steps)
+                {
+                    var step = new TestStep
+                    {
+                        Description = s.Description,
+                        ExpectedResult = s.ExpectedResult,
+                        TestCase = testCase
+                    };
+                    testCase.Steps.Add(step);
+                }
+            }
+            return testCase;
+        }
+
+        // Ensure that after mapping, all TestStep objects are added to the TestCase.Steps collection before saving the TestCase. EF Core will cascade insert if relationship is configured. If not, a post-processing step may be needed.
+
+        /// <summary>
+        /// Adds a step to a test case.
+        /// </summary>
+        [HttpPost("{id}/steps")]
+        public async Task<ActionResult<TestStepDto>> AddStep(int id, [FromBody] TestStepDto dto)
+        {
+            var testStep = new TestStep { Description = dto.Description, ExpectedResult = dto.ExpectedResult };
+            var added = await _testCaseService.AddStepAsync(id, testStep);
+            return Ok(new TestStepDto { Description = added.Description, ExpectedResult = added.ExpectedResult });
+        }
+
+        /// <summary>
+        /// Removes a step from a test case.
+        /// </summary>
+        [HttpDelete("{id}/steps/{stepId}")]
+        public async Task<IActionResult> RemoveStep(int id, int stepId)
+        {
+            var removed = await _testCaseService.RemoveStepAsync(id, stepId);
+            if (!removed) return NotFound();
+            return NoContent();
+        }
     }
 }
