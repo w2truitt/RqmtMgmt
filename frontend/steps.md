@@ -1,3 +1,26 @@
+# Epic 7: API Test Coverage Checklist
+### User Stories
+- As a developer or QA, I want every API endpoint to be covered by automated tests (happy and negative paths), so that the backend remains robust and safe during changes.
+
+- [x] Requirement endpoints: Create, Get by ID, List, Update, Delete, error paths
+- [x] TestCase endpoints: Create, Get by ID, List, Update, Delete, error paths
+- [x] TestCase steps: Add step, Remove step, error paths
+- [x] TestSuite endpoints: Create, Get by ID, List, Update, Delete, error paths
+- [x] TestPlan endpoints: Create, Get by ID, List, Update, Delete, error paths
+- [x] User endpoints: Create, Get by ID, List, Update, Delete, error paths
+- [x] User roles: Assign, Remove, Get roles, error paths
+- [x] Role endpoints: Create, List, Delete, error paths
+- [x] Requirement-TestCaseLink: Create, Get by requirement, Get by testcase, Delete, error paths
+- [ ] Redline endpoints: Requirement and TestCase version listing, get version, redline comparison
+- [ ] Test positive (success) and negative/error scenarios (invalid ID, missing fields, unauthorized, forbidden, not found, bad request).
+- [ ] Test relationship and traceability endpoints (link/unlink requirements to test cases, hierarchical requirements, trace matrices).
+- [ ] Test role-based access (different users/roles: Admin, QA, Developer, Viewer; ensure forbidden actions are blocked).
+- [ ] Test versioning/history endpoints: creation, retrieval, rollback, redline comparison.
+- [ ] Test attachment upload/download endpoints (if present).
+- [ ] Test audit log retrieval and user action logging endpoints.
+- [ ] Test list endpoints for pagination, filtering, and search parameters.
+- [ ] Use code coverage tools to monitor and enforce coverage goals (90–100% for core, 70–90% for auxiliary endpoints).
+
 ## Epic 6: Automated Testing & Coverage
 ### User Stories
 - As a developer or architect, I want comprehensive unit and integration tests for all backend features, so that I can be confident in the stability and correctness of the system as it evolves.

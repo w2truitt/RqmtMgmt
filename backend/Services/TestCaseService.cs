@@ -56,11 +56,31 @@ namespace backend.Services
             return testCase;
         }
 
-        public async Task<TestCase> UpdateAsync(TestCase testCase)
+        public async Task<TestCase> UpdateAsync(TestCase updated)
         {
-            _context.TestCases.Update(testCase);
+            var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == updated.Id);
+            if (tracked == null)
+                throw new KeyNotFoundException($"TestCase with ID {updated.Id} not found.");
+
+            // Update simple properties
+            tracked.Title = updated.Title;
+            tracked.Description = updated.Description;
+            tracked.SuiteId = updated.SuiteId;
+            tracked.CreatedBy = updated.CreatedBy;
+            tracked.CreatedAt = updated.CreatedAt;
+
+            // Replace steps (for simplicity, remove and add)
+            tracked.Steps.Clear();
+            foreach (var step in updated.Steps)
+            {
+                tracked.Steps.Add(new TestStep {
+                    Description = step.Description,
+                    ExpectedResult = step.ExpectedResult
+                });
+            }
+
             await _context.SaveChangesAsync();
-            return testCase;
+            return tracked;
         }
 
         public async Task<bool> DeleteAsync(int id)

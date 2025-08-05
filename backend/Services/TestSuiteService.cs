@@ -31,11 +31,19 @@ namespace backend.Services
             return suite;
         }
 
-        public async Task<TestSuite> UpdateAsync(TestSuite suite)
+        public async Task<TestSuite> UpdateAsync(TestSuite updated)
         {
-            _context.TestSuites.Update(suite);
+            var tracked = await _context.TestSuites.FindAsync(updated.Id);
+            if (tracked == null)
+                throw new KeyNotFoundException($"TestSuite with ID {updated.Id} not found.");
+
+            tracked.Name = updated.Name;
+            tracked.Description = updated.Description;
+            tracked.CreatedBy = updated.CreatedBy;
+            tracked.CreatedAt = updated.CreatedAt;
+
             await _context.SaveChangesAsync();
-            return suite;
+            return tracked;
         }
 
         public async Task<bool> DeleteAsync(int id)

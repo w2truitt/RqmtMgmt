@@ -89,6 +89,7 @@ namespace backend.Controllers
             Steps = tc.Steps != null
                 ? tc.Steps.Select(s => new TestStepDto
                 {
+                    Id = s.Id,
                     Description = s.Description,
                     ExpectedResult = s.ExpectedResult
                 }).ToList()

@@ -37,11 +37,18 @@ namespace backend.Services
             return user;
         }
 
-        public async Task<User> UpdateAsync(User user)
+        public async Task<User> UpdateAsync(User updated)
         {
-            _context.Users.Update(user);
+            var tracked = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == updated.Id);
+            if (tracked == null)
+                throw new KeyNotFoundException($"User with ID {updated.Id} not found.");
+
+            tracked.UserName = updated.UserName;
+            tracked.Email = updated.Email;
+            // tracked.Roles: Roles are managed via AssignRoles/RemoveRole
+
             await _context.SaveChangesAsync();
-            return user;
+            return tracked;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -83,7 +90,7 @@ namespace backend.Services
         {
             var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return false;
-            var userRole = user.UserRoles.FirstOrDefault(ur => ur.Role.Name == roleName);
+            var userRole = user.UserRoles.FirstOrDefault(ur => ur.Role.Name.Equals(roleName, System.StringComparison.OrdinalIgnoreCase));
             if (userRole == null) return false;
             _context.UserRoles.Remove(userRole);
             await _context.SaveChangesAsync();

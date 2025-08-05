@@ -36,11 +36,25 @@ namespace backend.Services
             return requirement;
         }
 
-        public async Task<Requirement> UpdateAsync(Requirement requirement)
+        public async Task<Requirement> UpdateAsync(Requirement updated)
         {
-            _context.Requirements.Update(requirement);
+            var tracked = await _context.Requirements.FindAsync(updated.Id);
+            if (tracked == null)
+                throw new KeyNotFoundException($"Requirement with ID {updated.Id} not found.");
+
+            // Update properties
+            tracked.Type = updated.Type;
+            tracked.Title = updated.Title;
+            tracked.Description = updated.Description;
+            tracked.ParentId = updated.ParentId;
+            tracked.Status = updated.Status;
+            tracked.Version = updated.Version;
+            tracked.CreatedBy = updated.CreatedBy;
+            tracked.CreatedAt = updated.CreatedAt;
+            tracked.UpdatedAt = updated.UpdatedAt;
+
             await _context.SaveChangesAsync();
-            return requirement;
+            return tracked;
         }
 
         public async Task<bool> DeleteAsync(int id)

@@ -31,11 +31,20 @@ namespace backend.Services
             return plan;
         }
 
-        public async Task<TestPlan> UpdateAsync(TestPlan plan)
+        public async Task<TestPlan> UpdateAsync(TestPlan updated)
         {
-            _context.TestPlans.Update(plan);
+            var tracked = await _context.TestPlans.FindAsync(updated.Id);
+            if (tracked == null)
+                throw new KeyNotFoundException($"TestPlan with ID {updated.Id} not found.");
+
+            tracked.Name = updated.Name;
+            tracked.Type = updated.Type;
+            tracked.Description = updated.Description;
+            tracked.CreatedBy = updated.CreatedBy;
+            tracked.CreatedAt = updated.CreatedAt;
+
             await _context.SaveChangesAsync();
-            return plan;
+            return tracked;
         }
 
         public async Task<bool> DeleteAsync(int id)

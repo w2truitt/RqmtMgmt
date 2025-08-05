@@ -64,7 +64,15 @@ namespace backend.Controllers
             if (id != dto.Id) return BadRequest();
             var existing = await _requirementService.GetByIdAsync(id);
             if (existing == null) return NotFound();
-            var updatedModel = FromDto(dto);
+            Requirement updatedModel;
+            try
+            {
+                updatedModel = FromDto(dto);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest($"Invalid enum value: {ex.Message}");
+            }
             var updated = await _requirementService.UpdateAsync(updatedModel);
             return Ok(ToDto(updated));
         }
@@ -97,11 +105,11 @@ namespace backend.Controllers
         private static Requirement FromDto(RequirementDto dto) => new Requirement
         {
             Id = dto.Id,
-            Type = Enum.Parse<RequirementType>(dto.Type),
+            Type = Enum.TryParse<RequirementType>(dto.Type, out var type) ? type : throw new ArgumentException($"'{dto.Type}' is not a valid RequirementType."),
             Title = dto.Title,
             Description = dto.Description,
             ParentId = dto.ParentId,
-            Status = Enum.Parse<RequirementStatus>(dto.Status),
+            Status = Enum.TryParse<RequirementStatus>(dto.Status, out var status) ? status : throw new ArgumentException($"'{dto.Status}' is not a valid RequirementStatus."),
             Version = dto.Version,
             CreatedBy = dto.CreatedBy,
             CreatedAt = dto.CreatedAt,

@@ -28,7 +28,7 @@ namespace backend.Services
         public async Task<bool> CreateLinkAsync(RequirementTestCaseLinkDto dto)
         {
             var exists = _db.RequirementTestCaseLinks.Any(l => l.RequirementId == dto.RequirementId && l.TestCaseId == dto.TestCaseId);
-            if (exists) return false;
+            if (exists) return true; // silently succeed (idempotent)
             _db.RequirementTestCaseLinks.Add(new backend.Models.RequirementTestCaseLink { RequirementId = dto.RequirementId, TestCaseId = dto.TestCaseId });
             await _db.SaveChangesAsync();
             return true;

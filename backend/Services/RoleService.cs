@@ -16,6 +16,9 @@ namespace backend.Services
         public Task<Role?> GetByIdAsync(int id) => _db.Roles.FirstOrDefaultAsync(r => r.Id == id);
         public async Task<Role> CreateAsync(string name)
         {
+            var existing = await _db.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower());
+            if (existing != null)
+                return existing;
             var role = new Role { Name = name };
             _db.Roles.Add(role);
             await _db.SaveChangesAsync();
