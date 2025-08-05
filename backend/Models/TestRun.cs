@@ -1,8 +1,10 @@
+using RqmtMgmtShared;
 namespace backend.Models
 {
     /// <summary>
     /// Represents an execution instance of a test case or test suite.
     /// </summary>
+    using RqmtMgmtShared;
     public class TestRun
     {
         /// <summary>

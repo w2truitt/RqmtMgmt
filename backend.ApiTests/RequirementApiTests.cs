@@ -24,8 +24,8 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "API Requirement",
-                Type = "CRS",
-                Status = "Draft",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
                 Description = "Created by API test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
@@ -60,8 +60,8 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Update Requirement",
-                Type = "PRS",
-                Status = "Draft",
+                Type = RequirementType.PRS,
+                Status = RequirementStatus.Draft,
                 Description = "To be updated",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
@@ -73,13 +73,13 @@ namespace backend.ApiTests
 
             // Now update
             created.Title = "Updated Title";
-            created.Status = "Approved";
+            created.Status = RequirementStatus.Approved;
             var putResp = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created);
             putResp.EnsureSuccessStatusCode();
             var updated = await putResp.Content.ReadFromJsonAsync<RequirementDto>();
             Assert.NotNull(updated);
             Assert.Equal("Updated Title", updated.Title);
-            Assert.Equal("Approved", updated.Status);
+            Assert.Equal(RequirementStatus.Approved, updated.Status);
         }
 
         [Fact]
@@ -89,8 +89,8 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Delete Requirement",
-                Type = "SRS",
-                Status = "Draft",
+                Type = RequirementType.SRS,
+                Status = RequirementStatus.Draft,
                 Description = "To be deleted",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
@@ -123,8 +123,8 @@ namespace backend.ApiTests
             {
                 Id = 9999999,
                 Title = "Should Fail",
-                Type = "CRS",
-                Status = "Draft",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
                 Description = "No such requirement",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
@@ -145,8 +145,8 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Versioned Requirement",
-                Type = "CRS",
-                Status = "Draft",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
                 Description = "Initial version test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
@@ -170,8 +170,8 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Versioned Requirement Update",
-                Type = "CRS",
-                Status = "Draft",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
                 Description = "Initial version",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
@@ -210,8 +210,8 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Initial Title",
-                Type = "CRS",
-                Status = "Draft",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
                 Description = "Initial description",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow

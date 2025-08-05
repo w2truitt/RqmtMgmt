@@ -3,6 +3,7 @@ using backend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RqmtMgmtShared;
 
 namespace backend.Services
 {
@@ -14,37 +15,37 @@ namespace backend.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<TestPlan>> GetAllAsync()
+        public async Task<List<TestPlanDto>> GetAllAsync()
         {
-            return await _context.TestPlans.ToListAsync();
+            var plans = await _context.TestPlans.ToListAsync();
+            return plans.Select(ToDto).ToList();
         }
 
-        public async Task<TestPlan?> GetByIdAsync(int id)
+        public async Task<TestPlanDto?> GetByIdAsync(int id)
         {
-            return await _context.TestPlans.FindAsync(id);
+            var plan = await _context.TestPlans.FindAsync(id);
+            return plan == null ? null : ToDto(plan);
         }
 
-        public async Task<TestPlan> CreateAsync(TestPlan plan)
+        public async Task<TestPlanDto?> CreateAsync(TestPlanDto dto)
         {
-            _context.TestPlans.Add(plan);
+            var entity = FromDto(dto);
+            _context.TestPlans.Add(entity);
             await _context.SaveChangesAsync();
-            return plan;
+            return ToDto(entity);
         }
 
-        public async Task<TestPlan> UpdateAsync(TestPlan updated)
+        public async Task<bool> UpdateAsync(TestPlanDto dto)
         {
-            var tracked = await _context.TestPlans.FindAsync(updated.Id);
-            if (tracked == null)
-                throw new KeyNotFoundException($"TestPlan with ID {updated.Id} not found.");
-
-            tracked.Name = updated.Name;
-            tracked.Type = updated.Type;
-            tracked.Description = updated.Description;
-            tracked.CreatedBy = updated.CreatedBy;
-            tracked.CreatedAt = updated.CreatedAt;
-
+            var tracked = await _context.TestPlans.FindAsync(dto.Id);
+            if (tracked == null) return false;
+            tracked.Name = dto.Name;
+            tracked.Type = Enum.TryParse<TestPlanType>(dto.Type, out var t) ? t : tracked.Type;
+            tracked.Description = dto.Description;
+            tracked.CreatedBy = dto.CreatedBy;
+            tracked.CreatedAt = dto.CreatedAt;
             await _context.SaveChangesAsync();
-            return tracked;
+            return true;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -55,5 +56,25 @@ namespace backend.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        private static TestPlanDto ToDto(TestPlan tp) => new TestPlanDto
+        {
+            Id = tp.Id,
+            Name = tp.Name,
+            Type = tp.Type.ToString(),
+            Description = tp.Description,
+            CreatedBy = tp.CreatedBy,
+            CreatedAt = tp.CreatedAt
+        };
+
+        private static TestPlan FromDto(TestPlanDto dto) => new TestPlan
+        {
+            Id = dto.Id,
+            Name = dto.Name,
+            Type = Enum.TryParse<TestPlanType>(dto.Type, out var t) ? t : TestPlanType.UserValidation,
+            Description = dto.Description,
+            CreatedBy = dto.CreatedBy,
+            CreatedAt = dto.CreatedAt
+        };
     }
 }

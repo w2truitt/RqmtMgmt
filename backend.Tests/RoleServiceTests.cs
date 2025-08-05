@@ -5,8 +5,7 @@ using backend.Models;
 using backend.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using System.Linq;
-using System.Collections.Generic;
+using RqmtMgmtShared;
 
 namespace backend.Tests
 {
@@ -21,65 +20,59 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task CreateAsync_AddsRole()
+        public async Task CreateRoleAsync_AddsRole()
         {
-            using var db = GetDbContext(nameof(CreateAsync_AddsRole));
+            using var db = GetDbContext(nameof(CreateRoleAsync_AddsRole));
             var service = new RoleService(db);
-            var result = await service.CreateAsync("Admin");
-            Assert.NotNull(result);
-            Assert.Equal("Admin", result.Name);
-            Assert.Single(db.Roles);
+            
+            await service.CreateRoleAsync("TestRole");
+            
+            var roles = await db.Roles.ToListAsync();
+            Assert.Single(roles);
+            Assert.Equal("TestRole", roles[0].Name);
         }
 
         [Fact]
-        public async Task GetAllAsync_ReturnsAllRoles()
+        public async Task GetAllRolesAsync_ReturnsAllRoles()
         {
-            using var db = GetDbContext(nameof(GetAllAsync_ReturnsAllRoles));
-            db.Roles.Add(new Role { Name = "R1" });
-            db.Roles.Add(new Role { Name = "R2" });
-            db.SaveChanges();
+            using var db = GetDbContext(nameof(GetAllRolesAsync_ReturnsAllRoles));
+            db.Roles.Add(new Role { Name = "Admin" });
+            db.Roles.Add(new Role { Name = "User" });
+            await db.SaveChangesAsync();
             var service = new RoleService(db);
-            var all = await service.GetAllAsync();
+            
+            var all = await service.GetAllRolesAsync();
+            
             Assert.Equal(2, all.Count);
+            Assert.Contains("Admin", all);
+            Assert.Contains("User", all);
         }
 
         [Fact]
-        public async Task GetByIdAsync_ReturnsCorrectRoleOrNull()
+        public async Task DeleteRoleAsync_DeletesWhenExists()
         {
-            using var db = GetDbContext(nameof(GetByIdAsync_ReturnsCorrectRoleOrNull));
-            var role = new Role { Name = "R1" };
+            using var db = GetDbContext(nameof(DeleteRoleAsync_DeletesWhenExists));
+            var role = new Role { Name = "ToDelete" };
             db.Roles.Add(role);
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             var service = new RoleService(db);
-            var found = await service.GetByIdAsync(role.Id);
-            Assert.NotNull(found);
-            Assert.Equal(role.Name, found!.Name);
-            var notFound = await service.GetByIdAsync(999);
-            Assert.Null(notFound);
+            
+            await service.DeleteRoleAsync("ToDelete");
+            
+            var roles = await db.Roles.ToListAsync();
+            Assert.Empty(roles);
         }
 
         [Fact]
-        public async Task DeleteAsync_DeletesWhenNoUserRolesElseFalse()
+        public async Task DeleteRoleAsync_DoesNothingWhenNotExists()
         {
-            using var db = GetDbContext(nameof(DeleteAsync_DeletesWhenNoUserRolesElseFalse));
-            var role = new Role { Name = "Del" };
-            db.Roles.Add(role);
-            db.SaveChanges();
+            using var db = GetDbContext(nameof(DeleteRoleAsync_DoesNothingWhenNotExists));
             var service = new RoleService(db);
-            var ok = await service.DeleteAsync(role.Id);
-            Assert.True(ok);
-            Assert.Empty(db.Roles);
-            // Add with user role
-            var role2 = new Role { Name = "WithUser" };
-            db.Roles.Add(role2);
-            db.SaveChanges();
-            db.UserRoles.Add(new UserRole { RoleId = role2.Id, UserId = 1 });
-            db.SaveChanges();
-            var fail = await service.DeleteAsync(role2.Id);
-            Assert.False(fail);
-            // Try non-existent
-            var fail2 = await service.DeleteAsync(9999);
-            Assert.False(fail2);
+            
+            await service.DeleteRoleAsync("NonExistent");
+            
+            // Should not throw exception
+            Assert.True(true);
         }
     }
 }

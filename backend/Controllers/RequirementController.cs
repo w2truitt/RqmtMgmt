@@ -12,74 +12,45 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class RequirementController : ControllerBase
     {
-        private readonly IRequirementService _requirementService;
+        private readonly RqmtMgmtShared.IRequirementService _requirementService;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RequirementController"/> class.
-        /// </summary>
-        public RequirementController(IRequirementService requirementService)
+        public RequirementController(RqmtMgmtShared.IRequirementService requirementService)
         {
             _requirementService = requirementService;
         }
 
-        /// <summary>
-        /// Gets all requirements.
-        /// </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RequirementDto>>> GetAll()
         {
             var requirements = await _requirementService.GetAllAsync();
-            var dtos = requirements.Select(r => ToDto(r));
-            return Ok(dtos);
+            return Ok(requirements);
         }
 
-        /// <summary>
-        /// Gets a requirement by its unique identifier.
-        /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<RequirementDto>> GetById(int id)
         {
             var requirement = await _requirementService.GetByIdAsync(id);
             if (requirement == null) return NotFound();
-            return Ok(ToDto(requirement));
+            return Ok(requirement);
         }
 
-        /// <summary>
-        /// Creates a new requirement.
-        /// </summary>
         [HttpPost]
         public async Task<ActionResult<RequirementDto>> Create([FromBody] RequirementDto dto)
         {
-            var model = FromDto(dto);
-            var created = await _requirementService.CreateAsync(model);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
+            var created = await _requirementService.CreateAsync(dto);
+            if (created == null) return BadRequest();
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
-        /// <summary>
-        /// Updates an existing requirement.
-        /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<RequirementDto>> Update(int id, [FromBody] RequirementDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] RequirementDto dto)
         {
             if (id != dto.Id) return BadRequest();
-            var existing = await _requirementService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
-            Requirement updatedModel;
-            try
-            {
-                updatedModel = FromDto(dto);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest($"Invalid enum value: {ex.Message}");
-            }
-            var updated = await _requirementService.UpdateAsync(updatedModel);
-            return Ok(ToDto(updated));
+            var success = await _requirementService.UpdateAsync(dto);
+            if (!success) return NotFound();
+            return NoContent();
         }
 
-        /// <summary>
-        /// Deletes a requirement by its unique identifier.
-        /// </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -87,33 +58,5 @@ namespace backend.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
-
-        // Mapping helpers
-        private static RequirementDto ToDto(Requirement r) => new RequirementDto
-        {
-            Id = r.Id,
-            Type = r.Type.ToString(),
-            Title = r.Title,
-            Description = r.Description,
-            ParentId = r.ParentId,
-            Status = r.Status.ToString(),
-            Version = r.Version,
-            CreatedBy = r.CreatedBy,
-            CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
-        };
-        private static Requirement FromDto(RequirementDto dto) => new Requirement
-        {
-            Id = dto.Id,
-            Type = Enum.TryParse<RequirementType>(dto.Type, out var type) ? type : throw new ArgumentException($"'{dto.Type}' is not a valid RequirementType."),
-            Title = dto.Title,
-            Description = dto.Description,
-            ParentId = dto.ParentId,
-            Status = Enum.TryParse<RequirementStatus>(dto.Status, out var status) ? status : throw new ArgumentException($"'{dto.Status}' is not a valid RequirementStatus."),
-            Version = dto.Version,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt,
-            UpdatedAt = dto.UpdatedAt
-        };
     }
 }

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System;
 using backend.Controllers;
-using backend.Services;
+using RqmtMgmtShared;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using RqmtMgmtShared;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace backend.Tests
@@ -21,59 +21,56 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task GetLinksForRequirement_ReturnsOk_WithLinks()
+        public async Task GetLinksForRequirement_ReturnsOkResult_WithLinks()
         {
-            var links = new List<RequirementTestCaseLinkDto> { new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 } };
-            _mockService.Setup(s => s.GetLinksForRequirementAsync(1)).ReturnsAsync(links);
+            var links = new List<RequirementTestCaseLinkDto>
+            {
+                new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 }
+            };
+            _mockService.Setup(s => s.GetLinksForRequirement(1)).ReturnsAsync(links);
+            
             var result = await _controller.GetLinksForRequirement(1);
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var value = Assert.IsAssignableFrom<IEnumerable<RequirementTestCaseLinkDto>>(ok.Value);
+            
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsAssignableFrom<List<RequirementTestCaseLinkDto>>(okResult.Value);
             Assert.Single(value);
         }
 
         [Fact]
-        public async Task GetLinksForTestCase_ReturnsOk_WithLinks()
+        public async Task GetLinksForTestCase_ReturnsOkResult_WithLinks()
         {
-            var links = new List<RequirementTestCaseLinkDto> { new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 } };
-            _mockService.Setup(s => s.GetLinksForTestCaseAsync(2)).ReturnsAsync(links);
+            var links = new List<RequirementTestCaseLinkDto>
+            {
+                new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 }
+            };
+            _mockService.Setup(s => s.GetLinksForTestCase(2)).ReturnsAsync(links);
+            
             var result = await _controller.GetLinksForTestCase(2);
-            var ok = Assert.IsType<OkObjectResult>(result);
-            var value = Assert.IsAssignableFrom<IEnumerable<RequirementTestCaseLinkDto>>(ok.Value);
+            
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsAssignableFrom<List<RequirementTestCaseLinkDto>>(okResult.Value);
             Assert.Single(value);
         }
 
         [Fact]
-        public async Task CreateLink_ReturnsCreated()
+        public async Task AddLink_ReturnsNoContent()
         {
             var dto = new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 };
-            _mockService.Setup(s => s.CreateLinkAsync(dto)).ReturnsAsync(true);
-            var result = await _controller.CreateLink(dto);
-            Assert.IsType<CreatedResult>(result);
-        }
-
-        [Fact]
-        public async Task CreateLink_ReturnsBadRequest_WhenNotCreated()
-        {
-            var dto = new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 };
-            _mockService.Setup(s => s.CreateLinkAsync(dto)).ReturnsAsync(false);
-            var result = await _controller.CreateLink(dto);
-            Assert.IsType<BadRequestResult>(result);
-        }
-
-        [Fact]
-        public async Task DeleteLink_ReturnsNoContent_WhenDeleted()
-        {
-            _mockService.Setup(s => s.DeleteLinkAsync(1, 2)).ReturnsAsync(true);
-            var result = await _controller.DeleteLink(1, 2);
+            _mockService.Setup(s => s.AddLink(1, 2)).Returns(Task.CompletedTask);
+            
+            var result = await _controller.AddLink(dto);
+            
             Assert.IsType<NoContentResult>(result);
         }
 
         [Fact]
-        public async Task DeleteLink_ReturnsNotFound_WhenNotExists()
+        public async Task RemoveLink_ReturnsNoContent()
         {
-            _mockService.Setup(s => s.DeleteLinkAsync(1, 2)).ReturnsAsync(false);
-            var result = await _controller.DeleteLink(1, 2);
-            Assert.IsType<NotFoundResult>(result);
+            _mockService.Setup(s => s.RemoveLink(1, 2)).Returns(Task.CompletedTask);
+            
+            var result = await _controller.RemoveLink(1, 2);
+            
+            Assert.IsType<NoContentResult>(result);
         }
     }
 }

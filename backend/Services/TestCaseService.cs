@@ -3,6 +3,7 @@ using backend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RqmtMgmtShared;
 
 namespace backend.Services
 {
@@ -11,77 +12,49 @@ namespace backend.Services
     /// </summary>
     public class TestCaseService : ITestCaseService
     {
-        public async Task<TestStep> AddStepAsync(int testCaseId, TestStep step)
-        {
-            var testCase = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == testCaseId);
-            if (testCase == null) throw new KeyNotFoundException("Test case not found");
-            // Determine step order (append to end)
-            int order = testCase.Steps.Count > 0 ? testCase.Steps.Max(s => s.Id) + 1 : 1;
-            step.TestCaseId = testCaseId;
-            // step.Order = order; // Uncomment if using explicit ordering
-            _context.TestSteps.Add(step);
-            await _context.SaveChangesAsync();
-            return step;
-        }
-
-        public async Task<bool> RemoveStepAsync(int testCaseId, int stepId)
-        {
-            var step = await _context.TestSteps.FirstOrDefaultAsync(s => s.Id == stepId && s.TestCaseId == testCaseId);
-            if (step == null) return false;
-            _context.TestSteps.Remove(step);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-
         private readonly RqmtMgmtDbContext _context;
         public TestCaseService(RqmtMgmtDbContext context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<TestCase>> GetAllAsync()
+        public async Task<List<TestCaseDto>> GetAllAsync()
         {
-            return await _context.TestCases.Include(tc => tc.Steps).ToListAsync();
+            var testCases = await _context.TestCases.Include(tc => tc.Steps).ToListAsync();
+            return testCases.Select(ToDto).ToList();
         }
 
-        public async Task<TestCase?> GetByIdAsync(int id)
+        public async Task<TestCaseDto?> GetByIdAsync(int id)
         {
-            return await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == id);
+            var testCase = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == id);
+            return testCase == null ? null : ToDto(testCase);
         }
 
-        public async Task<TestCase> CreateAsync(TestCase testCase)
+        public async Task<TestCaseDto?> CreateAsync(TestCaseDto dto)
         {
-            // Always set CreatedBy to test user ID 1 until auth is enabled
-            testCase.CreatedBy = 1;
-            _context.TestCases.Add(testCase);
+            var entity = FromDto(dto);
+            entity.CreatedBy = dto.CreatedBy;
+            entity.CreatedAt = dto.CreatedAt;
+            _context.TestCases.Add(entity);
             await _context.SaveChangesAsync();
-            return testCase;
+            return ToDto(entity);
         }
 
-        public async Task<TestCase> UpdateAsync(TestCase updated)
+        public async Task<bool> UpdateAsync(TestCaseDto dto)
         {
-            var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == updated.Id);
-            if (tracked == null)
-                throw new KeyNotFoundException($"TestCase with ID {updated.Id} not found.");
-
-            // Update only editable properties; preserve CreatedBy and CreatedAt
-            tracked.Title = updated.Title;
-            tracked.Description = updated.Description;
-            tracked.SuiteId = updated.SuiteId;
-            // tracked.CreatedBy and tracked.CreatedAt are intentionally NOT changed during update
-
-            // Replace steps (for simplicity, remove and add)
+            var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == dto.Id);
+            if (tracked == null) return false;
+            tracked.Title = dto.Title;
+            tracked.Description = dto.Description;
+            tracked.SuiteId = dto.SuiteId;
+            // Replace steps (remove and add)
             tracked.Steps.Clear();
-            foreach (var step in updated.Steps)
+            foreach (var s in dto.Steps)
             {
-                tracked.Steps.Add(new TestStep {
-                    Description = step.Description,
-                    ExpectedResult = step.ExpectedResult
-                });
+                tracked.Steps.Add(new TestStep { Description = s.Description, ExpectedResult = s.ExpectedResult });
             }
-
             await _context.SaveChangesAsync();
-            return tracked;
+            return true;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -91,6 +64,53 @@ namespace backend.Services
             _context.TestCases.Remove(tc);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // Mapping helpers
+        private static TestCaseDto ToDto(TestCase tc) => new TestCaseDto
+        {
+            Id = tc.Id,
+            SuiteId = tc.SuiteId,
+            Title = tc.Title,
+            Description = tc.Description,
+            Steps = tc.Steps != null
+                ? tc.Steps.Select(s => new TestStepDto
+                {
+                    Id = s.Id,
+                    Description = s.Description,
+                    ExpectedResult = s.ExpectedResult
+                }).ToList()
+                : new List<TestStepDto>(),
+            CreatedBy = tc.CreatedBy,
+            CreatedAt = tc.CreatedAt
+        };
+
+        private static TestCase FromDto(TestCaseDto dto)
+        {
+            var testCase = new TestCase
+            {
+                Id = dto.Id,
+                SuiteId = dto.SuiteId,
+                Title = dto.Title,
+                Description = dto.Description,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                Steps = new List<TestStep>()
+            };
+            if (dto.Steps != null)
+            {
+                foreach (var s in dto.Steps)
+                {
+                    var step = new TestStep
+                    {
+                        Description = s.Description,
+                        ExpectedResult = s.ExpectedResult,
+                        TestCase = testCase
+                    };
+                    testCase.Steps.Add(step);
+                }
+            }
+            return testCase;
         }
     }
 }

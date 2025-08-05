@@ -1,10 +1,13 @@
 #nullable enable
+using System;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.Models;
 using backend.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using RqmtMgmtShared;
+using System.Linq;
 
 namespace backend.Tests
 {
@@ -23,36 +26,42 @@ namespace backend.Tests
         {
             using var db = GetDbContext(nameof(CreateAsync_AddsTestSuite));
             var service = new TestSuiteService(db);
-            var suite = new TestSuite { Name = "Suite1" };
-            var result = await service.CreateAsync(suite);
+            var testSuite = new TestSuiteDto { Name = "Test Suite", Description = "Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            
+            var result = await service.CreateAsync(testSuite);
+            
             Assert.NotNull(result);
-            Assert.Equal("Suite1", result.Name);
-            Assert.Single(db.TestSuites);
+            Assert.Equal("Test Suite", result.Name);
+            Assert.Single(await db.TestSuites.ToListAsync());
         }
 
         [Fact]
         public async Task GetAllAsync_ReturnsAllTestSuites()
         {
             using var db = GetDbContext(nameof(GetAllAsync_ReturnsAllTestSuites));
-            db.TestSuites.Add(new TestSuite { Name = "S1" });
-            db.TestSuites.Add(new TestSuite { Name = "S2" });
-            db.SaveChanges();
+            db.TestSuites.Add(new TestSuite { Name = "TS1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            db.TestSuites.Add(new TestSuite { Name = "TS2", Description = "Desc2", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            await db.SaveChangesAsync();
             var service = new TestSuiteService(db);
+            
             var all = await service.GetAllAsync();
-            Assert.Equal(2, System.Linq.Enumerable.Count(all));
+            
+            Assert.Equal(2, all.Count);
         }
 
         [Fact]
         public async Task GetByIdAsync_ReturnsCorrectTestSuiteOrNull()
         {
             using var db = GetDbContext(nameof(GetByIdAsync_ReturnsCorrectTestSuiteOrNull));
-            var suite = new TestSuite { Name = "S1" };
-            db.TestSuites.Add(suite);
-            db.SaveChanges();
+            var testSuite = new TestSuite { Name = "TS1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestSuites.Add(testSuite);
+            await db.SaveChangesAsync();
             var service = new TestSuiteService(db);
-            var found = await service.GetByIdAsync(suite.Id);
+            
+            var found = await service.GetByIdAsync(testSuite.Id);
             Assert.NotNull(found);
-            Assert.Equal(suite.Name, found!.Name);
+            Assert.Equal(testSuite.Name, found!.Name);
+            
             var notFound = await service.GetByIdAsync(999);
             Assert.Null(notFound);
         }
@@ -61,26 +70,30 @@ namespace backend.Tests
         public async Task UpdateAsync_UpdatesTestSuite()
         {
             using var db = GetDbContext(nameof(UpdateAsync_UpdatesTestSuite));
-            var suite = new TestSuite { Name = "Old" };
-            db.TestSuites.Add(suite);
-            db.SaveChanges();
+            var testSuite = new TestSuite { Name = "Old", Description = "Old Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestSuites.Add(testSuite);
+            await db.SaveChangesAsync();
             var service = new TestSuiteService(db);
-            suite.Name = "New";
-            var updated = await service.UpdateAsync(suite);
-            Assert.Equal("New", updated.Name);
+            
+            var dto = new TestSuiteDto { Id = testSuite.Id, Name = "New", Description = "New Desc", CreatedBy = testSuite.CreatedBy, CreatedAt = testSuite.CreatedAt };
+            var updated = await service.UpdateAsync(dto);
+            
+            Assert.True(updated);
         }
 
         [Fact]
         public async Task DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse()
         {
             using var db = GetDbContext(nameof(DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse));
-            var suite = new TestSuite { Name = "Del" };
-            db.TestSuites.Add(suite);
-            db.SaveChanges();
+            var testSuite = new TestSuite { Name = "ToDelete", Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestSuites.Add(testSuite);
+            await db.SaveChangesAsync();
             var service = new TestSuiteService(db);
-            var ok = await service.DeleteAsync(suite.Id);
+            
+            var ok = await service.DeleteAsync(testSuite.Id);
             Assert.True(ok);
-            Assert.Empty(db.TestSuites);
+            Assert.Empty(await db.TestSuites.ToListAsync());
+            
             var fail = await service.DeleteAsync(9999);
             Assert.False(fail);
         }

@@ -1,5 +1,6 @@
 using System;
 using backend.Models;
+using RqmtMgmtShared;
 using Xunit;
 
 namespace backend.Tests
@@ -10,8 +11,8 @@ namespace backend.Tests
         public void CanSetAndGet_AllProperties()
         {
             var now = DateTime.UtcNow;
-            var tc = new TestCase { Id = 2, Title = "Test" };
-            var plan = new TestPlan { Id = 3, Name = "Plan", Type = TestPlanType.UserValidation };
+            var tc = new TestCase { Id = 2, Title = "Test", CreatedBy = 1, CreatedAt = now };
+            var plan = new TestPlan { Id = 3, Name = "Plan", Type = TestPlanType.UserValidation, CreatedBy = 1, CreatedAt = now };
             var user = new User { Id = 4, UserName = "runner", Email = "runner@test.com" };
             var run = new TestRun
             {

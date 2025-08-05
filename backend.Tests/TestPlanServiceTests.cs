@@ -1,10 +1,13 @@
 #nullable enable
+using System;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.Models;
 using backend.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using RqmtMgmtShared;
+using System.Linq;
 
 namespace backend.Tests
 {
@@ -23,36 +26,42 @@ namespace backend.Tests
         {
             using var db = GetDbContext(nameof(CreateAsync_AddsTestPlan));
             var service = new TestPlanService(db);
-            var plan = new TestPlan { Name = "Plan1" };
-            var result = await service.CreateAsync(plan);
+            var testPlan = new TestPlanDto { Name = "Test Plan", Type = "UserValidation", Description = "Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            
+            var result = await service.CreateAsync(testPlan);
+            
             Assert.NotNull(result);
-            Assert.Equal("Plan1", result.Name);
-            Assert.Single(db.TestPlans);
+            Assert.Equal("Test Plan", result.Name);
+            Assert.Single(await db.TestPlans.ToListAsync());
         }
 
         [Fact]
         public async Task GetAllAsync_ReturnsAllTestPlans()
         {
             using var db = GetDbContext(nameof(GetAllAsync_ReturnsAllTestPlans));
-            db.TestPlans.Add(new TestPlan { Name = "P1" });
-            db.TestPlans.Add(new TestPlan { Name = "P2" });
-            db.SaveChanges();
+            db.TestPlans.Add(new TestPlan { Name = "TP1", Type = TestPlanType.UserValidation, Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            db.TestPlans.Add(new TestPlan { Name = "TP2", Type = TestPlanType.SoftwareVerification, Description = "Desc2", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            await db.SaveChangesAsync();
             var service = new TestPlanService(db);
+            
             var all = await service.GetAllAsync();
-            Assert.Equal(2, System.Linq.Enumerable.Count(all));
+            
+            Assert.Equal(2, all.Count);
         }
 
         [Fact]
         public async Task GetByIdAsync_ReturnsCorrectTestPlanOrNull()
         {
             using var db = GetDbContext(nameof(GetByIdAsync_ReturnsCorrectTestPlanOrNull));
-            var plan = new TestPlan { Name = "P1" };
-            db.TestPlans.Add(plan);
-            db.SaveChanges();
+            var testPlan = new TestPlan { Name = "TP1", Type = TestPlanType.UserValidation, Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestPlans.Add(testPlan);
+            await db.SaveChangesAsync();
             var service = new TestPlanService(db);
-            var found = await service.GetByIdAsync(plan.Id);
+            
+            var found = await service.GetByIdAsync(testPlan.Id);
             Assert.NotNull(found);
-            Assert.Equal(plan.Name, found!.Name);
+            Assert.Equal(testPlan.Name, found!.Name);
+            
             var notFound = await service.GetByIdAsync(999);
             Assert.Null(notFound);
         }
@@ -61,26 +70,30 @@ namespace backend.Tests
         public async Task UpdateAsync_UpdatesTestPlan()
         {
             using var db = GetDbContext(nameof(UpdateAsync_UpdatesTestPlan));
-            var plan = new TestPlan { Name = "Old" };
-            db.TestPlans.Add(plan);
-            db.SaveChanges();
+            var testPlan = new TestPlan { Name = "Old", Type = TestPlanType.UserValidation, Description = "Old Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestPlans.Add(testPlan);
+            await db.SaveChangesAsync();
             var service = new TestPlanService(db);
-            plan.Name = "New";
-            var updated = await service.UpdateAsync(plan);
-            Assert.Equal("New", updated.Name);
+            
+            var dto = new TestPlanDto { Id = testPlan.Id, Name = "New", Type = "UserValidation", Description = "New Desc", CreatedBy = testPlan.CreatedBy, CreatedAt = testPlan.CreatedAt };
+            var updated = await service.UpdateAsync(dto);
+            
+            Assert.True(updated);
         }
 
         [Fact]
         public async Task DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse()
         {
             using var db = GetDbContext(nameof(DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse));
-            var plan = new TestPlan { Name = "Del" };
-            db.TestPlans.Add(plan);
-            db.SaveChanges();
+            var testPlan = new TestPlan { Name = "ToDelete", Type = TestPlanType.UserValidation, Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestPlans.Add(testPlan);
+            await db.SaveChangesAsync();
             var service = new TestPlanService(db);
-            var ok = await service.DeleteAsync(plan.Id);
+            
+            var ok = await service.DeleteAsync(testPlan.Id);
             Assert.True(ok);
-            Assert.Empty(db.TestPlans);
+            Assert.Empty(await db.TestPlans.ToListAsync());
+            
             var fail = await service.DeleteAsync(9999);
             Assert.False(fail);
         }

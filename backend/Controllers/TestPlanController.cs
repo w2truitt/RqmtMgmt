@@ -9,8 +9,8 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class TestPlanController : ControllerBase
     {
-        private readonly ITestPlanService _testPlanService;
-        public TestPlanController(ITestPlanService testPlanService)
+        private readonly RqmtMgmtShared.ITestPlanService _testPlanService;
+        public TestPlanController(RqmtMgmtShared.ITestPlanService testPlanService)
         {
             _testPlanService = testPlanService;
         }
@@ -19,8 +19,7 @@ namespace backend.Controllers
         public async Task<ActionResult<IEnumerable<TestPlanDto>>> GetAll()
         {
             var plans = await _testPlanService.GetAllAsync();
-            var dtos = plans.Select(ToDto);
-            return Ok(dtos);
+            return Ok(plans);
         }
 
         [HttpGet("{id}")]
@@ -28,25 +27,24 @@ namespace backend.Controllers
         {
             var plan = await _testPlanService.GetByIdAsync(id);
             if (plan == null) return NotFound();
-            return Ok(ToDto(plan));
+            return Ok(plan);
         }
 
         [HttpPost]
         public async Task<ActionResult<TestPlanDto>> Create([FromBody] TestPlanDto dto)
         {
-            var model = FromDto(dto);
-            var created = await _testPlanService.CreateAsync(model);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
+            var created = await _testPlanService.CreateAsync(dto);
+            if (created == null) return BadRequest();
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<TestPlanDto>> Update(int id, [FromBody] TestPlanDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] TestPlanDto dto)
         {
             if (id != dto.Id) return BadRequest();
-            var existing = await _testPlanService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
-            var updated = await _testPlanService.UpdateAsync(FromDto(dto));
-            return Ok(ToDto(updated));
+            var success = await _testPlanService.UpdateAsync(dto);
+            if (!success) return NotFound();
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
@@ -56,24 +54,5 @@ namespace backend.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
-
-        private static TestPlanDto ToDto(TestPlan tp) => new TestPlanDto
-        {
-            Id = tp.Id,
-            Name = tp.Name,
-            Type = tp.Type.ToString(),
-            Description = tp.Description,
-            CreatedBy = tp.CreatedBy,
-            CreatedAt = tp.CreatedAt
-        };
-        private static TestPlan FromDto(TestPlanDto dto) => new TestPlan
-        {
-            Id = dto.Id,
-            Name = dto.Name,
-            Type = Enum.Parse<TestPlanType>(dto.Type),
-            Description = dto.Description,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt
-        };
     }
 }

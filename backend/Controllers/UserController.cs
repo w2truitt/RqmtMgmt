@@ -12,8 +12,8 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly RqmtMgmtShared.IUserService _userService;
+        public UserController(RqmtMgmtShared.IUserService userService)
         {
             _userService = userService;
         }
@@ -22,8 +22,7 @@ namespace backend.Controllers
         public async Task<ActionResult<IEnumerable<UserDto>>> GetAll()
         {
             var users = await _userService.GetAllAsync();
-            var dtos = users.Select(ToDto);
-            return Ok(dtos);
+            return Ok(users);
         }
 
         [HttpGet("{id}")]
@@ -31,25 +30,24 @@ namespace backend.Controllers
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null) return NotFound();
-            return Ok(ToDto(user));
+            return Ok(user);
         }
 
         [HttpPost]
         public async Task<ActionResult<UserDto>> Create([FromBody] UserDto dto)
         {
-            var model = FromDto(dto);
-            var created = await _userService.CreateAsync(model);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
+            var created = await _userService.CreateAsync(dto);
+            if (created == null) return BadRequest();
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UserDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UserDto dto)
         {
             if (id != dto.Id) return BadRequest();
-            var existing = await _userService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
-            var updated = await _userService.UpdateAsync(FromDto(dto));
-            return Ok(ToDto(updated));
+            var success = await _userService.UpdateAsync(dto);
+            if (!success) return NotFound();
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
@@ -63,40 +61,22 @@ namespace backend.Controllers
         [HttpGet("{id}/roles")]
         public async Task<ActionResult<List<string>>> GetRoles(int id)
         {
-            var user = await _userService.GetByIdAsync(id);
-            if (user == null) return NotFound();
-            return Ok(user.UserRoles.Select(ur => ur.Role.Name).ToList());
+            var roles = await _userService.GetUserRolesAsync(id);
+            return Ok(roles);
         }
 
         [HttpPost("{id}/roles")]
-        public async Task<IActionResult> AssignRoles(int id, [FromBody] List<string> roles)
+        public async Task<IActionResult> AssignRole(int id, [FromBody] string role)
         {
-            var result = await _userService.AssignRolesAsync(id, roles);
-            if (!result) return NotFound();
+            await _userService.AssignRoleAsync(id, role);
             return NoContent();
         }
 
-        [HttpDelete("{id}/roles/{roleName}")]
-        public async Task<IActionResult> RemoveRole(int id, string roleName)
+        [HttpDelete("{id}/roles/{role}")]
+        public async Task<IActionResult> RemoveRole(int id, string role)
         {
-            var result = await _userService.RemoveRoleAsync(id, roleName);
-            if (!result) return NotFound();
+            await _userService.RemoveRoleAsync(id, role);
             return NoContent();
         }
-
-        private static UserDto ToDto(User u) => new UserDto
-        {
-            Id = u.Id,
-            UserName = u.UserName,
-            Email = u.Email,
-            Roles = u.UserRoles?.Select(ur => ur.Role.Name).ToList() ?? new List<string>()
-        };
-        private static User FromDto(UserDto dto) => new User
-        {
-            Id = dto.Id,
-            UserName = dto.UserName,
-            Email = dto.Email,
-            UserRoles = dto.Roles?.Select(r => new UserRole { Role = new Role { Name = r } }).ToList() ?? new List<UserRole>()
-        };
     }
 }

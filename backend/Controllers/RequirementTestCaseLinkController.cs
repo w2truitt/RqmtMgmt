@@ -10,27 +10,35 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class RequirementTestCaseLinkController : ControllerBase
     {
-        private readonly IRequirementTestCaseLinkService _service;
-        public RequirementTestCaseLinkController(IRequirementTestCaseLinkService service) => _service = service;
+        private readonly RqmtMgmtShared.IRequirementTestCaseLinkService _service;
+        public RequirementTestCaseLinkController(RqmtMgmtShared.IRequirementTestCaseLinkService service) => _service = service;
 
         [HttpGet("requirement/{requirementId}")]
-        public async Task<IActionResult> GetLinksForRequirement(int requirementId)
-            => Ok(await _service.GetLinksForRequirementAsync(requirementId));
+        public async Task<ActionResult<List<RequirementTestCaseLinkDto>>> GetLinksForRequirement(int requirementId)
+        {
+            var links = await _service.GetLinksForRequirement(requirementId);
+            return Ok(links);
+        }
 
         [HttpGet("testcase/{testCaseId}")]
-        public async Task<IActionResult> GetLinksForTestCase(int testCaseId)
-            => Ok(await _service.GetLinksForTestCaseAsync(testCaseId));
+        public async Task<ActionResult<List<RequirementTestCaseLinkDto>>> GetLinksForTestCase(int testCaseId)
+        {
+            var links = await _service.GetLinksForTestCase(testCaseId);
+            return Ok(links);
+        }
 
         [HttpPost]
-        public async Task<IActionResult> CreateLink([FromBody] RequirementTestCaseLinkDto dto)
-            => await _service.CreateLinkAsync(dto)
-                ? Created($"api/RequirementTestCaseLink/requirement/{dto.RequirementId}", dto)
-                : BadRequest();
+        public async Task<IActionResult> AddLink([FromBody] RequirementTestCaseLinkDto dto)
+        {
+            await _service.AddLink(dto.RequirementId, dto.TestCaseId);
+            return NoContent();
+        }
 
         [HttpDelete]
-        public async Task<IActionResult> DeleteLink([FromQuery] int requirementId, [FromQuery] int testCaseId)
-            => await _service.DeleteLinkAsync(requirementId, testCaseId)
-                ? NoContent()
-                : NotFound();
+        public async Task<IActionResult> RemoveLink([FromQuery] int requirementId, [FromQuery] int testCaseId)
+        {
+            await _service.RemoveLink(requirementId, testCaseId);
+            return NoContent();
+        }
     }
 }

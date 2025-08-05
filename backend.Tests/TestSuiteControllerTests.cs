@@ -1,8 +1,7 @@
+#nullable enable
 using System;
 using backend.Controllers;
 using RqmtMgmtShared;
-using backend.Models;
-using backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Collections.Generic;
@@ -23,69 +22,75 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task GetAll_ReturnsOk_WithListOfTestSuites()
+        public async Task GetAll_ReturnsOkResult_WithListOfTestSuites()
         {
-            var suites = new List<TestSuite>
+            var testSuites = new List<TestSuiteDto>
             {
-                new TestSuite { Id = 1, Name = "Suite1", CreatedBy = 1, CreatedAt = DateTime.UtcNow },
-                new TestSuite { Id = 2, Name = "Suite2", CreatedBy = 2, CreatedAt = DateTime.UtcNow }
+                new TestSuiteDto { Id = 1, Name = "Suite1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow },
+                new TestSuiteDto { Id = 2, Name = "Suite2", Description = "Desc2", CreatedBy = 1, CreatedAt = DateTime.UtcNow }
             };
-            _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(suites);
+            _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(testSuites);
+            
             var result = await _controller.GetAll();
+            
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var value = Assert.IsAssignableFrom<IEnumerable<TestSuiteDto>>(okResult.Value);
-            Assert.Collection(value,
-                item => Assert.Equal("Suite1", item.Name),
-                item => Assert.Equal("Suite2", item.Name));
+            var value = Assert.IsAssignableFrom<List<TestSuiteDto>>(okResult.Value);
+            Assert.Equal(2, value.Count);
         }
 
         [Fact]
         public async Task GetById_ReturnsNotFound_WhenNotExists()
         {
-            _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((TestSuite)null);
+            _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((TestSuiteDto?)null);
+            
             var result = await _controller.GetById(42);
+            
             Assert.IsType<NotFoundResult>(result.Result);
         }
 
         [Fact]
         public async Task Create_ReturnsCreated_WithTestSuite()
         {
-            var dto = new TestSuiteDto { Name = "Suite1" };
-            var entity = new TestSuite { Id = 1, Name = "Suite1", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
-            _mockService.Setup(s => s.CreateAsync(It.IsAny<TestSuite>())).ReturnsAsync(entity);
+            var dto = new TestSuiteDto { Name = "NewSuite", Description = "New Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var entity = new TestSuiteDto { Id = 1, Name = "NewSuite", Description = "New Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            _mockService.Setup(s => s.CreateAsync(It.IsAny<TestSuiteDto>())).ReturnsAsync(entity);
+            
             var result = await _controller.Create(dto);
+            
             var created = Assert.IsType<CreatedAtActionResult>(result.Result);
             var value = Assert.IsAssignableFrom<TestSuiteDto>(created.Value);
-            Assert.Equal("Suite1", value.Name);
+            Assert.Equal("NewSuite", value.Name);
         }
 
         [Fact]
-        public async Task Update_ReturnsOk_WithTestSuite()
+        public async Task Update_ReturnsNoContent_WhenSuccessful()
         {
-            var dto = new TestSuiteDto { Id = 1, Name = "Updated" };
-            var entity = new TestSuite { Id = 1, Name = "Updated", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
-            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(entity);
-            _mockService.Setup(s => s.UpdateAsync(It.IsAny<TestSuite>())).ReturnsAsync(entity);
+            var dto = new TestSuiteDto { Id = 1, Name = "Updated", Description = "Updated Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            _mockService.Setup(s => s.UpdateAsync(It.IsAny<TestSuiteDto>())).ReturnsAsync(true);
+            
             var result = await _controller.Update(1, dto);
-            var ok = Assert.IsType<OkObjectResult>(result.Result);
-            var value = Assert.IsAssignableFrom<TestSuiteDto>(ok.Value);
-            Assert.Equal("Updated", value.Name);
+            
+            Assert.IsType<NoContentResult>(result);
         }
 
         [Fact]
         public async Task Update_ReturnsNotFound_WhenNotExists()
         {
-            var dto = new TestSuiteDto { Id = 99, Name = "NotFound" };
-            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((TestSuite)null);
+            var dto = new TestSuiteDto { Id = 99, Name = "NotFound", Description = "Not Found Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            _mockService.Setup(s => s.UpdateAsync(It.IsAny<TestSuiteDto>())).ReturnsAsync(false);
+            
             var result = await _controller.Update(99, dto);
-            Assert.IsType<NotFoundResult>(result.Result);
+            
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
         public async Task Delete_ReturnsNoContent_WhenDeleted()
         {
             _mockService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
+            
             var result = await _controller.Delete(1);
+            
             Assert.IsType<NoContentResult>(result);
         }
 
@@ -93,7 +98,9 @@ namespace backend.Tests
         public async Task Delete_ReturnsNotFound_WhenNotExists()
         {
             _mockService.Setup(s => s.DeleteAsync(99)).ReturnsAsync(false);
+            
             var result = await _controller.Delete(99);
+            
             Assert.IsType<NotFoundResult>(result);
         }
     }

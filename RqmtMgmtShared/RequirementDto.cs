@@ -8,11 +8,11 @@ namespace RqmtMgmtShared
     public class RequirementDto
     {
         public int Id { get; set; }
-        public required string Type { get; set; }
+        public RequirementType Type { get; set; }
         public required string Title { get; set; }
         public string? Description { get; set; }
         public int? ParentId { get; set; }
-        public required string Status { get; set; }
+        public RequirementStatus Status { get; set; }
         public int Version { get; set; }
         public int CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }

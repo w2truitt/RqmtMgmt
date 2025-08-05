@@ -1,3 +1,4 @@
+using RqmtMgmtShared;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -10,22 +11,28 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class RoleController : ControllerBase
     {
-        private readonly IRoleService _service;
-        public RoleController(IRoleService service) => _service = service;
+        private readonly RqmtMgmtShared.IRoleService _service;
+        public RoleController(RqmtMgmtShared.IRoleService service) => _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<Role>>> GetAll()
-            => Ok(await _service.GetAllAsync());
-
-        [HttpPost]
-        public async Task<ActionResult<Role>> Create([FromBody] string name)
+        public async Task<ActionResult<List<string>>> GetAllRoles()
         {
-            var role = await _service.CreateAsync(name);
-            return CreatedAtAction(nameof(GetAll), new { id = role.Id }, role);
+            var roles = await _service.GetAllRolesAsync();
+            return Ok(roles);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-            => await _service.DeleteAsync(id) ? NoContent() : NotFound();
+        [HttpPost]
+        public async Task<IActionResult> CreateRole([FromBody] string roleName)
+        {
+            await _service.CreateRoleAsync(roleName);
+            return NoContent();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeleteRole([FromQuery] string roleName)
+        {
+            await _service.DeleteRoleAsync(roleName);
+            return NoContent();
+        }
     }
 }

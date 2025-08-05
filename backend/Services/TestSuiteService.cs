@@ -3,6 +3,7 @@ using backend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RqmtMgmtShared;
 
 namespace backend.Services
 {
@@ -14,38 +15,38 @@ namespace backend.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<TestSuite>> GetAllAsync()
+        public async Task<List<TestSuiteDto>> GetAllAsync()
         {
-            return await _context.TestSuites.ToListAsync();
+            var suites = await _context.TestSuites.ToListAsync();
+            return suites.Select(ToDto).ToList();
         }
 
-        public async Task<TestSuite?> GetByIdAsync(int id)
+        public async Task<TestSuiteDto?> GetByIdAsync(int id)
         {
-            return await _context.TestSuites.FindAsync(id);
+            var suite = await _context.TestSuites.FindAsync(id);
+            return suite == null ? null : ToDto(suite);
         }
 
-        public async Task<TestSuite> CreateAsync(TestSuite suite)
+        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto dto)
         {
-            // Always set CreatedBy to test user ID 1 until auth is enabled
-            suite.CreatedBy = 1;
-            _context.TestSuites.Add(suite);
+            var entity = FromDto(dto);
+            entity.CreatedBy = dto.CreatedBy;
+            entity.CreatedAt = dto.CreatedAt;
+            _context.TestSuites.Add(entity);
             await _context.SaveChangesAsync();
-            return suite;
+            return ToDto(entity);
         }
 
-        public async Task<TestSuite> UpdateAsync(TestSuite updated)
+        public async Task<bool> UpdateAsync(TestSuiteDto dto)
         {
-            var tracked = await _context.TestSuites.FindAsync(updated.Id);
-            if (tracked == null)
-                throw new KeyNotFoundException($"TestSuite with ID {updated.Id} not found.");
-
-            tracked.Name = updated.Name;
-            tracked.Description = updated.Description;
-            tracked.CreatedBy = updated.CreatedBy;
-            tracked.CreatedAt = updated.CreatedAt;
-
+            var tracked = await _context.TestSuites.FindAsync(dto.Id);
+            if (tracked == null) return false;
+            tracked.Name = dto.Name;
+            tracked.Description = dto.Description;
+            tracked.CreatedBy = dto.CreatedBy;
+            tracked.CreatedAt = dto.CreatedAt;
             await _context.SaveChangesAsync();
-            return tracked;
+            return true;
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -56,5 +57,23 @@ namespace backend.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        private static TestSuiteDto ToDto(TestSuite s) => new TestSuiteDto
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Description = s.Description,
+            CreatedBy = s.CreatedBy,
+            CreatedAt = s.CreatedAt
+        };
+
+        private static TestSuite FromDto(TestSuiteDto dto) => new TestSuite
+        {
+            Id = dto.Id,
+            Name = dto.Name,
+            Description = dto.Description,
+            CreatedBy = dto.CreatedBy,
+            CreatedAt = dto.CreatedAt
+        };
     }
 }

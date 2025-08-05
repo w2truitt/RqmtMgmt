@@ -1,8 +1,6 @@
 using System;
 using backend.Controllers;
 using RqmtMgmtShared;
-using backend.Models;
-using backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Collections.Generic;
@@ -25,10 +23,10 @@ namespace backend.Tests
         [Fact]
         public async Task GetAll_ReturnsOkResult_WithListOfRequirements()
         {
-            var requirements = new List<Requirement>
+            var requirements = new List<RequirementDto>
             {
-                new Requirement { Id = 1, Type = RequirementType.CRS, Title = "Req1", Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
-                new Requirement { Id = 2, Type = RequirementType.PRS, Title = "Req2", Status = RequirementStatus.Approved, Version = 1, CreatedBy = 2, CreatedAt = DateTime.UtcNow }
+                new RequirementDto { Id = 1, Type = RequirementType.CRS, Title = "Req1", Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow },
+                new RequirementDto { Id = 2, Type = RequirementType.PRS, Title = "Req2", Status = RequirementStatus.Approved, Version = 1, CreatedBy = 2, CreatedAt = System.DateTime.UtcNow }
             };
             _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(requirements);
             var result = await _controller.GetAll();
@@ -42,7 +40,7 @@ namespace backend.Tests
         [Fact]
         public async Task GetById_ReturnsNotFound_WhenNotExists()
         {
-            _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((Requirement)null);
+            _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((RequirementDto)null);
             var result = await _controller.GetById(42);
             Assert.IsType<NotFoundResult>(result.Result);
         }
@@ -50,9 +48,9 @@ namespace backend.Tests
         [Fact]
         public async Task Create_ReturnsCreated_WithRequirement()
         {
-            var dto = new RequirementDto { Title = "Req1", Type = "CRS", Status = "Draft" };
-            var entity = new Requirement { Id = 1, Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = DateTime.UtcNow };
-            _mockService.Setup(s => s.CreateAsync(It.IsAny<Requirement>())).ReturnsAsync(entity);
+            var dto = new RequirementDto { Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
+            var entity = new RequirementDto { Id = 1, Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow };
+            _mockService.Setup(s => s.CreateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(entity);
             var result = await _controller.Create(dto);
             var created = Assert.IsType<CreatedAtActionResult>(result.Result);
             var value = Assert.IsAssignableFrom<RequirementDto>(created.Value);
@@ -62,23 +60,22 @@ namespace backend.Tests
         [Fact]
         public async Task Update_ReturnsOk_WithRequirement()
         {
-            var dto = new RequirementDto { Id = 1, Title = "Updated", Type = "CRS", Status = "Draft" };
-            var entity = new Requirement { Id = 1, Title = "Updated", Type = RequirementType.CRS, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var dto = new RequirementDto { Id = 1, Title = "Updated", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
+            var entity = new RequirementDto { Id = 1, Title = "Updated", Type = RequirementType.CRS, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow };
             _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(entity);
-            _mockService.Setup(s => s.UpdateAsync(It.IsAny<Requirement>())).ReturnsAsync(entity);
+            _mockService.Setup(s => s.UpdateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(true);
             var result = await _controller.Update(1, dto);
-            var ok = Assert.IsType<OkObjectResult>(result.Result);
-            var value = Assert.IsAssignableFrom<RequirementDto>(ok.Value);
-            Assert.Equal("Updated", value.Title);
+            var noContent = Assert.IsType<NoContentResult>(result);
         }
 
         [Fact]
         public async Task Update_ReturnsNotFound_WhenNotExists()
         {
-            var dto = new RequirementDto { Id = 99, Title = "NotFound", Type = "CRS", Status = "Draft" };
-            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((Requirement)null);
+            var dto = new RequirementDto { Id = 99, Title = "NotFound", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
+            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((RequirementDto)null);
+            _mockService.Setup(s => s.UpdateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(false);
             var result = await _controller.Update(99, dto);
-            Assert.IsType<NotFoundResult>(result.Result);
+            Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]

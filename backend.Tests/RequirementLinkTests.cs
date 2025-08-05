@@ -1,4 +1,6 @@
+using System;
 using backend.Models;
+using RqmtMgmtShared;
 using Xunit;
 
 namespace backend.Tests
@@ -8,8 +10,8 @@ namespace backend.Tests
         [Fact]
         public void CanSetAndGet_AllProperties()
         {
-            var from = new Requirement { Id = 1, Title = "From", Type = RequirementType.CRS };
-            var to = new Requirement { Id = 2, Title = "To", Type = RequirementType.PRS };
+            var from = new Requirement { Id = 1, Title = "From", Type = RequirementType.CRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var to = new Requirement { Id = 2, Title = "To", Type = RequirementType.PRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = DateTime.UtcNow };
             var link = new RequirementLink
             {
                 Id = 7,

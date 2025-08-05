@@ -1,10 +1,13 @@
 #nullable enable
+using System;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.Models;
 using backend.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using RqmtMgmtShared;
+using System.Linq;
 
 namespace backend.Tests
 {
@@ -23,36 +26,42 @@ namespace backend.Tests
         {
             using var db = GetDbContext(nameof(CreateAsync_AddsTestCase));
             var service = new TestCaseService(db);
-            var tc = new TestCase { Title = "Test Case" };
-            var result = await service.CreateAsync(tc);
+            var testCase = new TestCaseDto { Title = "Test Case", Description = "Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            
+            var result = await service.CreateAsync(testCase);
+            
             Assert.NotNull(result);
             Assert.Equal("Test Case", result.Title);
-            Assert.Single(db.TestCases);
+            Assert.Single(await db.TestCases.ToListAsync());
         }
 
         [Fact]
         public async Task GetAllAsync_ReturnsAllTestCases()
         {
             using var db = GetDbContext(nameof(GetAllAsync_ReturnsAllTestCases));
-            db.TestCases.Add(new TestCase { Title = "TC1" });
-            db.TestCases.Add(new TestCase { Title = "TC2" });
-            db.SaveChanges();
+            db.TestCases.Add(new TestCase { Title = "TC1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            db.TestCases.Add(new TestCase { Title = "TC2", Description = "Desc2", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            await db.SaveChangesAsync();
             var service = new TestCaseService(db);
+            
             var all = await service.GetAllAsync();
-            Assert.Equal(2, System.Linq.Enumerable.Count(all));
+            
+            Assert.Equal(2, all.Count);
         }
 
         [Fact]
         public async Task GetByIdAsync_ReturnsCorrectTestCaseOrNull()
         {
             using var db = GetDbContext(nameof(GetByIdAsync_ReturnsCorrectTestCaseOrNull));
-            var tc = new TestCase { Title = "TC1" };
-            db.TestCases.Add(tc);
-            db.SaveChanges();
+            var testCase = new TestCase { Title = "TC1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestCases.Add(testCase);
+            await db.SaveChangesAsync();
             var service = new TestCaseService(db);
-            var found = await service.GetByIdAsync(tc.Id);
+            
+            var found = await service.GetByIdAsync(testCase.Id);
             Assert.NotNull(found);
-            Assert.Equal(tc.Title, found!.Title);
+            Assert.Equal(testCase.Title, found!.Title);
+            
             var notFound = await service.GetByIdAsync(999);
             Assert.Null(notFound);
         }
@@ -61,26 +70,30 @@ namespace backend.Tests
         public async Task UpdateAsync_UpdatesTestCase()
         {
             using var db = GetDbContext(nameof(UpdateAsync_UpdatesTestCase));
-            var tc = new TestCase { Title = "Old" };
-            db.TestCases.Add(tc);
-            db.SaveChanges();
+            var testCase = new TestCase { Title = "Old", Description = "Old Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestCases.Add(testCase);
+            await db.SaveChangesAsync();
             var service = new TestCaseService(db);
-            tc.Title = "New";
-            var updated = await service.UpdateAsync(tc);
-            Assert.Equal("New", updated.Title);
+            
+            var dto = new TestCaseDto { Id = testCase.Id, Title = "New", Description = "New Desc", CreatedBy = testCase.CreatedBy, CreatedAt = testCase.CreatedAt };
+            var updated = await service.UpdateAsync(dto);
+            
+            Assert.True(updated);
         }
 
         [Fact]
         public async Task DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse()
         {
             using var db = GetDbContext(nameof(DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse));
-            var tc = new TestCase { Title = "Del" };
-            db.TestCases.Add(tc);
-            db.SaveChanges();
+            var testCase = new TestCase { Title = "ToDelete", Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestCases.Add(testCase);
+            await db.SaveChangesAsync();
             var service = new TestCaseService(db);
-            var ok = await service.DeleteAsync(tc.Id);
+            
+            var ok = await service.DeleteAsync(testCase.Id);
             Assert.True(ok);
-            Assert.Empty(db.TestCases);
+            Assert.Empty(await db.TestCases.ToListAsync());
+            
             var fail = await service.DeleteAsync(9999);
             Assert.False(fail);
         }

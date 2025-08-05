@@ -33,14 +33,14 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         // Register all services for DI
-        builder.Services.AddScoped<backend.Services.IRequirementService, backend.Services.RequirementService>();
-        builder.Services.AddScoped<backend.Services.ITestCaseService, backend.Services.TestCaseService>();
-        builder.Services.AddScoped<backend.Services.ITestPlanService, backend.Services.TestPlanService>();
-        builder.Services.AddScoped<backend.Services.ITestSuiteService, backend.Services.TestSuiteService>();
-        builder.Services.AddScoped<backend.Services.IUserService, backend.Services.UserService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IRequirementService, backend.Services.RequirementService>();
+        builder.Services.AddScoped<RqmtMgmtShared.ITestCaseService, backend.Services.TestCaseService>();
+        builder.Services.AddScoped<RqmtMgmtShared.ITestPlanService, backend.Services.TestPlanService>();
+        builder.Services.AddScoped<RqmtMgmtShared.ITestSuiteService, backend.Services.TestSuiteService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IUserService, backend.Services.UserService>();
         builder.Services.AddScoped<backend.Services.IRedlineService, backend.Services.RedlineService>();
-        builder.Services.AddScoped<backend.Services.IRequirementTestCaseLinkService, backend.Services.RequirementTestCaseLinkService>();
-        builder.Services.AddScoped<backend.Services.IRoleService, backend.Services.RoleService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IRequirementTestCaseLinkService, backend.Services.RequirementTestCaseLinkService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IRoleService, backend.Services.RoleService>();
         // Register DbContext with connection string from configuration
         builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

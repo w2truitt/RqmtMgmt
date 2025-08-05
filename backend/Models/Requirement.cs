@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 
+using RqmtMgmtShared;
 namespace backend.Models
 {
     /// <summary>
     /// Represents a requirement (CRS, PRS, or SRS) in the requirements management system.
     /// Supports hierarchical relationships and links to test cases.
     /// </summary>
+    using RqmtMgmtShared;
     public class Requirement
     {
         /// <summary>

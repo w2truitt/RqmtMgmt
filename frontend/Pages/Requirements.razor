@@ -1,8 +1,8 @@
 @page "/requirements"
 @using RqmtMgmtShared
-@inject RequirementsDataService ReqService
-@inject frontend.Services.RequirementTestCaseLinkService LinkService
-@inject frontend.Services.TestCasesDataService TestCaseService
+@inject RqmtMgmtShared.IRequirementService ReqService
+@inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
+@inject RqmtMgmtShared.ITestCaseService TestCaseService
 
 <h3>Requirements</h3>
 <table class="table">
@@ -111,8 +111,8 @@
                     <div class="form-group">
                         <label>Status</label>
                         <select class="form-control" @bind="formModel.Status">
-                            <option>Draft</option>
-                            <option>Approved</option>
+                            <option value="@RequirementStatus.Draft">Draft</option>
+                            <option value="@RequirementStatus.Approved">Approved</option>
                         </select>
                     </div>
                 </div>
@@ -128,7 +128,7 @@
 
 @code {
     List<RequirementDto> requirements = new();
-    RequirementDto formModel = new() { Type = "CRS", Title = string.Empty, Status = "Draft" };
+    RequirementDto formModel = new() { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
     RequirementDto? editRequirement = null;
     bool showForm = false;
 
@@ -155,7 +155,7 @@
 
     void ShowAddForm()
     {
-        formModel = new RequirementDto { Type = "CRS", Title = string.Empty, Status = "Draft" };
+        formModel = new RequirementDto { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
         editRequirement = null;
         showForm = true;
     }

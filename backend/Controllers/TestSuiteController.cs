@@ -9,8 +9,8 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     public class TestSuiteController : ControllerBase
     {
-        private readonly ITestSuiteService _testSuiteService;
-        public TestSuiteController(ITestSuiteService testSuiteService)
+        private readonly RqmtMgmtShared.ITestSuiteService _testSuiteService;
+        public TestSuiteController(RqmtMgmtShared.ITestSuiteService testSuiteService)
         {
             _testSuiteService = testSuiteService;
         }
@@ -19,8 +19,7 @@ namespace backend.Controllers
         public async Task<ActionResult<IEnumerable<TestSuiteDto>>> GetAll()
         {
             var suites = await _testSuiteService.GetAllAsync();
-            var dtos = suites.Select(ToDto);
-            return Ok(dtos);
+            return Ok(suites);
         }
 
         [HttpGet("{id}")]
@@ -28,25 +27,24 @@ namespace backend.Controllers
         {
             var suite = await _testSuiteService.GetByIdAsync(id);
             if (suite == null) return NotFound();
-            return Ok(ToDto(suite));
+            return Ok(suite);
         }
 
         [HttpPost]
         public async Task<ActionResult<TestSuiteDto>> Create([FromBody] TestSuiteDto dto)
         {
-            var model = FromDto(dto);
-            var created = await _testSuiteService.CreateAsync(model);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
+            var created = await _testSuiteService.CreateAsync(dto);
+            if (created == null) return BadRequest();
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<TestSuiteDto>> Update(int id, [FromBody] TestSuiteDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] TestSuiteDto dto)
         {
             if (id != dto.Id) return BadRequest();
-            var existing = await _testSuiteService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
-            var updated = await _testSuiteService.UpdateAsync(FromDto(dto));
-            return Ok(ToDto(updated));
+            var success = await _testSuiteService.UpdateAsync(dto);
+            if (!success) return NotFound();
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
@@ -56,22 +54,5 @@ namespace backend.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
-
-        private static TestSuiteDto ToDto(TestSuite s) => new TestSuiteDto
-        {
-            Id = s.Id,
-            Name = s.Name,
-            Description = s.Description,
-            CreatedBy = s.CreatedBy,
-            CreatedAt = s.CreatedAt
-        };
-        private static TestSuite FromDto(TestSuiteDto dto) => new TestSuite
-        {
-            Id = dto.Id,
-            Name = dto.Name,
-            Description = dto.Description,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt
-        };
     }
 }

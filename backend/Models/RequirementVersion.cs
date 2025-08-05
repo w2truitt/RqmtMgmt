@@ -1,10 +1,12 @@
 using System;
 
+using RqmtMgmtShared;
 namespace backend.Models
 {
     /// <summary>
     /// Represents a historical version of a requirement for version tracking and redline comparison.
     /// </summary>
+    using RqmtMgmtShared;
     public class RequirementVersion
     {
         /// <summary>

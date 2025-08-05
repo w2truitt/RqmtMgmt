@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 
+using RqmtMgmtShared;
 namespace backend.Models
 {
     /// <summary>
     /// Represents a test plan document grouping test cases for validation or verification.
     /// </summary>
+    using RqmtMgmtShared;
     public class TestPlan
     {
         /// <summary>

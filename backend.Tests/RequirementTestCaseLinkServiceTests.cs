@@ -1,11 +1,12 @@
-using System.Linq;
+#nullable enable
 using System.Threading.Tasks;
 using backend.Data;
 using backend.Models;
 using backend.Services;
 using Microsoft.EntityFrameworkCore;
-using RqmtMgmtShared;
 using Xunit;
+using RqmtMgmtShared;
+using System.Linq;
 
 namespace backend.Tests
 {
@@ -14,82 +15,93 @@ namespace backend.Tests
         private static RqmtMgmtDbContext GetDbContext(string testName)
         {
             var options = new DbContextOptionsBuilder<RqmtMgmtDbContext>()
-                .UseInMemoryDatabase(databaseName: $"RequirementTestCaseLinkService_{testName}_{System.Guid.NewGuid()}")
+                .UseInMemoryDatabase(databaseName: $"RequirementTestCaseLinkServiceTestDb_{testName}_{System.Guid.NewGuid()}")
                 .Options;
             return new RqmtMgmtDbContext(options);
         }
 
         [Fact]
-        public async Task CreateLinkAsync_AddsLink_WhenNotExists()
+        public async Task AddLink_AddsLink()
         {
-            using var db = GetDbContext(nameof(CreateLinkAsync_AddsLink_WhenNotExists));
+            using var db = GetDbContext(nameof(AddLink_AddsLink));
             var service = new RequirementTestCaseLinkService(db);
-            var dto = new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 };
-            var result = await service.CreateLinkAsync(dto);
-            Assert.True(result);
-            var link = db.RequirementTestCaseLinks.FirstOrDefault();
-            Assert.NotNull(link);
-            Assert.Equal(1, link.RequirementId);
-            Assert.Equal(2, link.TestCaseId);
+            
+            await service.AddLink(1, 2);
+            
+            var links = await db.RequirementTestCaseLinks.ToListAsync();
+            Assert.Single(links);
+            Assert.Equal(1, links[0].RequirementId);
+            Assert.Equal(2, links[0].TestCaseId);
         }
 
         [Fact]
-        public async Task CreateLinkAsync_ReturnsFalse_WhenLinkExists()
+        public async Task AddLink_DoesNotAddDuplicate()
         {
-            using var db = GetDbContext(nameof(CreateLinkAsync_ReturnsFalse_WhenLinkExists));
+            using var db = GetDbContext(nameof(AddLink_DoesNotAddDuplicate));
             db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 2 });
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             var service = new RequirementTestCaseLinkService(db);
-            var dto = new RequirementTestCaseLinkDto { RequirementId = 1, TestCaseId = 2 };
-            var result = await service.CreateLinkAsync(dto);
-            Assert.True(result);
+            
+            await service.AddLink(1, 2);
+            
+            var links = await db.RequirementTestCaseLinks.ToListAsync();
+            Assert.Single(links);
         }
 
         [Fact]
-        public async Task DeleteLinkAsync_RemovesLinkAndReturnsTrue()
+        public async Task RemoveLink_RemovesLink()
         {
-            using var db = GetDbContext(nameof(DeleteLinkAsync_RemovesLinkAndReturnsTrue));
+            using var db = GetDbContext(nameof(RemoveLink_RemovesLink));
             db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 2 });
-            db.SaveChanges();
+            await db.SaveChangesAsync();
             var service = new RequirementTestCaseLinkService(db);
-            var result = await service.DeleteLinkAsync(1, 2);
-            Assert.True(result);
-            Assert.Empty(db.RequirementTestCaseLinks);
+            
+            await service.RemoveLink(1, 2);
+            
+            var links = await db.RequirementTestCaseLinks.ToListAsync();
+            Assert.Empty(links);
         }
 
         [Fact]
-        public async Task DeleteLinkAsync_ReturnsFalse_WhenNotExists()
+        public async Task RemoveLink_DoesNothingWhenNotExists()
         {
-            using var db = GetDbContext(nameof(DeleteLinkAsync_ReturnsFalse_WhenNotExists));
+            using var db = GetDbContext(nameof(RemoveLink_DoesNothingWhenNotExists));
             var service = new RequirementTestCaseLinkService(db);
-            var result = await service.DeleteLinkAsync(1, 2);
-            Assert.False(result);
+            
+            await service.RemoveLink(1, 2);
+            
+            // Should not throw exception
+            Assert.True(true);
         }
 
         [Fact]
-        public async Task GetLinksForRequirementAsync_ReturnsCorrectLinks()
+        public async Task GetLinksForRequirement_ReturnsCorrectLinks()
         {
-            using var db = GetDbContext(nameof(GetLinksForRequirementAsync_ReturnsCorrectLinks));
+            using var db = GetDbContext(nameof(GetLinksForRequirement_ReturnsCorrectLinks));
             db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 2 });
             db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 3 });
-            db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 2, TestCaseId = 2 });
-            db.SaveChanges();
+            db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 2, TestCaseId = 4 });
+            await db.SaveChangesAsync();
             var service = new RequirementTestCaseLinkService(db);
-            var links = await service.GetLinksForRequirementAsync(1);
+            
+            var links = await service.GetLinksForRequirement(1);
+            
             Assert.Equal(2, links.Count);
             Assert.All(links, l => Assert.Equal(1, l.RequirementId));
         }
 
         [Fact]
-        public async Task GetLinksForTestCaseAsync_ReturnsCorrectLinks()
+        public async Task GetLinksForTestCase_ReturnsCorrectLinks()
         {
-            using var db = GetDbContext(nameof(GetLinksForTestCaseAsync_ReturnsCorrectLinks));
+            using var db = GetDbContext(nameof(GetLinksForTestCase_ReturnsCorrectLinks));
             db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 2 });
-            db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 3 });
-            db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 2, TestCaseId = 2 });
-            db.SaveChanges();
+            db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 3, TestCaseId = 2 });
+            db.RequirementTestCaseLinks.Add(new RequirementTestCaseLink { RequirementId = 4, TestCaseId = 3 });
+            await db.SaveChangesAsync();
             var service = new RequirementTestCaseLinkService(db);
-            var links = await service.GetLinksForTestCaseAsync(2);
+            
+            var links = await service.GetLinksForTestCase(2);
+            
             Assert.Equal(2, links.Count);
             Assert.All(links, l => Assert.Equal(2, l.TestCaseId));
         }

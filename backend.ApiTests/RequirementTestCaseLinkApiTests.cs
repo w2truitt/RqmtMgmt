@@ -23,8 +23,8 @@ namespace backend.ApiTests
             var reqDto = new RequirementDto
             {
                 Title = "Req-TC Link Req",
-                Type = "CRS",
-                Status = "Draft",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
                 Description = "For link test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow

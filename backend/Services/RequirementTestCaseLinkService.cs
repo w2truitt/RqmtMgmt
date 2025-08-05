@@ -11,36 +11,38 @@ namespace backend.Services
         private readonly RqmtMgmtDbContext _db;
         public RequirementTestCaseLinkService(RqmtMgmtDbContext db) => _db = db;
 
-        public Task<List<RequirementTestCaseLinkDto>> GetLinksForRequirementAsync(int requirementId) =>
+        public Task<List<RequirementTestCaseLinkDto>> GetLinksForRequirement(int requirementId) =>
             Task.FromResult(
                 _db.RequirementTestCaseLinks
                     .Where(l => l.RequirementId == requirementId)
                     .Select(l => new RequirementTestCaseLinkDto { RequirementId = l.RequirementId, TestCaseId = l.TestCaseId })
                     .ToList());
 
-        public Task<List<RequirementTestCaseLinkDto>> GetLinksForTestCaseAsync(int testCaseId) =>
+        public Task<List<RequirementTestCaseLinkDto>> GetLinksForTestCase(int testCaseId) =>
             Task.FromResult(
                 _db.RequirementTestCaseLinks
                     .Where(l => l.TestCaseId == testCaseId)
                     .Select(l => new RequirementTestCaseLinkDto { RequirementId = l.RequirementId, TestCaseId = l.TestCaseId })
                     .ToList());
 
-        public async Task<bool> CreateLinkAsync(RequirementTestCaseLinkDto dto)
+        public async Task AddLink(int requirementId, int testCaseId)
         {
-            var exists = _db.RequirementTestCaseLinks.Any(l => l.RequirementId == dto.RequirementId && l.TestCaseId == dto.TestCaseId);
-            if (exists) return true; // silently succeed (idempotent)
-            _db.RequirementTestCaseLinks.Add(new backend.Models.RequirementTestCaseLink { RequirementId = dto.RequirementId, TestCaseId = dto.TestCaseId });
-            await _db.SaveChangesAsync();
-            return true;
+            var exists = _db.RequirementTestCaseLinks.Any(l => l.RequirementId == requirementId && l.TestCaseId == testCaseId);
+            if (!exists)
+            {
+                _db.RequirementTestCaseLinks.Add(new backend.Models.RequirementTestCaseLink { RequirementId = requirementId, TestCaseId = testCaseId });
+                await _db.SaveChangesAsync();
+            }
         }
 
-        public async Task<bool> DeleteLinkAsync(int requirementId, int testCaseId)
+        public async Task RemoveLink(int requirementId, int testCaseId)
         {
             var link = _db.RequirementTestCaseLinks.FirstOrDefault(l => l.RequirementId == requirementId && l.TestCaseId == testCaseId);
-            if (link == null) return false;
-            _db.RequirementTestCaseLinks.Remove(link);
-            await _db.SaveChangesAsync();
-            return true;
+            if (link != null)
+            {
+                _db.RequirementTestCaseLinks.Remove(link);
+                await _db.SaveChangesAsync();
+            }
         }
     }
 }

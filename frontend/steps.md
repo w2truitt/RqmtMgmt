@@ -1,37 +1,3 @@
-# Epic 7: API Test Coverage Checklist
-### User Stories
-- As a developer or QA, I want every API endpoint to be covered by automated tests (happy and negative paths), so that the backend remains robust and safe during changes.
-
-- [x] Requirement endpoints: Create, Get by ID, List, Update, Delete, error paths
-- [x] TestCase endpoints: Create, Get by ID, List, Update, Delete, error paths
-- [x] TestCase steps: Add step, Remove step, error paths
-- [x] TestSuite endpoints: Create, Get by ID, List, Update, Delete, error paths
-- [x] TestPlan endpoints: Create, Get by ID, List, Update, Delete, error paths
-- [x] User endpoints: Create, Get by ID, List, Update, Delete, error paths
-- [x] User roles: Assign, Remove, Get roles, error paths
-- [x] Role endpoints: Create, List, Delete, error paths
-- [x] Requirement-TestCaseLink: Create, Get by requirement, Get by testcase, Delete, error paths
-- [ ] Redline endpoints: Requirement and TestCase version listing, get version, redline comparison
-- [ ] Test positive (success) and negative/error scenarios (invalid ID, missing fields, unauthorized, forbidden, not found, bad request).
-- [ ] Test relationship and traceability endpoints (link/unlink requirements to test cases, hierarchical requirements, trace matrices).
-- [ ] Test role-based access (different users/roles: Admin, QA, Developer, Viewer; ensure forbidden actions are blocked).
-- [ ] Test versioning/history endpoints: creation, retrieval, rollback, redline comparison.
-- [ ] Test attachment upload/download endpoints (if present).
-- [ ] Test audit log retrieval and user action logging endpoints.
-- [ ] Test list endpoints for pagination, filtering, and search parameters.
-- [ ] Use code coverage tools to monitor and enforce coverage goals (90–100% for core, 70–90% for auxiliary endpoints).
-
-## Epic 6: Automated Testing & Coverage
-### User Stories
-- As a developer or architect, I want comprehensive unit and integration tests for all backend features, so that I can be confident in the stability and correctness of the system as it evolves.
-
-#### Tasks
-- [x] Ensure all CRUD endpoints for Requirements, Test Cases, Test Plans, Test Suites, and Users have positive and negative unit tests.
-- [x] Add tests for linkage APIs (Requirement-TestCase, Requirement-TestPlan): create, retrieve, and delete links.
-- [x] Add tests for version history and redline endpoints, including edge/error cases.
-- [x] Add tests for user and role management, including authorization/permission logic (if applicable).
-- [ ] Integrate code coverage tooling (e.g., Coverlet, ReportGenerator) and monitor in CI.
-- [ ] (Future) Add frontend/component tests for Blazor UI using bUnit or similar.
 # Frontend Development Plan (Blazor WebAssembly)
 
 ## Epic 1: Application Shell & Navigation
@@ -79,7 +45,7 @@
 ## Epic 4: User Management & Security
 ### User Stories
 - As an admin, I want to manage users and their roles.
-- As a user, I want to log in and see only the features I’m authorized for.
+- As a user, I want to log in and see only the features I'm authorized for.
 
 #### Tasks
 - [ ] Add authentication (Azure AD or similar)
@@ -107,6 +73,128 @@
 - [ ] Apply styling and themes
 - [ ] Ensure responsive layouts
 - [ ] Add accessibility features (ARIA, keyboard nav)
+
+---
+
+## Epic 7: Frontend Testing Strategy
+### User Stories
+- As a developer, I want comprehensive component tests using bUnit so I can ensure individual Blazor components work correctly in isolation.
+- As a QA engineer, I want integration tests that validate component interactions with real API services so I can catch integration issues early.
+- As a product owner, I want end-to-end tests using Playwright so I can ensure critical user workflows function correctly across different browsers.
+
+#### Component Testing Tasks (bUnit + xUnit)
+- [ ] Set up frontend.ComponentTests project with bUnit, xUnit, and Moq
+- [ ] Create test base classes and helper utilities for component testing
+- [ ] Add data-testid attributes to components for reliable test selectors
+
+**Navigation & Layout Components:**
+- [ ] Test MainLayout component rendering and navigation structure
+- [ ] Test NavMenu component with different user roles and permissions
+- [ ] Test breadcrumb navigation and active route highlighting
+
+**Requirements Management Components:**
+- [ ] Test RequirementsList component with mock data and empty states
+- [ ] Test RequirementForm component for create/edit scenarios
+- [ ] Test RequirementDetails component with version history display
+- [ ] Test RequirementCard component rendering and action buttons
+- [ ] Test requirement filtering and search functionality
+- [ ] Test requirement status change workflows
+
+**Test Management Components:**
+- [ ] Test TestSuitesList component with mock data and pagination
+- [ ] Test TestSuiteForm component for create/edit operations
+- [ ] Test TestCasesList component with filtering and sorting
+- [ ] Test TestCaseForm component with dynamic step management
+- [ ] Test TestCaseDetails component with step execution tracking
+- [ ] Test TestPlansList component and plan management workflows
+- [ ] Test TestPlanForm component with test case selection
+
+**User Management Components:**
+- [ ] Test UsersList component with role display and management
+- [ ] Test UserForm component for create/edit user scenarios
+- [ ] Test RoleAssignment component with multi-select functionality
+- [ ] Test user profile and settings components
+
+**Dashboard & Reporting Components:**
+- [ ] Test Dashboard component with summary widgets and charts
+- [ ] Test RequirementsSummary widget with statistics
+- [ ] Test TestExecutionSummary widget with progress indicators
+- [ ] Test TraceabilityMatrix component with requirement-test links
+- [ ] Test ReportGeneration component with export functionality
+
+**Shared/Common Components:**
+- [ ] Test ConfirmDialog component with different message types
+- [ ] Test LoadingSpinner component and loading states
+- [ ] Test ErrorBoundary component with error display
+- [ ] Test Pagination component with various page scenarios
+- [ ] Test SearchBox component with debounced input
+- [ ] Test DataTable component with sorting and filtering
+
+#### Integration Testing Tasks (bUnit + Real Services)
+- [ ] Set up integration test base with TestHost and real API services
+- [ ] Create mock HTTP client factory for controlled API responses
+
+**API Integration Tests:**
+- [ ] Test RequirementsList component with real API service calls
+- [ ] Test TestCaseForm component with API validation and submission
+- [ ] Test UserManagement components with role assignment API calls
+- [ ] Test Dashboard components with real data aggregation services
+- [ ] Test error handling when API services return errors or timeouts
+- [ ] Test loading states during API calls and data refresh scenarios
+
+**State Management Integration:**
+- [ ] Test component state updates after successful API operations
+- [ ] Test component behavior with shared state across multiple components
+- [ ] Test navigation after create/update/delete operations
+- [ ] Test form validation with server-side validation responses
+
+#### End-to-End Testing Tasks (Playwright + xUnit)
+- [ ] Set up frontend.E2ETests project with Playwright and WebApplicationFactory
+- [ ] Configure test environment with backend API and test database
+- [ ] Create page object models for major application pages
+- [ ] Set up test data seeding and cleanup utilities
+
+**Requirements Management E2E Workflows:**
+- [ ] Test complete requirement creation workflow (navigate → form → save → verify)
+- [ ] Test requirement editing workflow with version history creation
+- [ ] Test requirement deletion with confirmation dialog
+- [ ] Test requirement search and filtering across multiple criteria
+- [ ] Test requirement status change workflow with audit trail
+- [ ] Test requirement linking to test cases workflow
+
+**Test Management E2E Workflows:**
+- [ ] Test complete test suite creation and test case assignment
+- [ ] Test test case creation with multiple steps and expected results
+- [ ] Test test case execution workflow with result recording
+- [ ] Test test plan creation and test case selection process
+- [ ] Test test run execution and results reporting
+- [ ] Test test case linking to requirements workflow
+
+**User Management E2E Workflows:**
+- [ ] Test user creation and role assignment workflow
+- [ ] Test user login and role-based feature access
+- [ ] Test user profile updates and password changes
+- [ ] Test admin user management and role modification workflows
+
+**Traceability & Reporting E2E Workflows:**
+- [ ] Test traceability matrix generation and navigation
+- [ ] Test requirement coverage reports with drill-down capability
+- [ ] Test test execution reports with filtering and export
+- [ ] Test version comparison and redline document generation
+
+**Cross-Browser & Responsive Testing:**
+- [ ] Test critical workflows in Chrome, Firefox, and Edge browsers
+- [ ] Test responsive design on tablet and mobile viewport sizes
+- [ ] Test keyboard navigation and accessibility features
+- [ ] Test application performance with large datasets
+
+#### Testing Infrastructure & Quality Gates
+- [ ] Set up automated test execution in CI/CD pipeline
+- [ ] Configure test coverage reporting for component tests
+- [ ] Set up visual regression testing for UI consistency
+- [ ] Create test data factories and builders for consistent test data
+- [ ] Implement test result reporting and failure notifications
+- [ ] Set coverage thresholds: 80%+ for components, 60%+ for E2E critical paths
 
 ---
 
