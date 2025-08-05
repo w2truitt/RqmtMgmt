@@ -39,3 +39,5 @@ yarn-error.log*
 .idea/
 coverage.cobertura.xml
 swagger.json
+backend/NuGet.Config
+frontend/NuGet.Config
