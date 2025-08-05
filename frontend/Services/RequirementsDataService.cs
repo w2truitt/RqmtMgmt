@@ -37,6 +37,6 @@ namespace frontend.Services
         }
 
         public async Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId)
-            => await _http.GetFromJsonAsync<List<RequirementVersionDto>>($"/api/Redline/RequirementVersions/{requirementId}") ?? new();
+            => await _http.GetFromJsonAsync<List<RequirementVersionDto>>($"/api/Redline/requirement/{requirementId}/versions") ?? new();
     }
 }

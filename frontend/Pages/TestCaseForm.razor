@@ -1,5 +1,6 @@
 @using RqmtMgmtShared
 @inject frontend.Services.TestCasesDataService TestCaseService
+@inject frontend.Services.TestSuitesDataService TestSuiteService
 
 <EditForm Model="formModel" OnValidSubmit="SaveTestCase">
     <DataAnnotationsValidator />
@@ -12,6 +13,19 @@
     <div class="form-group">
         <label>Description</label>
         <InputText class="form-control" @bind-Value="formModel.Description" />
+    </div>
+    <div class="form-group">
+        <label>Test Suite</label>
+        <select class="form-control" @bind="formModel.SuiteId">
+            <option value="">-- Select Suite --</option>
+            @if (testSuites != null)
+            {
+                foreach (var suite in testSuites)
+                {
+                    <option value="@suite.Id">@suite.Name</option>
+                }
+            }
+        </select>
     </div>
     <div class="form-group">
         <label>Steps</label>
@@ -40,9 +54,11 @@
 
     TestCaseDto formModel = new() { Title = string.Empty };
     List<TestStepDto> Steps = new();
+    List<TestSuiteDto>? testSuites;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        testSuites = await TestSuiteService.GetAllAsync();
         if (EditModel != null)
         {
             formModel = new TestCaseDto
@@ -50,6 +66,7 @@
                 Id = EditModel.Id,
                 Title = EditModel.Title,
                 Description = EditModel.Description,
+                SuiteId = EditModel.SuiteId,
                 Steps = EditModel.Steps != null ? new List<TestStepDto>(EditModel.Steps) : new List<TestStepDto>()
             };
             Steps = EditModel.Steps != null ? new List<TestStepDto>(EditModel.Steps) : new List<TestStepDto>();

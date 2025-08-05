@@ -33,6 +33,22 @@ namespace backend.Services
         {
             _context.Requirements.Add(requirement);
             await _context.SaveChangesAsync();
+
+            // Insert initial version record
+            var version = new RequirementVersion
+            {
+                RequirementId = requirement.Id,
+                Version = 1,
+                Type = requirement.Type,
+                Title = requirement.Title,
+                Description = requirement.Description,
+                ParentId = requirement.ParentId,
+                Status = requirement.Status,
+                ModifiedBy = requirement.CreatedBy,
+                ModifiedAt = requirement.CreatedAt
+            };
+            _context.RequirementVersions.Add(version);
+            await _context.SaveChangesAsync();
             return requirement;
         }
 
@@ -41,6 +57,23 @@ namespace backend.Services
             var tracked = await _context.Requirements.FindAsync(updated.Id);
             if (tracked == null)
                 throw new KeyNotFoundException($"Requirement with ID {updated.Id} not found.");
+
+            // Save current state as new version BEFORE updating
+            int nextVersion = await _context.RequirementVersions.CountAsync(v => v.RequirementId == tracked.Id) + 1;
+            var version = new RequirementVersion
+            {
+                RequirementId = tracked.Id,
+                Version = nextVersion,
+                Type = tracked.Type,
+                Title = tracked.Title,
+                Description = tracked.Description,
+                ParentId = tracked.ParentId,
+                Status = tracked.Status,
+                ModifiedBy = tracked.CreatedBy,
+                ModifiedAt = tracked.UpdatedAt ?? DateTime.UtcNow
+            };
+            _context.RequirementVersions.Add(version);
+            await _context.SaveChangesAsync();
 
             // Update properties
             tracked.Type = updated.Type;

@@ -51,6 +51,8 @@ namespace backend.Services
 
         public async Task<TestCase> CreateAsync(TestCase testCase)
         {
+            // Always set CreatedBy to test user ID 1 until auth is enabled
+            testCase.CreatedBy = 1;
             _context.TestCases.Add(testCase);
             await _context.SaveChangesAsync();
             return testCase;
