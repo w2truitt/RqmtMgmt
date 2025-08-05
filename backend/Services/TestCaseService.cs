@@ -62,12 +62,11 @@ namespace backend.Services
             if (tracked == null)
                 throw new KeyNotFoundException($"TestCase with ID {updated.Id} not found.");
 
-            // Update simple properties
+            // Update only editable properties; preserve CreatedBy and CreatedAt
             tracked.Title = updated.Title;
             tracked.Description = updated.Description;
             tracked.SuiteId = updated.SuiteId;
-            tracked.CreatedBy = updated.CreatedBy;
-            tracked.CreatedAt = updated.CreatedAt;
+            // tracked.CreatedBy and tracked.CreatedAt are intentionally NOT changed during update
 
             // Replace steps (for simplicity, remove and add)
             tracked.Steps.Clear();

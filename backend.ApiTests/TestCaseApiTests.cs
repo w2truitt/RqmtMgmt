@@ -78,6 +78,7 @@ namespace backend.ApiTests
             var response = await _client.PostAsJsonAsync("/api/testcase", createDto);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<TestCaseDto>();
+            Assert.NotNull(created);
 
             // Now update
             created.Title = "Updated Title";
@@ -107,6 +108,7 @@ namespace backend.ApiTests
             var response = await _client.PostAsJsonAsync("/api/testcase", createDto);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<TestCaseDto>();
+            Assert.NotNull(created);
 
             // Delete
             var delResp = await _client.DeleteAsync($"/api/testcase/{created.Id}");
@@ -162,6 +164,7 @@ namespace backend.ApiTests
             var response = await _client.PostAsJsonAsync("/api/testcase", createDto);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<TestCaseDto>();
+            Assert.NotNull(created);
 
             // Add step
             var stepDto = new TestStepDto { Description = "Step X", ExpectedResult = "Result X" };
@@ -181,10 +184,11 @@ namespace backend.ApiTests
             // Get the actual step ID (by matching description)
             var stepToRemove = fetched.Steps.Find(s => s.Description == "Step X");
             Assert.NotNull(stepToRemove);
-            // We assume TestStepDto has an 'Id' property, if not, this will need to be added to the DTO and API response
             var stepIdProp = stepToRemove.GetType().GetProperty("Id");
             Assert.NotNull(stepIdProp);
-            var stepId = (int)stepIdProp.GetValue(stepToRemove);
+            var idValue = stepIdProp.GetValue(stepToRemove);
+            Assert.NotNull(idValue);
+            var stepId = (int)idValue;
 
             var removeResp = await _client.DeleteAsync($"/api/testcase/{created.Id}/steps/{stepId}");
             removeResp.EnsureSuccessStatusCode();
@@ -220,6 +224,7 @@ namespace backend.ApiTests
             var response = await _client.PostAsJsonAsync("/api/testcase", createDto);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<TestCaseDto>();
+            Assert.NotNull(created);
 
             // Try to remove stepId 999999
             var removeResp = await _client.DeleteAsync($"/api/testcase/{created.Id}/steps/999999");

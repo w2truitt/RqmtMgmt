@@ -26,6 +26,8 @@ namespace backend.Services
 
         public async Task<TestSuite> CreateAsync(TestSuite suite)
         {
+            // Always set CreatedBy to test user ID 1 until auth is enabled
+            suite.CreatedBy = 1;
             _context.TestSuites.Add(suite);
             await _context.SaveChangesAsync();
             return suite;

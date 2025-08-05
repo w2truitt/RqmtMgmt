@@ -69,6 +69,7 @@ namespace backend.ApiTests
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
+            Assert.NotNull(created);
 
             // Now update
             created.Title = "Updated Title";
@@ -97,6 +98,7 @@ namespace backend.ApiTests
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<RequirementDto>();
+            Assert.NotNull(created);
 
             // Delete
             var delResp = await _client.DeleteAsync($"/api/requirement/{created.Id}");

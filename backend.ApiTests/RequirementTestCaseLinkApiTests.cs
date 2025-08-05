@@ -86,6 +86,7 @@ namespace backend.ApiTests
             var getByReqResp2 = await _client.GetAsync($"/api/requirementtestcaselink/requirement/{requirementId}");
             getByReqResp2.EnsureSuccessStatusCode();
             var linksByReq2 = await getByReqResp2.Content.ReadFromJsonAsync<List<RequirementTestCaseLinkDto>>();
+            Assert.NotNull(linksByReq2);
             Assert.DoesNotContain(linksByReq2, l => l.RequirementId == requirementId && l.TestCaseId == testCaseId);
         }
 
