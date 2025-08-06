@@ -84,3 +84,12 @@ public interface IRequirementTestCaseLinkService
     Task AddLink(int requirementId, int testCaseId);
     Task RemoveLink(int requirementId, int testCaseId);
 }
+
+/// <summary>
+/// Service interface for dashboard operations
+/// </summary>
+public interface IDashboardService
+{
+    Task<DashboardStatisticsDto> GetStatisticsAsync();
+    Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5);
+}

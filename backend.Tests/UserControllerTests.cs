@@ -63,14 +63,15 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task Update_ReturnsNoContent_WhenSuccessful()
+        public async Task Update_ReturnsOkResult_WhenSuccessful()
         {
             var dto = new UserDto { Id = 1, UserName = "updated", Email = "updated@test.com" };
             _mockService.Setup(s => s.UpdateAsync(It.IsAny<UserDto>())).ReturnsAsync(true);
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(dto);
             
             var result = await _controller.Update(1, dto);
             
-            Assert.IsType<NoContentResult>(result);
+            Assert.IsType<OkObjectResult>(result.Result);
         }
 
         [Fact]
@@ -81,7 +82,7 @@ namespace backend.Tests
             
             var result = await _controller.Update(99, dto);
             
-            Assert.IsType<NotFoundResult>(result);
+            Assert.IsType<NotFoundResult>(result.Result);
         }
 
         [Fact]
@@ -108,6 +109,7 @@ namespace backend.Tests
         public async Task GetRoles_ReturnsOkResult_WithRoles()
         {
             var roles = new List<string> { "Admin", "User" };
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new UserDto { Id = 1, UserName = "test", Email = "test@test.com" });
             _mockService.Setup(s => s.GetUserRolesAsync(1)).ReturnsAsync(roles);
             
             var result = await _controller.GetRoles(1);
@@ -120,9 +122,11 @@ namespace backend.Tests
         [Fact]
         public async Task AssignRole_ReturnsNoContent()
         {
-            _mockService.Setup(s => s.AssignRoleAsync(1, "Admin")).Returns(Task.CompletedTask);
+            var roles = new List<string> { "Admin" };
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new UserDto { Id = 1, UserName = "test", Email = "test@test.com" });
+            _mockService.Setup(s => s.AssignRoleAsync(1, It.IsAny<string>())).Returns(Task.CompletedTask);
             
-            var result = await _controller.AssignRole(1, "Admin");
+            var result = await _controller.AssignRole(1, roles);
             
             Assert.IsType<NoContentResult>(result);
         }
@@ -130,7 +134,10 @@ namespace backend.Tests
         [Fact]
         public async Task RemoveRole_ReturnsNoContent()
         {
-            _mockService.Setup(s => s.RemoveRoleAsync(1, "Admin")).Returns(Task.CompletedTask);
+            var userRoles = new List<string> { "Admin", "User" };
+            _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(new UserDto { Id = 1, UserName = "test", Email = "test@test.com" });
+            _mockService.Setup(s => s.GetUserRolesAsync(1)).ReturnsAsync(userRoles);
+            _mockService.Setup(s => s.RemoveRoleAsync(1, It.IsAny<string>())).Returns(Task.CompletedTask);
             
             var result = await _controller.RemoveRole(1, "Admin");
             

@@ -9,7 +9,8 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// Configure HttpClient to point to backend API
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7001/") });
 builder.Services.AddMudServices();
 
 // Register services as interfaces
@@ -20,5 +21,6 @@ builder.Services.AddScoped<ITestSuiteService, TestSuitesDataService>();
 builder.Services.AddScoped<IUserService, UsersDataService>();
 builder.Services.AddScoped<IRequirementTestCaseLinkService, RequirementTestCaseLinkService>();
 builder.Services.AddScoped<IRoleService, RolesDataService>();
+builder.Services.AddScoped<IDashboardService, DashboardDataService>();
 
 await builder.Build().RunAsync();

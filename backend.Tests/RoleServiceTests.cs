@@ -25,11 +25,13 @@ namespace backend.Tests
             using var db = GetDbContext(nameof(CreateRoleAsync_AddsRole));
             var service = new RoleService(db);
             
-            await service.CreateRoleAsync("TestRole");
+            var result = await service.CreateRoleAsync("TestRole");
             
             var roles = await db.Roles.ToListAsync();
             Assert.Single(roles);
             Assert.Equal("TestRole", roles[0].Name);
+            Assert.NotNull(result);
+            Assert.Equal("TestRole", result.Name);
         }
 
         [Fact]
@@ -42,10 +44,9 @@ namespace backend.Tests
             var service = new RoleService(db);
             
             var all = await service.GetAllRolesAsync();
-            
             Assert.Equal(2, all.Count);
-            Assert.Contains("Admin", all);
-            Assert.Contains("User", all);
+            Assert.Contains(all, r => r.Name == "Admin");
+            Assert.Contains(all, r => r.Name == "User");
         }
 
         [Fact]
@@ -56,11 +57,11 @@ namespace backend.Tests
             db.Roles.Add(role);
             await db.SaveChangesAsync();
             var service = new RoleService(db);
-            
-            await service.DeleteRoleAsync("ToDelete");
-            
+            var firstRole = await db.Roles.FirstOrDefaultAsync(r => r.Name == "ToDelete");
+            var result = await service.DeleteRoleAsync(firstRole!.Id);
             var roles = await db.Roles.ToListAsync();
             Assert.Empty(roles);
+            Assert.True(result);
         }
 
         [Fact]
@@ -68,11 +69,8 @@ namespace backend.Tests
         {
             using var db = GetDbContext(nameof(DeleteRoleAsync_DoesNothingWhenNotExists));
             var service = new RoleService(db);
-            
-            await service.DeleteRoleAsync("NonExistent");
-            
-            // Should not throw exception
-            Assert.True(true);
+            var result = await service.DeleteRoleAsync(999);
+            Assert.False(result);
         }
     }
 }

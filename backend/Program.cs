@@ -41,6 +41,7 @@ public class Program
         builder.Services.AddScoped<backend.Services.IRedlineService, backend.Services.RedlineService>();
         builder.Services.AddScoped<RqmtMgmtShared.IRequirementTestCaseLinkService, backend.Services.RequirementTestCaseLinkService>();
         builder.Services.AddScoped<RqmtMgmtShared.IRoleService, backend.Services.RoleService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IDashboardService, backend.Services.DashboardService>();
         // Register DbContext with connection string from configuration
         builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

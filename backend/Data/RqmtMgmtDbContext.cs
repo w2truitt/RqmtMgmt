@@ -174,6 +174,40 @@ namespace backend.Data
                 .WithOne(ts => ts.TestCase)
                 .HasForeignKey(ts => ts.TestCaseId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Performance Indexes
+            modelBuilder.Entity<Requirement>()
+                .HasIndex(r => new { r.Type, r.Status })
+                .HasDatabaseName("IX_Requirements_Type_Status");
+
+            modelBuilder.Entity<Requirement>()
+                .HasIndex(r => r.CreatedAt)
+                .HasDatabaseName("IX_Requirements_CreatedAt");
+
+            modelBuilder.Entity<TestCase>()
+                .HasIndex(tc => tc.CreatedAt)
+                .HasDatabaseName("IX_TestCases_CreatedAt");
+
+            modelBuilder.Entity<TestRun>()
+                .HasIndex(tr => tr.RunAt)
+                .HasDatabaseName("IX_TestRuns_RunAt");
+
+            modelBuilder.Entity<TestRun>()
+                .HasIndex(tr => tr.Result)
+                .HasDatabaseName("IX_TestRuns_Result");
+
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(al => al.Timestamp)
+                .HasDatabaseName("IX_AuditLogs_Timestamp");
+
+            modelBuilder.Entity<AuditLog>()
+                .HasIndex(al => new { al.Entity, al.EntityId })
+                .HasDatabaseName("IX_AuditLogs_Entity_EntityId");
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique()
+                .HasDatabaseName("IX_Users_Email");
         }
     }
 }

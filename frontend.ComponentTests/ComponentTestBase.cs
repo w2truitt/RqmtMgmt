@@ -22,6 +22,7 @@ public abstract class ComponentTestBase : TestContext
         Services.AddSingleton(Mock.Of<IUserService>());
         Services.AddSingleton(Mock.Of<IRoleService>());
         Services.AddSingleton(Mock.Of<IRequirementTestCaseLinkService>());
+        Services.AddSingleton(Mock.Of<IDashboardService>());
 
         // Add Blazor testing services
         Services.AddOptions();
