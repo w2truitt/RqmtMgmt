@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +25,18 @@ public class Program
                 };
             });
 
+        // Add CORS policy to allow frontend connection
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend", policy =>
+            {
+                policy.WithOrigins("https://localhost:7160", "http://localhost:5239", "https://localhost:5001", "http://localhost:5000")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
+        });
+
         // Add services
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
@@ -32,6 +44,7 @@ public class Program
         });
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        
         // Register all services for DI
         builder.Services.AddScoped<RqmtMgmtShared.IRequirementService, backend.Services.RequirementService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestCaseService, backend.Services.TestCaseService>();
@@ -42,11 +55,35 @@ public class Program
         builder.Services.AddScoped<RqmtMgmtShared.IRequirementTestCaseLinkService, backend.Services.RequirementTestCaseLinkService>();
         builder.Services.AddScoped<RqmtMgmtShared.IRoleService, backend.Services.RoleService>();
         builder.Services.AddScoped<RqmtMgmtShared.IDashboardService, backend.Services.DashboardService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IEnhancedDashboardService, backend.Services.EnhancedDashboardService>();
+        builder.Services.AddScoped<RqmtMgmtShared.ITestRunSessionService, backend.Services.TestRunSessionService>();
+        builder.Services.AddScoped<RqmtMgmtShared.ITestExecutionService, backend.Services.TestExecutionService>();
+        
         // Register DbContext with connection string from configuration
         builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         var app = builder.Build();
+
+        // Seed the database in development
+        if (app.Environment.IsDevelopment())
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
+                await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+            }
+        }
+
+        // Seed the database in testing environment
+        if (app.Environment.IsEnvironment("Testing"))
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
+                await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+            }
+        }
 
         if (app.Environment.IsDevelopment())
         {
@@ -59,6 +96,9 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+
+        // Enable CORS
+        app.UseCors("AllowFrontend");
 
         // Enable authentication and authorization middleware
         app.UseAuthentication();
@@ -82,6 +122,6 @@ public class Program
             return Results.Problem("An unexpected error occurred. Please contact support if the issue persists.");
         });
 
-        app.Run();
+        await app.RunAsync();
     }
 }

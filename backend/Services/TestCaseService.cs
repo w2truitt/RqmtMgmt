@@ -32,6 +32,23 @@ namespace backend.Services
 
         public async Task<TestCaseDto?> CreateAsync(TestCaseDto dto)
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return null;
+
+            if (dto.CreatedBy <= 0)
+                return null;
+
+            // Validate steps
+            if (dto.Steps != null)
+            {
+                foreach (var step in dto.Steps)
+                {
+                    if (string.IsNullOrWhiteSpace(step.Description) || string.IsNullOrWhiteSpace(step.ExpectedResult))
+                        return null;
+                }
+            }
+
             var entity = FromDto(dto);
             entity.CreatedBy = dto.CreatedBy;
             entity.CreatedAt = dto.CreatedAt;
@@ -44,6 +61,24 @@ namespace backend.Services
         {
             var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == dto.Id);
             if (tracked == null) return false;
+
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return false;
+
+            if (dto.CreatedBy <= 0)
+                return false;
+
+            // Validate steps
+            if (dto.Steps != null)
+            {
+                foreach (var step in dto.Steps)
+                {
+                    if (string.IsNullOrWhiteSpace(step.Description) || string.IsNullOrWhiteSpace(step.ExpectedResult))
+                        return false;
+                }
+            }
+
             tracked.Title = dto.Title;
             tracked.Description = dto.Description;
             tracked.SuiteId = dto.SuiteId;

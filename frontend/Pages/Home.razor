@@ -1,5 +1,5 @@
 @page "/"
-@inject IDashboardService DashboardService
+@inject IEnhancedDashboardService EnhancedDashboardService
 @using RqmtMgmtShared
 
 <PageTitle>Dashboard</PageTitle>
@@ -129,6 +129,10 @@ else
 {
     <div class="error-message">
         <p>⚠️ Unable to load dashboard data. Please try refreshing the page.</p>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p><small>@errorMessage</small></p>
+        }
     </div>
 }
 
@@ -136,6 +140,7 @@ else
     // Loading and error states
     private bool isLoading = true;
     private bool hasError = false;
+    private string errorMessage = string.Empty;
     
     // Summary statistics
     private int requirementsCount = 0;
@@ -151,8 +156,8 @@ else
     private int failedTests = 0;
     
     private int testPlansCount = 0;
-    private int executionProgress = 0;
-    private int coveragePercentage = 0;
+    private double executionProgress = 0;
+    private double coveragePercentage = 0;
     
     // Recent activity
     private List<RecentActivityDto> recentActivities = new();
@@ -168,40 +173,39 @@ else
         {
             isLoading = true;
             hasError = false;
+            errorMessage = string.Empty;
             StateHasChanged();
 
-            // Load statistics and recent activity in parallel for better performance
-            var statisticsTask = DashboardService.GetStatisticsAsync();
-            var activitiesTask = DashboardService.GetRecentActivityAsync(5);
+            // Use the enhanced dashboard service to get all statistics in one call
+            var dashboardStats = await EnhancedDashboardService.GetDashboardStatsAsync();
 
-            await Task.WhenAll(statisticsTask, activitiesTask);
-
-            var statistics = await statisticsTask;
-            var activities = await activitiesTask;
-
-            // Map statistics to component properties
-            requirementsCount = statistics.Requirements.Total;
-            approvedRequirements = statistics.Requirements.Approved;
-            draftRequirements = statistics.Requirements.Draft;
+            // Map requirement statistics
+            requirementsCount = dashboardStats.Requirements.TotalRequirements;
+            approvedRequirements = dashboardStats.Requirements.ApprovedRequirements;
+            draftRequirements = dashboardStats.Requirements.DraftRequirements;
             
-            testSuitesCount = statistics.TestSuites.Total;
-            activeTestSuites = statistics.TestSuites.Active;
-            completedTestSuites = statistics.TestSuites.Completed;
+            // Map test management statistics
+            testSuitesCount = dashboardStats.TestManagement.TotalTestSuites;
+            // For now, treat all test suites as "active" since we don't have status tracking
+            activeTestSuites = testSuitesCount;
+            completedTestSuites = 0;
             
-            testCasesCount = statistics.TestCases.Total;
-            passedTests = statistics.TestCases.Passed;
-            failedTests = statistics.TestCases.Failed;
+            testCasesCount = dashboardStats.TestManagement.TotalTestCases;
+            testPlansCount = dashboardStats.TestManagement.TotalTestPlans;
+            coveragePercentage = dashboardStats.TestManagement.TestCoveragePercentage;
             
-            testPlansCount = statistics.TestPlans.Total;
-            executionProgress = statistics.TestPlans.ExecutionProgress;
-            coveragePercentage = statistics.TestPlans.CoveragePercentage;
+            // Map test execution statistics
+            passedTests = dashboardStats.TestExecution.PassedExecutions;
+            failedTests = dashboardStats.TestExecution.FailedExecutions;
+            executionProgress = dashboardStats.TestExecution.PassRate;
             
             // Set recent activities
-            recentActivities = activities;
+            recentActivities = dashboardStats.RecentActivities;
         }
         catch (Exception ex)
         {
             hasError = true;
+            errorMessage = ex.Message;
             Console.WriteLine($"Error loading dashboard data: {ex.Message}");
         }
         finally

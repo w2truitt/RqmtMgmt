@@ -57,15 +57,98 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 
 ### Prerequisites
 - .NET 8 SDK (for both front-end and back-end)
+- Docker and Docker Compose (for containerized development)
 - Access to Azure (for cloud deployment)
 
-### Front-End Setup (Blazor)
+### Docker-Based Development (Recommended)
+
+The solution is designed to run in Docker containers with nginx as a reverse proxy:
+
+1. **Navigate to the docker-compose directory:**
+   ```bash
+   cd docker-compose/
+   ```
+
+2. **Start all services:**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Access the application:**
+   - Frontend: http://localhost:8080 (via nginx)
+   - Backend API: http://localhost:8080/api (via nginx)
+   - Swagger: http://localhost:8080/swagger (via nginx)
+   - Database: localhost:1433 (direct connection)
+
+The nginx configuration forwards:
+- `/api/*` requests to the backend container (port 80)
+- `/swagger/*` requests to the backend container (port 80)  
+- All other requests to the frontend container (port 80)
+
+### RqmtMgmtShared Package Management
+
+The solution uses a shared library (`RqmtMgmtShared`) that contains common DTOs, interfaces, and models used by both frontend and backend projects. This is packaged as a local NuGet package.
+
+**When to Update the Shared Package:**
+- Adding new DTOs, interfaces, or shared models
+- Modifying existing shared contracts
+- Adding new enums or constants used across projects
+
+**Process for Updating RqmtMgmtShared:**
+
+1. **Make changes to the RqmtMgmtShared project**
+
+2. **Increment the version number in `RqmtMgmtShared/RqmtMgmtShared.csproj`:**
+   ```xml
+   <Version>1.0.9</Version>
+   <PackageVersion>1.0.9</PackageVersion>
+   ```
+
+3. **Build and pack the new version:**
+   ```bash
+   cd RqmtMgmtShared/
+   dotnet pack -o ../local_nuget/
+   ```
+
+4. **Update all consuming projects to use the new version:**
+   - `backend/backend.csproj`
+   - `backend.Tests/backend.Tests.csproj`  
+   - `backend.ApiTests/backend.ApiTests.csproj`
+   - `frontend/frontend.csproj`
+   
+   Update the PackageReference:
+   ```xml
+   <PackageReference Include="RqmtMgmtShared" Version="1.0.9" />
+   ```
+
+5. **Clear NuGet caches and restore:**
+   ```bash
+   dotnet nuget locals all --clear
+   dotnet restore
+   ```
+
+6. **Rebuild Docker containers to pick up the new package:**
+   ```bash
+   cd docker-compose/
+   docker-compose down
+   docker-compose up --build -d
+   ```
+
+**Important Notes:**
+- The `local_nuget/` folder is mounted into both frontend and backend containers
+- The `NuGet.Config` files in each project point to the local package store
+- Always increment the version number when making changes to avoid caching issues
+- The Docker containers will rebuild and pick up the new package version automatically
+
+### Alternative: Local Development Setup
+
+#### Front-End Setup (Blazor)
 
 1. Navigate to `frontend/`
 2. Restore dependencies: `dotnet restore`
 3. Start development server: `dotnet run` (or use Visual Studio/VS Code launch)
 
-### Back-End Setup
+#### Back-End Setup
 
 1. Navigate to `backend/`
 2. Restore dependencies: `dotnet restore`

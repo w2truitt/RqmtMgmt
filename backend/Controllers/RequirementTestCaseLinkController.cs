@@ -34,6 +34,13 @@ namespace backend.Controllers
             return NoContent();
         }
 
+        [HttpPost("{requirementId}/{testCaseId}")]
+        public async Task<IActionResult> AddLink(int requirementId, int testCaseId)
+        {
+            await _service.AddLink(requirementId, testCaseId);
+            return NoContent();
+        }
+
         [HttpDelete]
         public async Task<IActionResult> RemoveLink([FromQuery] int requirementId, [FromQuery] int testCaseId)
         {

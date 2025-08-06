@@ -14,10 +14,19 @@ namespace backend.ApiTests
     /// <summary>
     /// Tests for error handling and edge cases across all API endpoints
     /// </summary>
-    public class ErrorHandlingTests : BaseApiTest
+    public class ErrorHandlingTests : IClassFixture<TestWebApplicationFactory<Program>>
     {
-        public ErrorHandlingTests(WebApplicationFactory<Program> factory) : base(factory)
+        private readonly HttpClient _client;
+        private readonly System.Text.Json.JsonSerializerOptions _jsonOptions;
+
+        public ErrorHandlingTests(TestWebApplicationFactory<Program> factory)
         {
+            _client = factory.CreateClient();
+            _jsonOptions = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
         }
 
         [Fact]

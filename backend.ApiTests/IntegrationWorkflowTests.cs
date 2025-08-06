@@ -13,10 +13,19 @@ namespace backend.ApiTests
     /// <summary>
     /// Integration tests that test complex workflows across multiple API controllers
     /// </summary>
-    public class IntegrationWorkflowTests : BaseApiTest
+    public class IntegrationWorkflowTests : IClassFixture<TestWebApplicationFactory<Program>>
     {
-        public IntegrationWorkflowTests(WebApplicationFactory<Program> factory) : base(factory)
+        private readonly HttpClient _client;
+        private readonly System.Text.Json.JsonSerializerOptions _jsonOptions;
+
+        public IntegrationWorkflowTests(TestWebApplicationFactory<Program> factory)
         {
+            _client = factory.CreateClient();
+            _jsonOptions = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
         }
 
         [Fact]
@@ -142,7 +151,7 @@ namespace backend.ApiTests
                 Name = "TestRole"
             };
 
-            var roleResponse = await _client.PostAsJsonAsync("/api/role", roleDto, _jsonOptions);
+            var roleResponse = await _client.PostAsJsonAsync("/api/role/dto", roleDto, _jsonOptions);
             roleResponse.EnsureSuccessStatusCode();
             var createdRole = await roleResponse.Content.ReadFromJsonAsync<RoleDto>(_jsonOptions);
             Assert.NotNull(createdRole);

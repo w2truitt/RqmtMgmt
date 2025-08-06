@@ -10,7 +10,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure HttpClient to point to backend API
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7001/") });
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddMudServices();
 
 // Register services as interfaces
@@ -22,5 +22,6 @@ builder.Services.AddScoped<IUserService, UsersDataService>();
 builder.Services.AddScoped<IRequirementTestCaseLinkService, RequirementTestCaseLinkService>();
 builder.Services.AddScoped<IRoleService, RolesDataService>();
 builder.Services.AddScoped<IDashboardService, DashboardDataService>();
+builder.Services.AddScoped<IEnhancedDashboardService, EnhancedDashboardDataService>();
 
 await builder.Build().RunAsync();

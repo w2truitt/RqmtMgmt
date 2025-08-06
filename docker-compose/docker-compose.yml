@@ -4,6 +4,8 @@ services:
     working_dir: /src
     volumes:
       - ../frontend:/src
+      - ../local_nuget:/src/local_nuget
+      - ../nuget.config:/src/nuget.config
     expose:
       - "5001:80"
     environment:
@@ -17,6 +19,8 @@ services:
     working_dir: /src
     volumes:
       - ../backend:/src
+      - ../local_nuget:/src/local_nuget
+      - ../nuget.config:/src/nuget.config
     expose:
       - "5000:80"
     environment:

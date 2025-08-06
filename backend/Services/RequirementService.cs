@@ -34,6 +34,17 @@ namespace backend.Services
 
         public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return null;
+            
+            if (dto.CreatedBy <= 0)
+                return null;
+            
+            // Check for circular reference if ParentId is provided
+            if (dto.ParentId.HasValue && await WouldCreateCircularReference(dto.Id, dto.ParentId.Value))
+                return null;
+
             var entity = DtoToEntity(dto);
             _context.Requirements.Add(entity);
             await _context.SaveChangesAsync();
@@ -60,6 +71,17 @@ namespace backend.Services
         {
             var entity = await _context.Requirements.FindAsync(dto.Id);
             if (entity == null)
+                return false;
+
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                return false;
+            
+            if (dto.CreatedBy <= 0)
+                return false;
+            
+            // Check for circular reference if ParentId is provided
+            if (dto.ParentId.HasValue && await WouldCreateCircularReference(dto.Id, dto.ParentId.Value))
                 return false;
 
             // Save current state as new version BEFORE updating
@@ -108,6 +130,25 @@ namespace backend.Services
                 .OrderBy(v => v.Version)
                 .ToListAsync();
             return versions.Select(EntityToVersionDto).ToList();
+        }
+
+        private async Task<bool> WouldCreateCircularReference(int requirementId, int parentId)
+        {
+            // Check if parentId is a descendant of requirementId
+            var current = parentId;
+            var visited = new HashSet<int>();
+            
+            while (current != 0 && !visited.Contains(current))
+            {
+                if (current == requirementId)
+                    return true;
+                
+                visited.Add(current);
+                var parent = await _context.Requirements.FindAsync(current);
+                current = parent?.ParentId ?? 0;
+            }
+            
+            return false;
         }
 
         private static RequirementDto EntityToDto(Requirement r) => new()

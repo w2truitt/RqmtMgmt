@@ -20,6 +20,10 @@ namespace backend.Services
 
         public async Task<RoleDto?> CreateRoleAsync(string roleName)
         {
+            // Validate role name
+            if (string.IsNullOrWhiteSpace(roleName))
+                return null;
+
             var existing = await _db.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
             if (existing != null)
             {

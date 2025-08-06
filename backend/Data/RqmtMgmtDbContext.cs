@@ -38,6 +38,12 @@ namespace backend.Data
         public DbSet<RequirementTestCaseLink> RequirementTestCaseLinks { get; set; }
         /// <summary>Gets or sets the test runs table.</summary>
         public DbSet<TestRun> TestRuns { get; set; }
+        /// <summary>Gets or sets the test run sessions table.</summary>
+        public DbSet<TestRunSession> TestRunSessions { get; set; }
+        /// <summary>Gets or sets the test case executions table.</summary>
+        public DbSet<TestCaseExecution> TestCaseExecutions { get; set; }
+        /// <summary>Gets or sets the test step executions table.</summary>
+        public DbSet<TestStepExecution> TestStepExecutions { get; set; }
         /// <summary>Gets or sets the audit logs table.</summary>
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<TestStep> TestSteps { get; set; }
@@ -115,6 +121,51 @@ namespace backend.Data
                 .HasForeignKey(tr => tr.RunBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // TestRunSession relationships
+            modelBuilder.Entity<TestRunSession>()
+                .HasOne(trs => trs.TestPlan)
+                .WithMany()
+                .HasForeignKey(trs => trs.TestPlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TestRunSession>()
+                .HasOne(trs => trs.Executor)
+                .WithMany()
+                .HasForeignKey(trs => trs.ExecutedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // TestCaseExecution relationships
+            modelBuilder.Entity<TestCaseExecution>()
+                .HasOne(tce => tce.TestRunSession)
+                .WithMany(trs => trs.TestCaseExecutions)
+                .HasForeignKey(tce => tce.TestRunSessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TestCaseExecution>()
+                .HasOne(tce => tce.TestCase)
+                .WithMany()
+                .HasForeignKey(tce => tce.TestCaseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TestCaseExecution>()
+                .HasOne(tce => tce.Executor)
+                .WithMany()
+                .HasForeignKey(tce => tce.ExecutedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // TestStepExecution relationships
+            modelBuilder.Entity<TestStepExecution>()
+                .HasOne(tse => tse.TestCaseExecution)
+                .WithMany(tce => tce.TestStepExecutions)
+                .HasForeignKey(tse => tse.TestCaseExecutionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TestStepExecution>()
+                .HasOne(tse => tse.TestStep)
+                .WithMany()
+                .HasForeignKey(tse => tse.TestStepId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // AuditLog <-> User
             modelBuilder.Entity<AuditLog>()
                 .HasOne(al => al.User)
@@ -148,6 +199,17 @@ namespace backend.Data
                 .Property(tr => tr.Result)
                 .HasConversion<string>();
 
+            // New enum conversions for test execution tracking
+            modelBuilder.Entity<TestRunSession>()
+                .Property(trs => trs.Status)
+                .HasConversion<string>();
+            modelBuilder.Entity<TestCaseExecution>()
+                .Property(tce => tce.OverallResult)
+                .HasConversion<string>();
+            modelBuilder.Entity<TestStepExecution>()
+                .Property(tse => tse.Result)
+                .HasConversion<string>();
+
             // Version tables
             modelBuilder.Entity<RequirementVersion>()
                 .Property(v => v.Type)
@@ -156,7 +218,6 @@ namespace backend.Data
                 .Property(v => v.Status)
                 .HasConversion<string>();
 
-            // (removed misplaced declarations)
             // User <-> Role many-to-many
             modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
             modelBuilder.Entity<UserRole>()
@@ -195,6 +256,23 @@ namespace backend.Data
             modelBuilder.Entity<TestRun>()
                 .HasIndex(tr => tr.Result)
                 .HasDatabaseName("IX_TestRuns_Result");
+
+            // New performance indexes for test execution tracking
+            modelBuilder.Entity<TestRunSession>()
+                .HasIndex(trs => trs.Status)
+                .HasDatabaseName("IX_TestRunSessions_Status");
+
+            modelBuilder.Entity<TestRunSession>()
+                .HasIndex(trs => trs.StartedAt)
+                .HasDatabaseName("IX_TestRunSessions_StartedAt");
+
+            modelBuilder.Entity<TestCaseExecution>()
+                .HasIndex(tce => tce.OverallResult)
+                .HasDatabaseName("IX_TestCaseExecutions_OverallResult");
+
+            modelBuilder.Entity<TestCaseExecution>()
+                .HasIndex(tce => tce.ExecutedAt)
+                .HasDatabaseName("IX_TestCaseExecutions_ExecutedAt");
 
             modelBuilder.Entity<AuditLog>()
                 .HasIndex(al => al.Timestamp)

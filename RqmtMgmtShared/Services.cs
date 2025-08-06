@@ -93,3 +93,45 @@ public interface IDashboardService
     Task<DashboardStatisticsDto> GetStatisticsAsync();
     Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5);
 }
+
+/// <summary>
+/// Enhanced service interface for dashboard operations with new statistics
+/// </summary>
+public interface IEnhancedDashboardService
+{
+    Task<DashboardStatsDto> GetDashboardStatsAsync();
+    Task<RequirementStatsDto> GetRequirementStatsAsync();
+    Task<TestManagementStatsDto> GetTestManagementStatsAsync();
+    Task<TestExecutionStatsDto> GetTestExecutionStatsAsync();
+    Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5);
+}
+
+/// <summary>
+/// Service interface for test run session management operations
+/// </summary>
+public interface ITestRunSessionService
+{
+    Task<List<TestRunSessionDto>> GetAllAsync();
+    Task<TestRunSessionDto?> GetByIdAsync(int id);
+    Task<TestRunSessionDto?> CreateAsync(TestRunSessionDto testRunSession);
+    Task<bool> UpdateAsync(TestRunSessionDto testRunSession);
+    Task<bool> DeleteAsync(int id);
+    Task<TestRunSessionDto?> StartTestRunSessionAsync(TestRunSessionDto testRunSession);
+    Task<bool> CompleteTestRunSessionAsync(int id);
+    Task<bool> AbortTestRunSessionAsync(int id);
+    Task<List<TestRunSessionDto>> GetActiveSessionsAsync();
+}
+
+/// <summary>
+/// Service interface for test execution and results tracking
+/// </summary>
+public interface ITestExecutionService
+{
+    Task<TestCaseExecutionDto?> ExecuteTestCaseAsync(TestCaseExecutionDto execution);
+    Task<bool> UpdateTestCaseExecutionAsync(TestCaseExecutionDto execution);
+    Task<TestStepExecutionDto?> UpdateStepResultAsync(TestStepExecutionDto stepExecution);
+    Task<List<TestCaseExecutionDto>> GetExecutionsForSessionAsync(int testRunSessionId);
+    Task<List<TestStepExecutionDto>> GetStepExecutionsForCaseAsync(int testCaseExecutionId);
+    Task<TestExecutionStatsDto> GetExecutionStatsAsync();
+    Task<TestExecutionStatsDto> GetExecutionStatsForSessionAsync(int testRunSessionId);
+}

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RqmtMgmtShared;
+using System.ComponentModel.DataAnnotations;
 
 namespace backend.Services
 {
@@ -29,6 +30,19 @@ namespace backend.Services
 
         public async Task<UserDto?> CreateAsync(UserDto dto)
         {
+            // Validate email format
+            if (!IsValidEmail(dto.Email))
+                return null;
+
+            // Check for duplicate email
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (existingUser != null)
+                return null;
+
+            // Validate username
+            if (string.IsNullOrWhiteSpace(dto.UserName))
+                return null;
+
             var entity = FromDto(dto);
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
@@ -39,6 +53,20 @@ namespace backend.Services
         {
             var tracked = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == dto.Id);
             if (tracked == null) return false;
+
+            // Validate email format
+            if (!IsValidEmail(dto.Email))
+                return false;
+
+            // Check for duplicate email (excluding current user)
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email && u.Id != dto.Id);
+            if (existingUser != null)
+                return false;
+
+            // Validate username
+            if (string.IsNullOrWhiteSpace(dto.UserName))
+                return false;
+
             tracked.UserName = dto.UserName;
             tracked.Email = dto.Email;
             await _context.SaveChangesAsync();
@@ -90,6 +118,22 @@ namespace backend.Services
             }
         }
 
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         // Mapping helpers
         private static UserDto ToDto(User u) => new UserDto
         {
@@ -104,7 +148,8 @@ namespace backend.Services
             Id = dto.Id,
             UserName = dto.UserName,
             Email = dto.Email,
-            UserRoles = dto.Roles?.Select(r => new UserRole { Role = new Role { Name = r } }).ToList() ?? new List<UserRole>()
+            UserRoles = new List<UserRole>(),
+            CreatedAt = DateTime.UtcNow
         };
     }
 }

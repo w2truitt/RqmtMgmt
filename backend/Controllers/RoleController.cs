@@ -29,6 +29,14 @@ namespace backend.Controllers
             return Ok(created);
         }
 
+        [HttpPost("dto")]
+        public async Task<ActionResult<RoleDto>> CreateRoleFromDto([FromBody] RoleDto roleDto)
+        {
+            var created = await _service.CreateRoleAsync(roleDto.Name);
+            if (created == null) return BadRequest();
+            return Ok(created);
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(int id)
         {

@@ -19,4 +19,9 @@ namespace RqmtMgmtShared
     /// Specifies the type of test plan (UserValidation, SoftwareVerification).
     /// </summary>
     public enum TestPlanType { UserValidation, SoftwareVerification }
+
+    /// <summary>
+    /// Specifies the status of a test run session.
+    /// </summary>
+    public enum TestRunStatus { InProgress, Completed, Aborted, Paused }
 }
