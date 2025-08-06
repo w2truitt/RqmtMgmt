@@ -42,12 +42,13 @@ namespace backend.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UserDto dto)
+        public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UserDto dto)
         {
             if (id != dto.Id) return BadRequest();
             var success = await _userService.UpdateAsync(dto);
             if (!success) return NotFound();
-            return NoContent();
+            var updated = await _userService.GetByIdAsync(id);
+            return Ok(updated);
         }
 
         [HttpDelete("{id}")]
@@ -61,20 +62,31 @@ namespace backend.Controllers
         [HttpGet("{id}/roles")]
         public async Task<ActionResult<List<string>>> GetRoles(int id)
         {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null) return NotFound();
             var roles = await _userService.GetUserRolesAsync(id);
             return Ok(roles);
         }
 
         [HttpPost("{id}/roles")]
-        public async Task<IActionResult> AssignRole(int id, [FromBody] string role)
+        public async Task<IActionResult> AssignRole(int id, [FromBody] List<string> roles)
         {
-            await _userService.AssignRoleAsync(id, role);
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null) return NotFound();
+            foreach (var role in roles)
+            {
+                await _userService.AssignRoleAsync(id, role);
+            }
             return NoContent();
         }
 
         [HttpDelete("{id}/roles/{role}")]
         public async Task<IActionResult> RemoveRole(int id, string role)
         {
+            var user = await _userService.GetByIdAsync(id);
+            if (user == null) return NotFound();
+            var userRoles = await _userService.GetUserRolesAsync(id);
+            if (!userRoles.Contains(role)) return NotFound();
             await _userService.RemoveRoleAsync(id, role);
             return NoContent();
         }

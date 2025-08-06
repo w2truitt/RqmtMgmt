@@ -15,23 +15,25 @@ namespace backend.Controllers
         public RoleController(RqmtMgmtShared.IRoleService service) => _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<string>>> GetAllRoles()
+        public async Task<ActionResult<List<RoleDto>>> GetAllRoles()
         {
             var roles = await _service.GetAllRolesAsync();
             return Ok(roles);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateRole([FromBody] string roleName)
+        public async Task<ActionResult<RoleDto>> CreateRole([FromBody] string roleName)
         {
-            await _service.CreateRoleAsync(roleName);
-            return NoContent();
+            var created = await _service.CreateRoleAsync(roleName);
+            if (created == null) return BadRequest();
+            return Ok(created);
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteRole([FromQuery] string roleName)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRole(int id)
         {
-            await _service.DeleteRoleAsync(roleName);
+            var deleted = await _service.DeleteRoleAsync(id);
+            if (!deleted) return NotFound();
             return NoContent();
         }
     }

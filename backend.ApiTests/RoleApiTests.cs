@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using backend;
 using System.Collections.Generic;
 using System;
+using RqmtMgmtShared;
 
 namespace backend.ApiTests
 {
@@ -77,11 +78,5 @@ namespace backend.ApiTests
             Assert.Equal(created1.Id, created2.Id);
             Assert.Equal(created1.Name, created2.Name, StringComparer.OrdinalIgnoreCase);
         }
-    }
-
-    public class RoleDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
     }
 }

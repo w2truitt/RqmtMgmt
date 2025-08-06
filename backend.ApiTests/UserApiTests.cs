@@ -9,11 +9,11 @@ using System;
 
 namespace backend.ApiTests
 {
-    public class UserApiTests : IClassFixture<WebApplicationFactory<Program>>
+    public class UserApiTests : IClassFixture<TestWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public UserApiTests(WebApplicationFactory<Program> factory)
+        public UserApiTests(TestWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }

@@ -9,13 +9,10 @@ using System;
 
 namespace backend.ApiTests
 {
-    public class TestPlanApiTests : IClassFixture<WebApplicationFactory<Program>>
+    public class TestPlanApiTests : BaseApiTest
     {
-        private readonly HttpClient _client;
-
-        public TestPlanApiTests(WebApplicationFactory<Program> factory)
+        public TestPlanApiTests(WebApplicationFactory<Program> factory) : base(factory)
         {
-            _client = factory.CreateClient();
         }
 
         [Fact]
@@ -29,15 +26,15 @@ namespace backend.ApiTests
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
-            var response = await _client.PostAsJsonAsync("/api/testplan", createDto);
+            var response = await _client.PostAsJsonAsync("/api/testplan", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<TestPlanDto>();
+            var created = await response.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(created);
             Assert.Equal("API Test Plan", created.Name);
 
             var getResp = await _client.GetAsync($"/api/testplan/{created.Id}");
             getResp.EnsureSuccessStatusCode();
-            var fetched = await getResp.Content.ReadFromJsonAsync<TestPlanDto>();
+            var fetched = await getResp.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(fetched);
             Assert.Equal("API Test Plan", fetched.Name);
         }
@@ -47,7 +44,7 @@ namespace backend.ApiTests
         {
             var response = await _client.GetAsync("/api/testplan");
             response.EnsureSuccessStatusCode();
-            var list = await response.Content.ReadFromJsonAsync<List<TestPlanDto>>();
+            var list = await response.Content.ReadFromJsonAsync<List<TestPlanDto>>(_jsonOptions);
             Assert.NotNull(list);
             Assert.True(list.Count > 0);
         }
@@ -64,19 +61,23 @@ namespace backend.ApiTests
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
-            var response = await _client.PostAsJsonAsync("/api/testplan", createDto);
+            var response = await _client.PostAsJsonAsync("/api/testplan", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<TestPlanDto>();
+            var created = await response.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(created);
 
             // Now update
-            created.Name = "Updated Plan Name";
+            created.Name = "Updated Name";
             created.Description = "Updated Desc";
-            var putResp = await _client.PutAsJsonAsync($"/api/testplan/{created.Id}", created);
+            var putResp = await _client.PutAsJsonAsync($"/api/testplan/{created.Id}", created, _jsonOptions);
             putResp.EnsureSuccessStatusCode();
-            var updated = await putResp.Content.ReadFromJsonAsync<TestPlanDto>();
+            
+            // Get the updated test plan to verify
+            var getResp = await _client.GetAsync($"/api/testplan/{created.Id}");
+            getResp.EnsureSuccessStatusCode();
+            var updated = await getResp.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(updated);
-            Assert.Equal("Updated Plan Name", updated.Name);
+            Assert.Equal("Updated Name", updated.Name);
             Assert.Equal("Updated Desc", updated.Description);
         }
 
@@ -92,9 +93,9 @@ namespace backend.ApiTests
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
-            var response = await _client.PostAsJsonAsync("/api/testplan", createDto);
+            var response = await _client.PostAsJsonAsync("/api/testplan", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<TestPlanDto>();
+            var created = await response.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(created);
 
             // Delete
@@ -121,11 +122,11 @@ namespace backend.ApiTests
                 Id = 9999999,
                 Name = "Should Fail",
                 Type = "UserValidation",
-                Description = "No such testplan",
+                Description = "No such test plan",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
-            var resp = await _client.PutAsJsonAsync("/api/testplan/9999999", updateDto);
+            var resp = await _client.PutAsJsonAsync("/api/testplan/9999999", updateDto, _jsonOptions);
             Assert.False(resp.IsSuccessStatusCode);
         }
 

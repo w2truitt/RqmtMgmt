@@ -69,9 +69,9 @@ public interface IUserService
 /// </summary>
 public interface IRoleService
 {
-    Task<List<string>> GetAllRolesAsync();
-    Task CreateRoleAsync(string roleName);
-    Task DeleteRoleAsync(string roleName);
+    Task<List<RoleDto>> GetAllRolesAsync();
+    Task<RoleDto?> CreateRoleAsync(string roleName);
+    Task<bool> DeleteRoleAsync(int roleId);
 }
 
 /// <summary>

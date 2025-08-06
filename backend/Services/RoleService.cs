@@ -13,29 +13,34 @@ namespace backend.Services
         private readonly RqmtMgmtDbContext _db;
         public RoleService(RqmtMgmtDbContext db) => _db = db;
 
-        public async Task<List<string>> GetAllRolesAsync()
+        public async Task<List<RoleDto>> GetAllRolesAsync()
         {
-            return await _db.Roles.Select(r => r.Name).ToListAsync();
+            return await _db.Roles.Select(r => new RoleDto { Id = r.Id, Name = r.Name }).ToListAsync();
         }
 
-        public async Task CreateRoleAsync(string roleName)
+        public async Task<RoleDto?> CreateRoleAsync(string roleName)
         {
-            var exists = await _db.Roles.AnyAsync(r => r.Name.ToLower() == roleName.ToLower());
-            if (!exists)
+            var existing = await _db.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
+            if (existing != null)
             {
-                _db.Roles.Add(new Role { Name = roleName });
-                await _db.SaveChangesAsync();
+                return new RoleDto { Id = existing.Id, Name = existing.Name };
             }
+
+            var role = new Role { Name = roleName };
+            _db.Roles.Add(role);
+            await _db.SaveChangesAsync();
+            return new RoleDto { Id = role.Id, Name = role.Name };
         }
 
-        public async Task DeleteRoleAsync(string roleName)
+        public async Task<bool> DeleteRoleAsync(int roleId)
         {
             var role = await _db.Roles.Include(r => r.UserRoles)
-                .FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
+                .FirstOrDefaultAsync(r => r.Id == roleId);
             if (role == null || (role.UserRoles != null && role.UserRoles.Any()))
-                return;
+                return false;
             _db.Roles.Remove(role);
             await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

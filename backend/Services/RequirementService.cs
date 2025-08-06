@@ -73,23 +73,21 @@ namespace backend.Services
                 Description = entity.Description,
                 ParentId = entity.ParentId,
                 Status = entity.Status,
-                ModifiedBy = entity.CreatedBy,
-                ModifiedAt = entity.UpdatedAt ?? DateTime.UtcNow
+                ModifiedBy = dto.CreatedBy, // Use the user making the update
+                ModifiedAt = DateTime.UtcNow
             };
             _context.RequirementVersions.Add(version);
-            await _context.SaveChangesAsync();
 
-            // Update entity from DTO
+            // Update entity from DTO (don't change CreatedBy and CreatedAt)
             entity.Type = dto.Type;
             entity.Title = dto.Title;
             entity.Description = dto.Description;
             entity.ParentId = dto.ParentId;
             entity.Status = dto.Status;
-            entity.Version = dto.Version;
-            entity.CreatedBy = dto.CreatedBy;
-            entity.CreatedAt = dto.CreatedAt;
-            entity.UpdatedAt = dto.UpdatedAt;
+            entity.Version = nextVersion;
+            entity.UpdatedAt = DateTime.UtcNow;
 
+            // Save all changes in one transaction
             await _context.SaveChangesAsync();
             return true;
         }
