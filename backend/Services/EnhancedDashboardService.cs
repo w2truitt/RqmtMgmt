@@ -18,12 +18,18 @@ namespace backend.Services
 
         public async Task<DashboardStatsDto> GetDashboardStatsAsync()
         {
+            // Execute all queries sequentially to avoid DbContext threading issues
+            var requirements = await GetRequirementStatsAsync();
+            var testManagement = await GetTestManagementStatsAsync();
+            var testExecution = await GetTestExecutionStatsAsync();
+            var recentActivities = await GetRecentActivityAsync(5);
+
             var dashboardStats = new DashboardStatsDto
             {
-                Requirements = await GetRequirementStatsAsync(),
-                TestManagement = await GetTestManagementStatsAsync(),
-                TestExecution = await GetTestExecutionStatsAsync(),
-                RecentActivities = await GetRecentActivityAsync(5)
+                Requirements = requirements,
+                TestManagement = testManagement,
+                TestExecution = testExecution,
+                RecentActivities = recentActivities
             };
 
             return dashboardStats;
@@ -78,36 +84,25 @@ namespace backend.Services
 
         public async Task<TestManagementStatsDto> GetTestManagementStatsAsync()
         {
-            // Optimized parallel queries for test management statistics
-            var testSuiteCountTask = _context.TestSuites.CountAsync();
-            var testPlanCountTask = _context.TestPlans.CountAsync();
-            var testCaseCountTask = _context.TestCases.CountAsync();
-            var testCasesWithStepsTask = _context.TestCases
+            // Execute queries sequentially to avoid DbContext threading issues
+            var testSuiteCount = await _context.TestSuites.CountAsync();
+            var testPlanCount = await _context.TestPlans.CountAsync();
+            var testCaseCount = await _context.TestCases.CountAsync();
+            var testCasesWithSteps = await _context.TestCases
                 .Where(tc => tc.Steps.Any())
                 .CountAsync();
-            var requirementTestCaseLinksTask = _context.RequirementTestCaseLinks.CountAsync();
-
-            await Task.WhenAll(
-                testSuiteCountTask,
-                testPlanCountTask,
-                testCaseCountTask,
-                testCasesWithStepsTask,
-                requirementTestCaseLinksTask
-            );
-
-            var totalTestCases = await testCaseCountTask;
+            var requirementTestCaseLinks = await _context.RequirementTestCaseLinks.CountAsync();
             var totalRequirements = await _context.Requirements.CountAsync();
-            var linkedTestCases = await requirementTestCaseLinksTask;
 
             var stats = new TestManagementStatsDto
             {
-                TotalTestSuites = await testSuiteCountTask,
-                TotalTestPlans = await testPlanCountTask,
-                TotalTestCases = totalTestCases,
-                TestCasesWithSteps = await testCasesWithStepsTask,
-                RequirementTestCaseLinks = linkedTestCases,
+                TotalTestSuites = testSuiteCount,
+                TotalTestPlans = testPlanCount,
+                TotalTestCases = testCaseCount,
+                TestCasesWithSteps = testCasesWithSteps,
+                RequirementTestCaseLinks = requirementTestCaseLinks,
                 TestCoveragePercentage = totalRequirements > 0 
-                    ? Math.Round((double)linkedTestCases / totalRequirements * 100, 2)
+                    ? Math.Round((double)requirementTestCaseLinks / totalRequirements * 100, 2)
                     : 0
             };
 
@@ -129,7 +124,9 @@ namespace backend.Services
 
             var lastExecutionDate = await _context.TestCaseExecutions
                 .Where(tce => tce.ExecutedAt.HasValue)
-                .MaxAsync(tce => (DateTime?)tce.ExecutedAt);
+                .OrderByDescending(tce => tce.ExecutedAt)
+                .Select(tce => tce.ExecutedAt)
+                .FirstOrDefaultAsync();
 
             var totalTestRuns = testRunSessionStats.Sum(s => s.Count);
             var activeTestRuns = testRunSessionStats

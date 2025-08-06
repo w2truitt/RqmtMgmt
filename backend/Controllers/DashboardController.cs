@@ -12,11 +12,13 @@ namespace backend.Controllers
     {
         private readonly IDashboardService _dashboardService;
         private readonly IEnhancedDashboardService _enhancedDashboardService;
+        private readonly ILogger<DashboardController> _logger;
 
-        public DashboardController(IDashboardService dashboardService, IEnhancedDashboardService enhancedDashboardService)
+        public DashboardController(IDashboardService dashboardService, IEnhancedDashboardService enhancedDashboardService, ILogger<DashboardController> logger)
         {
             _dashboardService = dashboardService;
             _enhancedDashboardService = enhancedDashboardService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -28,11 +30,14 @@ namespace backend.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting dashboard statistics");
                 var statistics = await _dashboardService.GetStatisticsAsync();
+                _logger.LogInformation("Successfully retrieved dashboard statistics");
                 return Ok(statistics);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving dashboard statistics");
                 return StatusCode(500, new { message = "An error occurred while retrieving dashboard statistics.", error = ex.Message });
             }
         }
@@ -46,11 +51,14 @@ namespace backend.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting enhanced dashboard statistics");
                 var statistics = await _enhancedDashboardService.GetDashboardStatsAsync();
+                _logger.LogInformation("Successfully retrieved enhanced dashboard statistics: {@Statistics}", statistics);
                 return Ok(statistics);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving enhanced dashboard statistics");
                 return StatusCode(500, new { message = "An error occurred while retrieving enhanced dashboard statistics.", error = ex.Message });
             }
         }
@@ -64,11 +72,14 @@ namespace backend.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting requirement statistics");
                 var stats = await _enhancedDashboardService.GetRequirementStatsAsync();
+                _logger.LogInformation("Successfully retrieved requirement statistics");
                 return Ok(stats);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving requirement statistics");
                 return StatusCode(500, new { message = "An error occurred while retrieving requirement statistics.", error = ex.Message });
             }
         }
@@ -82,11 +93,14 @@ namespace backend.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting test management statistics");
                 var stats = await _enhancedDashboardService.GetTestManagementStatsAsync();
+                _logger.LogInformation("Successfully retrieved test management statistics");
                 return Ok(stats);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving test management statistics");
                 return StatusCode(500, new { message = "An error occurred while retrieving test management statistics.", error = ex.Message });
             }
         }
@@ -100,11 +114,14 @@ namespace backend.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting test execution statistics");
                 var stats = await _enhancedDashboardService.GetTestExecutionStatsAsync();
+                _logger.LogInformation("Successfully retrieved test execution statistics");
                 return Ok(stats);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving test execution statistics");
                 return StatusCode(500, new { message = "An error occurred while retrieving test execution statistics.", error = ex.Message });
             }
         }
@@ -119,16 +136,21 @@ namespace backend.Controllers
         {
             try
             {
+                _logger.LogInformation("Getting recent activity with count: {Count}", count);
+                
                 if (count <= 0 || count > 50) // Limit to reasonable range
                 {
+                    _logger.LogWarning("Invalid count requested: {Count}", count);
                     return BadRequest(new { message = "Count must be between 1 and 50." });
                 }
 
                 var activities = await _enhancedDashboardService.GetRecentActivityAsync(count);
+                _logger.LogInformation("Successfully retrieved {Count} recent activities", activities.Count);
                 return Ok(activities);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error retrieving recent activity");
                 return StatusCode(500, new { message = "An error occurred while retrieving recent activity.", error = ex.Message });
             }
         }

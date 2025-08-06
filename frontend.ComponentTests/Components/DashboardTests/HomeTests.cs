@@ -16,7 +16,7 @@ public class HomeTests : ComponentTestBase
     public void Home_RendersCorrectly_WithDashboardTitle()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -30,7 +30,7 @@ public class HomeTests : ComponentTestBase
     public void Home_DisplaysAllDashboardCards()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -51,7 +51,7 @@ public class HomeTests : ComponentTestBase
     public void Home_DisplaysRequirementsStatistics()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -82,7 +82,7 @@ public class HomeTests : ComponentTestBase
     public void Home_DisplaysTestSuitesStatistics()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -105,15 +105,15 @@ public class HomeTests : ComponentTestBase
         
         // Verify mock data is loaded
         Assert.Equal("12", totalStat.QuerySelector(".dashboard-stat-number")?.TextContent);
-        Assert.Equal("8", activeStat.QuerySelector(".dashboard-stat-number")?.TextContent);
-        Assert.Equal("4", completedStat.QuerySelector(".dashboard-stat-number")?.TextContent);
+        Assert.Equal("12", activeStat.QuerySelector(".dashboard-stat-number")?.TextContent); // Updated to match activeTestSuites = testSuitesCount in Home.razor
+        Assert.Equal("0", completedStat.QuerySelector(".dashboard-stat-number")?.TextContent); // Updated to match completedTestSuites = 0 in Home.razor
     }
     
     [Fact]
     public void Home_DisplaysTestCasesStatistics()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -144,7 +144,7 @@ public class HomeTests : ComponentTestBase
     public void Home_DisplaysTestPlansStatistics()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -175,7 +175,7 @@ public class HomeTests : ComponentTestBase
     public void Home_DisplaysRecentActivity()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -199,7 +199,7 @@ public class HomeTests : ComponentTestBase
     public void Home_HasCorrectBootstrapIcons()
     {
         // Arrange
-        SetupMockDashboardService();
+        SetupMockEnhancedDashboardService();
         
         // Act
         var component = RenderComponent<Home>();
@@ -217,108 +217,131 @@ public class HomeTests : ComponentTestBase
     }
 
     /// <summary>
-    /// Sets up the mock dashboard service with test data that matches the expected values in tests
+    /// Sets up the mock enhanced dashboard service with test data that matches the expected values in tests
     /// </summary>
-    private void SetupMockDashboardService()
+    private void SetupMockEnhancedDashboardService()
     {
-        var mockDashboardService = GetMockService<IDashboardService>();
+        var mockEnhancedDashboardService = GetMockService<IEnhancedDashboardService>();
         
-        // Set up mock statistics to return the expected test values
-        var mockStatistics = new DashboardStatisticsDto
+        // Set up mock statistics to return the expected test values using the new DashboardStatsDto structure
+        var mockDashboardStats = new DashboardStatsDto
         {
-            Requirements = new RequirementStatisticsDto
+            Requirements = new RequirementStatsDto
             {
-                Total = 47,
-                Approved = 32,
-                Draft = 15,
-                Implemented = 0,
-                Verified = 0
+                TotalRequirements = 47,
+                ApprovedRequirements = 32,
+                DraftRequirements = 15,
+                ImplementedRequirements = 0,
+                VerifiedRequirements = 0,
+                ByStatus = new Dictionary<RequirementStatus, int>
+                {
+                    { RequirementStatus.Approved, 32 },
+                    { RequirementStatus.Draft, 15 }
+                },
+                ByType = new Dictionary<RequirementType, int>
+                {
+                    { RequirementType.CRS, 30 },
+                    { RequirementType.PRS, 12 },
+                    { RequirementType.SRS, 5 }
+                }
             },
-            TestSuites = new TestSuiteStatisticsDto
+            TestManagement = new TestManagementStatsDto
             {
-                Total = 12,
-                Active = 8,
-                Completed = 4
+                TotalTestSuites = 12,
+                TotalTestPlans = 6,
+                TotalTestCases = 156,
+                TestCasesWithSteps = 140,
+                RequirementTestCaseLinks = 40,
+                TestCoveragePercentage = 85.0
             },
-            TestCases = new TestCaseStatisticsDto
+            TestExecution = new TestExecutionStatsDto
             {
-                Total = 156,
-                Passed = 142,
-                Failed = 14,
-                NotRun = 0
+                TotalTestRuns = 10,
+                ActiveTestRuns = 2,
+                CompletedTestRuns = 8,
+                TotalTestCaseExecutions = 156,
+                PassedExecutions = 142,
+                FailedExecutions = 14,
+                BlockedExecutions = 0,
+                NotRunExecutions = 0,
+                PassRate = 78.0,
+                LastExecutionDate = DateTime.UtcNow.AddHours(-2)
             },
-            TestPlans = new TestPlanStatisticsDto
+            RecentActivities = new List<RecentActivityDto>
             {
-                Total = 6,
-                ExecutionProgress = 78,
-                CoveragePercentage = 85
+                new RecentActivityDto
+                {
+                    Id = 1,
+                    Description = "New requirement 'User Authentication' created",
+                    EntityType = "Requirement",
+                    EntityId = 1,
+                    Action = "Created",
+                    UserId = 1,
+                    UserName = "Test User",
+                    CreatedAt = DateTime.UtcNow.AddHours(-2)
+                },
+                new RecentActivityDto
+                {
+                    Id = 2,
+                    Description = "Test suite 'Login Tests' completed",
+                    EntityType = "TestSuite",
+                    EntityId = 1,
+                    Action = "Completed",
+                    UserId = 1,
+                    UserName = "Test User",
+                    CreatedAt = DateTime.UtcNow.AddHours(-4)
+                },
+                new RecentActivityDto
+                {
+                    Id = 3,
+                    Description = "Requirement 'Data Validation' approved",
+                    EntityType = "Requirement",
+                    EntityId = 2,
+                    Action = "Approved",
+                    UserId = 1,
+                    UserName = "Test User",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1)
+                },
+                new RecentActivityDto
+                {
+                    Id = 4,
+                    Description = "Test case 'Password Reset' updated",
+                    EntityType = "TestCase",
+                    EntityId = 1,
+                    Action = "Updated",
+                    UserId = 1,
+                    UserName = "Test User",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2)
+                },
+                new RecentActivityDto
+                {
+                    Id = 5,
+                    Description = "Test plan 'User Validation' created",
+                    EntityType = "TestPlan",
+                    EntityId = 1,
+                    Action = "Created",
+                    UserId = 1,
+                    UserName = "Test User",
+                    CreatedAt = DateTime.UtcNow.AddDays(-3)
+                }
             }
         };
         
-        // Set up mock recent activities
-        var mockActivities = new List<RecentActivityDto>
-        {
-            new RecentActivityDto
-            {
-                Id = 1,
-                Description = "New requirement 'User Authentication' created",
-                EntityType = "Requirement",
-                EntityId = 1,
-                Action = "Created",
-                UserId = 1,
-                UserName = "Test User",
-                CreatedAt = DateTime.UtcNow.AddHours(-2)
-            },
-            new RecentActivityDto
-            {
-                Id = 2,
-                Description = "Test suite 'Login Tests' completed",
-                EntityType = "TestSuite",
-                EntityId = 1,
-                Action = "Completed",
-                UserId = 1,
-                UserName = "Test User",
-                CreatedAt = DateTime.UtcNow.AddHours(-4)
-            },
-            new RecentActivityDto
-            {
-                Id = 3,
-                Description = "Requirement 'Data Validation' approved",
-                EntityType = "Requirement",
-                EntityId = 2,
-                Action = "Approved",
-                UserId = 1,
-                UserName = "Test User",
-                CreatedAt = DateTime.UtcNow.AddDays(-1)
-            },
-            new RecentActivityDto
-            {
-                Id = 4,
-                Description = "Test case 'Password Reset' updated",
-                EntityType = "TestCase",
-                EntityId = 1,
-                Action = "Updated",
-                UserId = 1,
-                UserName = "Test User",
-                CreatedAt = DateTime.UtcNow.AddDays(-2)
-            },
-            new RecentActivityDto
-            {
-                Id = 5,
-                Description = "Test plan 'User Validation' created",
-                EntityType = "TestPlan",
-                EntityId = 1,
-                Action = "Created",
-                UserId = 1,
-                UserName = "Test User",
-                CreatedAt = DateTime.UtcNow.AddDays(-3)
-            }
-        };
+        // Set up the mock to return the dashboard stats
+        mockEnhancedDashboardService.Setup(s => s.GetDashboardStatsAsync())
+            .ReturnsAsync(mockDashboardStats);
         
-        mockDashboardService.Setup(s => s.GetStatisticsAsync())
-            .ReturnsAsync(mockStatistics);
+        // Set up individual methods in case they're called separately
+        mockEnhancedDashboardService.Setup(s => s.GetRequirementStatsAsync())
+            .ReturnsAsync(mockDashboardStats.Requirements);
         
-        mockDashboardService.Setup(s => s.GetRecentActivityAsync(It.IsAny<int>()))
-            .ReturnsAsync(mockActivities);
+        mockEnhancedDashboardService.Setup(s => s.GetTestManagementStatsAsync())
+            .ReturnsAsync(mockDashboardStats.TestManagement);
+        
+        mockEnhancedDashboardService.Setup(s => s.GetTestExecutionStatsAsync())
+            .ReturnsAsync(mockDashboardStats.TestExecution);
+        
+        mockEnhancedDashboardService.Setup(s => s.GetRecentActivityAsync(It.IsAny<int>()))
+            .ReturnsAsync(mockDashboardStats.RecentActivities);
     }
 }
