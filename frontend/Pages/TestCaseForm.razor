@@ -1,6 +1,6 @@
 @using RqmtMgmtShared
-@inject frontend.Services.TestCasesDataService TestCaseService
-@inject frontend.Services.TestSuitesDataService TestSuiteService
+@inject ITestCaseService TestCaseService
+@inject ITestSuiteService TestSuiteService
 
 <EditForm Model="formModel" OnValidSubmit="SaveTestCase">
     <DataAnnotationsValidator />

@@ -1,6 +1,6 @@
 @page "/testplans"
 @using RqmtMgmtShared
-@inject frontend.Services.TestPlansDataService TestPlanService
+@inject ITestPlanService TestPlanService
 
 <h3>Test Plans</h3>
 <button class="btn btn-success" @onclick="ShowAddForm">Add Test Plan</button>

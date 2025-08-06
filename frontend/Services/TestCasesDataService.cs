@@ -3,7 +3,7 @@ using RqmtMgmtShared;
 
 namespace frontend.Services
 {
-    public class TestCasesDataService
+    public class TestCasesDataService : ITestCaseService
     {
         private readonly HttpClient _http;
 

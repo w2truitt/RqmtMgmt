@@ -1,7 +1,7 @@
 @page "/users"
 @using RqmtMgmtShared
-@inject frontend.Services.UsersDataService UserService
-@inject frontend.Services.RolesDataService RolesService
+@inject IUserService UserService
+@inject IRoleService RolesService
 
 <h3>Users</h3>
 <button class="btn btn-success" @onclick="ShowAddForm">Add User</button>
@@ -91,7 +91,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         users = await UserService.GetAllAsync();
-        allRoles = await RolesService.GetAllAsync();
+        allRoles = await RolesService.GetAllRolesAsync();
     }
 
     async Task Delete(int id)

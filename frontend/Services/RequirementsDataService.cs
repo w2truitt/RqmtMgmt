@@ -3,7 +3,7 @@ using RqmtMgmtShared;
 
 namespace frontend.Services
 {
-    public class RequirementsDataService
+    public class RequirementsDataService : IRequirementService
     {
         private readonly HttpClient _http;
 

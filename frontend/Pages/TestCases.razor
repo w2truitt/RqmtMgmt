@@ -1,7 +1,7 @@
 @page "/testcases"
 @using RqmtMgmtShared
-@inject frontend.Services.TestCasesDataService TestCaseService
-@inject frontend.Services.TestSuitesDataService TestSuiteService
+@inject ITestCaseService TestCaseService
+@inject ITestSuiteService TestSuiteService
 
 <h3>Test Cases</h3>
 <button class="btn btn-success" @onclick="ShowAddForm">Add Test Case</button>
