@@ -23,7 +23,7 @@ public class NavMenuTests : ComponentTestBase
         
         // Check all navigation links are present
         var navLinks = component.FindAll("a.nav-link");
-        Assert.Equal(6, navLinks.Count);
+        Assert.Equal(7, navLinks.Count);
         
         // Verify specific navigation links
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "/" && link.TextContent.Contains("Home"));
@@ -31,6 +31,7 @@ public class NavMenuTests : ComponentTestBase
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "testsuites" && link.TextContent.Contains("Test Suites"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "testcases" && link.TextContent.Contains("Test Cases"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "testplans" && link.TextContent.Contains("Test Plans"));
+        Assert.Contains(navLinks, link => link.GetAttribute("href") == "test-run-sessions" && link.TextContent.Contains("Test Execution"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "users" && link.TextContent.Contains("Users"));
     }
     
@@ -98,6 +99,7 @@ public class NavMenuTests : ComponentTestBase
         var testSuitesIcon = component.Find("span.bi-collection-nav-menu");
         var testCasesIcon = component.Find("span.bi-file-earmark-check-nav-menu");
         var testPlansIcon = component.Find("span.bi-journal-code-nav-menu");
+        var testExecutionIcon = component.Find("span.bi-play-circle-nav-menu");
         var usersIcon = component.Find("span.bi-person-lines-fill-nav-menu");
         
         Assert.NotNull(homeIcon);
@@ -105,6 +107,7 @@ public class NavMenuTests : ComponentTestBase
         Assert.NotNull(testSuitesIcon);
         Assert.NotNull(testCasesIcon);
         Assert.NotNull(testPlansIcon);
+        Assert.NotNull(testExecutionIcon);
         Assert.NotNull(usersIcon);
     }
     

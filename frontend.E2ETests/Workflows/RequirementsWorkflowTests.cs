@@ -44,8 +44,8 @@ public class RequirementsWorkflowTests : E2ETestBase
         await requirementsPage.FillRequirementFormAsync(
             testRequirement.Title, 
             testRequirement.Description, 
-            testRequirement.Type, 
-            testRequirement.Status);
+            testRequirement.Type.ToString(), 
+            testRequirement.Status.ToString());
         await requirementsPage.SaveRequirementAsync();
         
         // Assert
@@ -59,8 +59,8 @@ public class RequirementsWorkflowTests : E2ETestBase
         // For now, just verify test data creation
         Assert.NotNull(testRequirement);
         Assert.Contains(testId, testRequirement.Title);
-        Assert.Equal("CRS", testRequirement.Type);
-        Assert.Equal("Draft", testRequirement.Status);
+        Assert.Equal(RqmtMgmtShared.RequirementType.CRS, testRequirement.Type);
+        Assert.Equal(RqmtMgmtShared.RequirementStatus.Draft, testRequirement.Status);
     }
     
     [Fact]

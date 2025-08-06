@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
+using backend.Data;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace frontend.E2ETests;
 
@@ -28,7 +31,16 @@ public abstract class E2ETestBase : IAsyncLifetime
                 builder.UseEnvironment("Testing");
                 builder.ConfigureServices(services =>
                 {
-                    // Add any test-specific service overrides here
+                    // Remove all existing DbContext-related services
+                    services.RemoveAll(typeof(DbContextOptions));
+                    services.RemoveAll(typeof(DbContextOptions<RqmtMgmtDbContext>));
+                    services.RemoveAll(typeof(RqmtMgmtDbContext));
+                    
+                    // Add in-memory database for testing
+                    services.AddDbContext<RqmtMgmtDbContext>(options =>
+                    {
+                        options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
+                    });
                 });
             });
         
