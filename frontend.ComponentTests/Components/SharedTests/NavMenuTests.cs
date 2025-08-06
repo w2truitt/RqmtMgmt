@@ -26,7 +26,7 @@ public class NavMenuTests : ComponentTestBase
         Assert.Equal(6, navLinks.Count);
         
         // Verify specific navigation links
-        Assert.Contains(navLinks, link => link.GetAttribute("href") == "" && link.TextContent.Contains("Home"));
+        Assert.Contains(navLinks, link => link.GetAttribute("href") == "/" && link.TextContent.Contains("Home"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "requirements" && link.TextContent.Contains("Requirements"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "testsuites" && link.TextContent.Contains("Test Suites"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "testcases" && link.TextContent.Contains("Test Cases"));
@@ -115,10 +115,10 @@ public class NavMenuTests : ComponentTestBase
         var component = RenderComponent<NavMenu>();
         
         // Assert
-        var homeLink = component.Find("a[href='/']");
+        var homeLink = component.Find("a.nav-link[href='/']");
         Assert.Contains("active", homeLink.GetAttribute("class") ?? "");
 
-        var requirementsLink = component.Find("a[href='/requirements']");
+        var requirementsLink = component.Find("a.nav-link[href='requirements']");
         Assert.DoesNotContain("active", requirementsLink.GetAttribute("class") ?? "");
     }
 }

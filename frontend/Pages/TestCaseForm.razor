@@ -8,11 +8,11 @@
 
     <div class="form-group">
         <label>Title</label>
-        <InputText class="form-control" @bind-Value="formModel.Title" />
+        <InputText class="form-control" @bind-Value="formModel.Title" placeholder="Title" />
     </div>
     <div class="form-group">
         <label>Description</label>
-        <InputText class="form-control" @bind-Value="formModel.Description" />
+        <InputText class="form-control" @bind-Value="formModel.Description" placeholder="Description" />
     </div>
     <div class="form-group">
         <label>Test Suite</label>
@@ -31,13 +31,21 @@
         <label>Steps</label>
         @for (int i = 0; i < Steps.Count; i++)
         {
-            var descPlaceholder = $"Step {i + 1} Description";
-            var expPlaceholder = $"Step {i + 1} Expected Result";
+            var stepIndex = i; // Capture the index for the closure
+            var descPlaceholder = $"Step {stepIndex + 1} Description";
+            var expPlaceholder = $"Step {stepIndex + 1} Expected Result";
             <div class="input-group mb-2">
-                <InputText class="form-control" @bind-Value="Steps[i].Description" placeholder="@descPlaceholder" />
-                <InputText class="form-control" @bind-Value="Steps[i].ExpectedResult" placeholder="@expPlaceholder" style="margin-left:5px;" />
+                <input class="form-control" 
+                       value="@Steps[stepIndex].Description" 
+                       @onchange="@((ChangeEventArgs e) => UpdateStepDescription(stepIndex, e.Value?.ToString() ?? string.Empty))"
+                       placeholder="@descPlaceholder" />
+                <input class="form-control" 
+                       value="@Steps[stepIndex].ExpectedResult" 
+                       @onchange="@((ChangeEventArgs e) => UpdateStepExpectedResult(stepIndex, e.Value?.ToString() ?? string.Empty))"
+                       placeholder="@expPlaceholder" 
+                       style="margin-left:5px;" />
                 <div class="input-group-append">
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveStep(i)">Remove</button>
+                    <button type="button" class="btn btn-danger" @onclick="@(() => RemoveStep(stepIndex))">Remove</button>
                 </div>
             </div>
         }
@@ -73,16 +81,35 @@
         }
     }
 
-
     void AddStep()
     {
         Steps.Add(new TestStepDto());
+        StateHasChanged();
     }
 
     void RemoveStep(int idx)
     {
         if (idx >= 0 && idx < Steps.Count)
+        {
             Steps.RemoveAt(idx);
+            StateHasChanged();
+        }
+    }
+
+    void UpdateStepDescription(int index, string value)
+    {
+        if (index >= 0 && index < Steps.Count)
+        {
+            Steps[index].Description = value;
+        }
+    }
+
+    void UpdateStepExpectedResult(int index, string value)
+    {
+        if (index >= 0 && index < Steps.Count)
+        {
+            Steps[index].ExpectedResult = value;
+        }
     }
 
     async Task SaveTestCase()
