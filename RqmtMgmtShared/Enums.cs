@@ -1,9 +1,9 @@
 namespace RqmtMgmtShared
 {
     /// <summary>
-    /// Specifies the type of requirement: CRS, PRS, or SRS.
+    /// Specifies the type of requirement: CRS, PRS, SRS, UserStory, BusinessRule, or EntityName.
     /// </summary>
-    public enum RequirementType { CRS, PRS, SRS }
+    public enum RequirementType { CRS, PRS, SRS, UserStory, BusinessRule, EntityName }
 
     /// <summary>
     /// Specifies the status of a requirement (Draft, Approved, Implemented, Verified).

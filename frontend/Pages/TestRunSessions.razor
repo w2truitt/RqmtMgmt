@@ -1,0 +1,407 @@
+@page "/test-run-sessions"
+@using RqmtMgmtShared
+@using frontend.Services
+@inject ITestRunSessionDataService TestRunSessionService
+@inject ITestPlanService TestPlanService
+@inject IUserService UserService
+@inject NavigationManager Navigation
+
+<PageTitle>Test Run Sessions</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Test Run Sessions</h1>
+    <button class="btn btn-primary" @onclick="ShowCreateModal">
+        <i class="bi bi-plus-circle me-2"></i>Create New Session
+    </button>
+</div>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Filter and Search Controls -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search sessions..." @bind="searchTerm" @onkeyup="FilterSessions" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="statusFilter" @bind:after="FilterSessions">
+                <option value="">All Statuses</option>
+                <option value="InProgress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Aborted">Aborted</option>
+                <option value="Paused">Paused</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-secondary" @onclick="RefreshSessions">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Sessions Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Test Plan</th>
+                    <th>Status</th>
+                    <th>Executor</th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Environment</th>
+                    <th>Build Version</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var session in filteredSessions)
+                {
+                    <tr>
+                        <td>
+                            <strong>@session.Name</strong>
+                            @if (!string.IsNullOrEmpty(session.Description))
+                            {
+                                <br />
+                                <small class="text-muted">@session.Description</small>
+                            }
+                        </td>
+                        <td>@session.TestPlanName</td>
+                        <td>
+                            <span class="badge @GetStatusBadgeClass(session.Status)">
+                                @session.Status
+                            </span>
+                        </td>
+                        <td>@session.ExecutorName</td>
+                        <td>@session.StartedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            @if (session.CompletedAt.HasValue)
+                            {
+                                @session.CompletedAt.Value.ToString("yyyy-MM-dd HH:mm")
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>@(session.Environment ?? "-")</td>
+                        <td>@(session.BuildVersion ?? "-")</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewSession(session.Id)" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                @if (session.Status == TestRunStatus.InProgress || session.Status == TestRunStatus.Paused)
+                                {
+                                    <button class="btn btn-sm btn-success" @onclick="() => ExecuteSession(session.Id)" title="Execute Tests">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" @onclick="() => CompleteSession(session.Id)" title="Complete Session">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => AbortSession(session.Id)" title="Abort Session">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                }
+                                @if (session.Status == TestRunStatus.Completed || session.Status == TestRunStatus.Aborted)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditSession(session.Id)" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSession(session.Id)" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!filteredSessions.Any())
+        {
+            <div class="text-center py-4">
+                <p class="text-muted">No test run sessions found matching the current filters.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination would go here if needed -->
+}
+
+<!-- Create/Edit Session Modal -->
+@if (showModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(isEditMode ? "Edit" : "Create") Test Run Session</h5>
+                    <button type="button" class="btn-close" @onclick="HideModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (modalSession != null)
+                    {
+                        <form>
+                            <div class="mb-3">
+                                <label for="sessionName" class="form-label">Session Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="sessionName" @bind="modalSession.Name" required />
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="sessionDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="sessionDescription" rows="3" @bind="modalSession.Description"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="testPlan" class="form-label">Test Plan <span class="text-danger">*</span></label>
+                                <select class="form-select" id="testPlan" @bind="modalSession.TestPlanId" required>
+                                    <option value="0">Select a Test Plan</option>
+                                    @foreach (var plan in testPlans)
+                                    {
+                                        <option value="@plan.Id">@plan.Name</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="environment" class="form-label">Environment</label>
+                                        <input type="text" class="form-control" id="environment" @bind="modalSession.Environment" placeholder="e.g., Production, Staging, Dev" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="buildVersion" class="form-label">Build Version</label>
+                                        <input type="text" class="form-control" id="buildVersion" @bind="modalSession.BuildVersion" placeholder="e.g., v1.2.3, Build 456" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!isEditMode)
+                            {
+                                <div class="mb-3">
+                                    <label for="executor" class="form-label">Executor <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="executor" @bind="modalSession.ExecutedBy" required>
+                                        <option value="0">Select an Executor</option>
+                                        @foreach (var user in users)
+                                        {
+                                            <option value="@user.Id">@user.UserName</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                        </form>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveSession" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        @(isEditMode ? "Update" : "Create") Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<TestRunSessionDto> sessions = new List<TestRunSessionDto>();
+    private List<TestRunSessionDto> filteredSessions = new List<TestRunSessionDto>();
+    private List<TestPlanDto> testPlans = new List<TestPlanDto>();
+    private List<UserDto> users = new List<UserDto>();
+
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private TestRunSessionDto? modalSession = null;
+
+    private string searchTerm = string.Empty;
+    private string statusFilter = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        
+        try
+        {
+            sessions = await TestRunSessionService.GetAllAsync();
+            testPlans = await TestPlanService.GetAllAsync();
+            users = await UserService.GetAllAsync();
+            
+            FilterSessions();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterSessions()
+    {
+        filteredSessions = sessions.Where(session =>
+            (string.IsNullOrEmpty(searchTerm) || 
+             session.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+             (session.TestPlanName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             (session.ExecutorName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+            (string.IsNullOrEmpty(statusFilter) || session.Status.ToString() == statusFilter)
+        ).OrderByDescending(s => s.StartedAt).ToList();
+        
+        StateHasChanged();
+    }
+
+    private async Task RefreshSessions()
+    {
+        sessions = await TestRunSessionService.GetAllAsync();
+        FilterSessions();
+    }
+
+    private void ShowCreateModal()
+    {
+        modalSession = new TestRunSessionDto
+        {
+            StartedAt = DateTime.Now,
+            Status = TestRunStatus.InProgress
+        };
+        isEditMode = false;
+        showModal = true;
+    }
+
+    private async Task EditSession(int sessionId)
+    {
+        var session = await TestRunSessionService.GetByIdAsync(sessionId);
+        if (session != null)
+        {
+            modalSession = session;
+            isEditMode = true;
+            showModal = true;
+        }
+    }
+
+    private void HideModal()
+    {
+        showModal = false;
+        modalSession = null;
+        isEditMode = false;
+        isSaving = false;
+    }
+
+    private async Task SaveSession()
+    {
+        if (modalSession == null || modalSession.TestPlanId == 0 || string.IsNullOrWhiteSpace(modalSession.Name))
+            return;
+
+        isSaving = true;
+        
+        try
+        {
+            TestRunSessionDto? result = null;
+            
+            if (isEditMode)
+            {
+                await TestRunSessionService.UpdateAsync(modalSession);
+                result = modalSession;
+            }
+            else
+            {
+                if (modalSession.ExecutedBy == 0)
+                {
+                    isSaving = false;
+                    return;
+                }
+                result = await TestRunSessionService.CreateAsync(modalSession);
+            }
+
+            if (result != null)
+            {
+                HideModal();
+                await RefreshSessions();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving session: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task CompleteSession(int sessionId)
+    {
+        if (await TestRunSessionService.CompleteTestRunSessionAsync(sessionId))
+        {
+            await RefreshSessions();
+        }
+    }
+
+    private async Task AbortSession(int sessionId)
+    {
+        if (await TestRunSessionService.AbortTestRunSessionAsync(sessionId))
+        {
+            await RefreshSessions();
+        }
+    }
+
+    private async Task DeleteSession(int sessionId)
+    {
+        // TODO: Add confirmation dialog
+        if (await TestRunSessionService.DeleteAsync(sessionId))
+        {
+            await RefreshSessions();
+        }
+    }
+
+    private void ViewSession(int sessionId)
+    {
+        Navigation.NavigateTo($"/test-execution/{sessionId}");
+    }
+
+    private void ExecuteSession(int sessionId)
+    {
+        Navigation.NavigateTo($"/test-execution/{sessionId}");
+    }
+
+    private string GetStatusBadgeClass(TestRunStatus status)
+    {
+        return status switch
+        {
+            TestRunStatus.InProgress => "bg-primary",
+            TestRunStatus.Completed => "bg-success",
+            TestRunStatus.Aborted => "bg-danger",
+            TestRunStatus.Paused => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+}

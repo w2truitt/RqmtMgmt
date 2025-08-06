@@ -161,32 +161,58 @@ namespace backend.Services
                 BuildVersion = entity.BuildVersion,
                 TestPlanName = entity.TestPlan?.Name,
                 ExecutorName = entity.Executor?.UserName,
-                TestCaseExecutions = entity.TestCaseExecutions?.Select(tce => new TestCaseExecutionDto
-                {
-                    Id = tce.Id,
-                    TestRunSessionId = tce.TestRunSessionId,
-                    TestCaseId = tce.TestCaseId,
-                    OverallResult = tce.OverallResult,
-                    ExecutedAt = tce.ExecutedAt,
-                    ExecutedBy = tce.ExecutedBy,
-                    Notes = tce.Notes,
-                    DefectId = tce.DefectId,
-                    TestCaseTitle = tce.TestCase?.Title,
-                    ExecutorName = tce.Executor?.UserName,
-                    TestStepExecutions = tce.TestStepExecutions?.Select(tse => new TestStepExecutionDto
-                    {
-                        Id = tse.Id,
-                        TestCaseExecutionId = tse.TestCaseExecutionId,
-                        TestStepId = tse.TestStepId,
-                        StepOrder = tse.StepOrder,
-                        Result = tse.Result,
-                        ActualResult = tse.ActualResult,
-                        Notes = tse.Notes,
-                        ExecutedAt = tse.ExecutedAt,
-                        StepDescription = tse.TestStep?.Description,
-                        ExpectedResult = tse.TestStep?.ExpectedResult
-                    }).ToList() ?? new List<TestStepExecutionDto>()
-                }).ToList() ?? new List<TestCaseExecutionDto>()
+                TestCaseExecutions = MapTestCaseExecutions(entity.TestCaseExecutions)
+            };
+        }
+
+        private static List<TestCaseExecutionDto> MapTestCaseExecutions(ICollection<TestCaseExecution>? testCaseExecutions)
+        {
+            if (testCaseExecutions == null)
+                return new List<TestCaseExecutionDto>();
+
+            return testCaseExecutions.Select(MapTestCaseExecutionToDto).ToList();
+        }
+
+        private static TestCaseExecutionDto MapTestCaseExecutionToDto(TestCaseExecution tce)
+        {
+            return new TestCaseExecutionDto
+            {
+                Id = tce.Id,
+                TestRunSessionId = tce.TestRunSessionId,
+                TestCaseId = tce.TestCaseId,
+                OverallResult = tce.OverallResult,
+                ExecutedAt = tce.ExecutedAt,
+                ExecutedBy = tce.ExecutedBy,
+                Notes = tce.Notes,
+                DefectId = tce.DefectId,
+                TestCaseTitle = tce.TestCase?.Title,
+                ExecutorName = tce.Executor?.UserName,
+                TestStepExecutions = MapTestStepExecutions(tce.TestStepExecutions)
+            };
+        }
+
+        private static List<TestStepExecutionDto> MapTestStepExecutions(ICollection<TestStepExecution>? testStepExecutions)
+        {
+            if (testStepExecutions == null)
+                return new List<TestStepExecutionDto>();
+
+            return testStepExecutions.Select(MapTestStepExecutionToDto).ToList();
+        }
+
+        private static TestStepExecutionDto MapTestStepExecutionToDto(TestStepExecution tse)
+        {
+            return new TestStepExecutionDto
+            {
+                Id = tse.Id,
+                TestCaseExecutionId = tse.TestCaseExecutionId,
+                TestStepId = tse.TestStepId,
+                StepOrder = tse.StepOrder,
+                Result = tse.Result,
+                ActualResult = tse.ActualResult,
+                Notes = tse.Notes,
+                ExecutedAt = tse.ExecutedAt,
+                StepDescription = tse.TestStep?.Description,
+                ExpectedResult = tse.TestStep?.ExpectedResult
             };
         }
     }

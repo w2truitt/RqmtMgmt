@@ -23,5 +23,7 @@ builder.Services.AddScoped<IRequirementTestCaseLinkService, RequirementTestCaseL
 builder.Services.AddScoped<IRoleService, RolesDataService>();
 builder.Services.AddScoped<IDashboardService, DashboardDataService>();
 builder.Services.AddScoped<IEnhancedDashboardService, EnhancedDashboardDataService>();
+builder.Services.AddScoped<ITestRunSessionDataService, TestRunSessionDataService>();
+builder.Services.AddScoped<ITestExecutionDataService, TestExecutionDataService>();
 
 await builder.Build().RunAsync();

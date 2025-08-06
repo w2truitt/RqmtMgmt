@@ -30,6 +30,75 @@ namespace backend.ApiTests
         }
 
         [Fact]
+        public async Task CanGetEnhancedDashboardStatistics()
+        {
+            var response = await _client.GetAsync("/api/dashboard/enhanced-statistics");
+            response.EnsureSuccessStatusCode();
+            var statistics = await response.Content.ReadFromJsonAsync<DashboardStatsDto>(_jsonOptions);
+            
+            Assert.NotNull(statistics);
+            Assert.NotNull(statistics.Requirements);
+            Assert.NotNull(statistics.TestManagement);
+            Assert.NotNull(statistics.TestExecution);
+            Assert.NotNull(statistics.RecentActivities);
+            Assert.True(statistics.Requirements.TotalRequirements >= 0);
+            Assert.True(statistics.TestManagement.TotalTestCases >= 0);
+            Assert.True(statistics.TestExecution.TotalTestRuns >= 0);
+        }
+
+        [Fact]
+        public async Task CanGetRequirementStats()
+        {
+            var response = await _client.GetAsync("/api/dashboard/requirements-stats");
+            response.EnsureSuccessStatusCode();
+            var stats = await response.Content.ReadFromJsonAsync<RequirementStatsDto>(_jsonOptions);
+            
+            Assert.NotNull(stats);
+            Assert.True(stats.TotalRequirements >= 0);
+            Assert.True(stats.DraftRequirements >= 0);
+            Assert.True(stats.ApprovedRequirements >= 0);
+            Assert.True(stats.ImplementedRequirements >= 0);
+            Assert.True(stats.VerifiedRequirements >= 0);
+            Assert.NotNull(stats.ByType);
+            Assert.NotNull(stats.ByStatus);
+        }
+
+        [Fact]
+        public async Task CanGetTestManagementStats()
+        {
+            var response = await _client.GetAsync("/api/dashboard/test-management-stats");
+            response.EnsureSuccessStatusCode();
+            var stats = await response.Content.ReadFromJsonAsync<TestManagementStatsDto>(_jsonOptions);
+            
+            Assert.NotNull(stats);
+            Assert.True(stats.TotalTestSuites >= 0);
+            Assert.True(stats.TotalTestPlans >= 0);
+            Assert.True(stats.TotalTestCases >= 0);
+            Assert.True(stats.TestCasesWithSteps >= 0);
+            Assert.True(stats.RequirementTestCaseLinks >= 0);
+            Assert.True(stats.TestCoveragePercentage >= 0 && stats.TestCoveragePercentage <= 100);
+        }
+
+        [Fact]
+        public async Task CanGetTestExecutionStats()
+        {
+            var response = await _client.GetAsync("/api/dashboard/test-execution-stats");
+            response.EnsureSuccessStatusCode();
+            var stats = await response.Content.ReadFromJsonAsync<TestExecutionStatsDto>(_jsonOptions);
+            
+            Assert.NotNull(stats);
+            Assert.True(stats.TotalTestRuns >= 0);
+            Assert.True(stats.ActiveTestRuns >= 0);
+            Assert.True(stats.CompletedTestRuns >= 0);
+            Assert.True(stats.TotalTestCaseExecutions >= 0);
+            Assert.True(stats.PassedExecutions >= 0);
+            Assert.True(stats.FailedExecutions >= 0);
+            Assert.True(stats.BlockedExecutions >= 0);
+            Assert.True(stats.NotRunExecutions >= 0);
+            Assert.True(stats.PassRate >= 0 && stats.PassRate <= 100);
+        }
+
+        [Fact]
         public async Task CanGetRecentActivityWithDefaultCount()
         {
             var response = await _client.GetAsync("/api/dashboard/recent-activity");

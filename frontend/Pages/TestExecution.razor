@@ -1,0 +1,403 @@
+@page "/test-execution/{SessionId:int}"
+@using RqmtMgmtShared
+@using frontend.Services
+@inject ITestRunSessionDataService TestRunSessionService
+@inject ITestExecutionDataService TestExecutionService
+@inject ITestCaseService TestCaseService
+@inject NavigationManager Navigation
+
+<PageTitle>Test Execution</PageTitle>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading test session...</span>
+        </div>
+    </div>
+}
+else if (session == null)
+{
+    <div class="alert alert-danger">
+        <h4>Session Not Found</h4>
+        <p>The test run session could not be found or has been deleted.</p>
+        <button class="btn btn-primary" @onclick="BackToSessions">
+            Back to Test Run Sessions
+        </button>
+    </div>
+}
+else
+{
+    <!-- Session Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/test-run-sessions" class="text-decoration-none">Test Run Sessions</a>
+                    </li>
+                    <li class="breadcrumb-item active">@session.Name</li>
+                </ol>
+            </nav>
+            <h1>@session.Name</h1>
+            @if (!string.IsNullOrEmpty(session.Description))
+            {
+                <p class="text-muted">@session.Description</p>
+            }
+        </div>
+        <div class="text-end">
+            <span class="badge @GetStatusBadgeClass(session.Status) fs-6 mb-2">
+                @session.Status
+            </span>
+            <br />
+            @if (session.Status == TestRunStatus.InProgress)
+            {
+                <button class="btn btn-success me-2" @onclick="CompleteSession">
+                    <i class="bi bi-check-circle me-1"></i>Complete Session
+                </button>
+                <button class="btn btn-warning me-2" @onclick="PauseSession">
+                    <i class="bi bi-pause-circle me-1"></i>Pause Session
+                </button>
+                <button class="btn btn-danger" @onclick="AbortSession">
+                    <i class="bi bi-x-circle me-1"></i>Abort Session
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Session Information -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Session Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Test Plan:</strong> @session.TestPlanName</p>
+                            <p><strong>Executor:</strong> @session.ExecutorName</p>
+                            <p><strong>Started:</strong> @session.StartedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Environment:</strong> @(session.Environment ?? "Not specified")</p>
+                            <p><strong>Build Version:</strong> @(session.BuildVersion ?? "Not specified")</p>
+                            <p><strong>Completed:</strong> @(session.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "In progress")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Execution Progress</h5>
+                </div>
+                <div class="card-body">
+                    @if (executionStats != null)
+                    {
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span>Progress:</span>
+                                <span>@executedCount / @totalTestCases</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: @(progressPercentage)%"></div>
+                            </div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="text-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    <br />
+                                    <strong>@executionStats.PassedExecutions</strong>
+                                    <br />
+                                    <small>Passed</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-danger">
+                                    <i class="bi bi-x-circle"></i>
+                                    <br />
+                                    <strong>@executionStats.FailedExecutions</strong>
+                                    <br />
+                                    <small>Failed</small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Cases List -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Test Cases</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2" @onclick="RefreshExecutions">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+                <select class="form-select form-select-sm d-inline-block w-auto" @bind="resultFilter" @bind:after="FilterExecutions">
+                    <option value="">All Results</option>
+                    <option value="Passed">Passed</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Blocked">Blocked</option>
+                    <option value="NotRun">Not Run</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (isLoadingExecutions)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading test cases...</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Test Case</th>
+                                <th>Result</th>
+                                <th>Executed</th>
+                                <th>Executor</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var execution in filteredExecutions)
+                            {
+                                <tr class="@GetRowClass(execution.OverallResult)">
+                                    <td>
+                                        <strong>@execution.TestCaseTitle</strong>
+                                        @if (!string.IsNullOrEmpty(execution.DefectId))
+                                        {
+                                            <br />
+                                            <small class="text-muted">Defect: @execution.DefectId</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetResultBadgeClass(execution.OverallResult)">
+                                            @execution.OverallResult
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (execution.ExecutedAt.HasValue)
+                                        {
+                                            @execution.ExecutedAt.Value.ToString("MM/dd HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not executed</span>
+                                        }
+                                    </td>
+                                    <td>@(execution.ExecutorName ?? "-")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(execution.Notes))
+                                        {
+                                            <span title="@execution.Notes">
+                                                @(execution.Notes.Length > 50 ? execution.Notes.Substring(0, 50) + "..." : execution.Notes)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (session.Status == TestRunStatus.InProgress || session.Status == TestRunStatus.Paused)
+                                        {
+                                            <button class="btn btn-sm btn-primary me-1" @onclick="() => ExecuteTestCase(execution)" title="Execute Test Case">
+                                                <i class="bi bi-play-fill"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewTestCaseDetails(execution.TestCaseId)" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (!filteredExecutions.Any())
+                {
+                    <div class="text-center py-4">
+                        <p class="text-muted">No test cases found matching the current filter.</p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int SessionId { get; set; }
+
+    private TestRunSessionDto? session;
+    private List<TestCaseExecutionDto> executions = new List<TestCaseExecutionDto>();
+    private List<TestCaseExecutionDto> filteredExecutions = new List<TestCaseExecutionDto>();
+    private TestExecutionStatsDto? executionStats;
+
+    private bool isLoading = true;
+    private bool isLoadingExecutions = false;
+    private string resultFilter = string.Empty;
+
+    private int totalTestCases => executions.Count;
+    private int executedCount => executions.Count(e => e.OverallResult != TestResult.NotRun);
+    private double progressPercentage => totalTestCases > 0 ? (double)executedCount / totalTestCases * 100 : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSessionData();
+    }
+
+    private async Task LoadSessionData()
+    {
+        isLoading = true;
+        
+        try
+        {
+            session = await TestRunSessionService.GetByIdAsync(SessionId);
+            if (session != null)
+            {
+                await LoadExecutions();
+                await LoadExecutionStats();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading session data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadExecutions()
+    {
+        isLoadingExecutions = true;
+        
+        try
+        {
+            executions = await TestExecutionService.GetExecutionsForSessionAsync(SessionId);
+            FilterExecutions();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading executions: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingExecutions = false;
+        }
+    }
+
+    private async Task LoadExecutionStats()
+    {
+        try
+        {
+            executionStats = await TestExecutionService.GetExecutionStatsForSessionAsync(SessionId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading execution stats: {ex.Message}");
+        }
+    }
+
+    private void FilterExecutions()
+    {
+        filteredExecutions = executions.Where(execution =>
+            string.IsNullOrEmpty(resultFilter) || execution.OverallResult.ToString() == resultFilter
+        ).ToList();
+        
+        StateHasChanged();
+    }
+
+    private async Task RefreshExecutions()
+    {
+        await LoadExecutions();
+        await LoadExecutionStats();
+    }
+
+    private async Task CompleteSession()
+    {
+        if (await TestRunSessionService.CompleteTestRunSessionAsync(SessionId))
+        {
+            await LoadSessionData();
+        }
+    }
+
+    private async Task PauseSession()
+    {
+        // TODO: Implement pause functionality in backend
+        // For now, we'll just refresh the session
+        await LoadSessionData();
+    }
+
+    private async Task AbortSession()
+    {
+        if (await TestRunSessionService.AbortTestRunSessionAsync(SessionId))
+        {
+            await LoadSessionData();
+        }
+    }
+
+    private void ExecuteTestCase(TestCaseExecutionDto execution)
+    {
+        Navigation.NavigateTo($"/test-case-execution/{execution.Id}");
+    }
+
+    private void ViewTestCaseDetails(int testCaseId)
+    {
+        Navigation.NavigateTo($"/testcases/{testCaseId}");
+    }
+
+    private void BackToSessions()
+    {
+        Navigation.NavigateTo("/test-run-sessions");
+    }
+
+    private string GetStatusBadgeClass(TestRunStatus status)
+    {
+        return status switch
+        {
+            TestRunStatus.InProgress => "bg-primary",
+            TestRunStatus.Completed => "bg-success",
+            TestRunStatus.Aborted => "bg-danger",
+            TestRunStatus.Paused => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetResultBadgeClass(TestResult result)
+    {
+        return result switch
+        {
+            TestResult.Passed => "bg-success",
+            TestResult.Failed => "bg-danger",
+            TestResult.Blocked => "bg-warning text-dark",
+            TestResult.NotRun => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetRowClass(TestResult result)
+    {
+        return result switch
+        {
+            TestResult.Failed => "table-danger",
+            TestResult.Blocked => "table-warning",
+            _ => ""
+        };
+    }
+}

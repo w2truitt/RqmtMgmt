@@ -1,0 +1,398 @@
+@page "/test-case-execution/{ExecutionId:int}"
+@using RqmtMgmtShared
+@using frontend.Services
+@inject ITestExecutionDataService TestExecutionService
+@inject ITestCaseService TestCaseService
+@inject NavigationManager Navigation
+
+<PageTitle>Test Case Execution</PageTitle>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading test case execution...</span>
+        </div>
+    </div>
+}
+else if (execution == null || testCase == null)
+{
+    <div class="alert alert-danger">
+        <h4>Test Case Execution Not Found</h4>
+        <p>The test case execution could not be found or has been deleted.</p>
+        <button class="btn btn-primary" @onclick="BackToSessions">
+            Back to Test Run Sessions
+        </button>
+    </div>
+}
+else
+{
+    <!-- Header with Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="/test-run-sessions" class="text-decoration-none">Test Run Sessions</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="/test-execution/@execution.TestRunSessionId" class="text-decoration-none">Test Execution</a>
+            </li>
+            <li class="breadcrumb-item active">@testCase.Title</li>
+        </ol>
+    </nav>
+
+    <!-- Test Case Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1>@testCase.Title</h1>
+            @if (!string.IsNullOrEmpty(testCase.Description))
+            {
+                <p class="text-muted">@testCase.Description</p>
+            }
+        </div>
+        <div class="text-end">
+            <span class="badge @GetResultBadgeClass(execution.OverallResult) fs-6 mb-2">
+                @execution.OverallResult
+            </span>
+            <br />
+            <button class="btn btn-success me-2" @onclick="SaveAndComplete" disabled="@isSaving">
+                @if (isSaving)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                }
+                <i class="bi bi-check-circle me-1"></i>Save & Complete
+            </button>
+            <button class="btn btn-outline-secondary" @onclick="SaveProgress" disabled="@isSaving">
+                <i class="bi bi-floppy me-1"></i>Save Progress
+            </button>
+        </div>
+    </div>
+
+    <!-- Test Case Information -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Test Case Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Test Case ID:</strong> @testCase.Id</p>
+                            <p><strong>Suite ID:</strong> @(testCase.SuiteId?.ToString() ?? "None")</p>
+                            <p><strong>Created By:</strong> @testCase.CreatedBy</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Created At:</strong> @testCase.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+                            <p><strong>Steps Count:</strong> @testCase.Steps.Count</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Execution Notes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="executionNotes" class="form-label">Overall Notes</label>
+                        <textarea class="form-control" id="executionNotes" rows="3" @bind="execution.Notes" placeholder="Add notes about this test execution..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="defectId" class="form-label">Defect ID</label>
+                        <input type="text" class="form-control" id="defectId" @bind="execution.DefectId" placeholder="e.g., BUG-123" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Steps Execution -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Test Steps Execution</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (testCase.Steps.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%">#</th>
+                                <th style="width: 30%">Step Description</th>
+                                <th style="width: 25%">Expected Result</th>
+                                <th style="width: 15%">Result</th>
+                                <th style="width: 25%">Actual Result / Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < testCase.Steps.Count; i++)
+                            {
+                                var step = testCase.Steps[i];
+                                var stepIndex = i + 1;
+                                var stepExecution = stepExecutions.FirstOrDefault(se => se.TestStepId == step.Id);
+                                if (stepExecution == null)
+                                {
+                                    stepExecution = new TestStepExecutionDto
+                                    {
+                                        TestCaseExecutionId = execution.Id,
+                                        TestStepId = step.Id,
+                                        StepOrder = stepIndex,
+                                        Result = TestResult.NotRun,
+                                        StepDescription = step.Description,
+                                        ExpectedResult = step.ExpectedResult
+                                    };
+                                    stepExecutions.Add(stepExecution);
+                                }
+
+                                <tr class="@GetStepRowClass(stepExecution.Result)">
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">@stepIndex</span>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            @step.Description
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small text-muted">
+                                            @step.ExpectedResult
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm" @bind="stepExecution.Result" @bind:after="() => UpdateStepResult(stepExecution)">
+                                            <option value="NotRun">Not Run</option>
+                                            <option value="Passed">Passed</option>
+                                            <option value="Failed">Failed</option>
+                                            <option value="Blocked">Blocked</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="mb-1">
+                                            <textarea class="form-control form-control-sm" rows="2" 
+                                                     @bind="stepExecution.ActualResult" 
+                                                     @bind:after="() => UpdateStepResult(stepExecution)"
+                                                     placeholder="Describe what actually happened..."></textarea>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(stepExecution.Notes))
+                                        {
+                                            <div class="small text-muted">
+                                                <strong>Notes:</strong> @stepExecution.Notes
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Overall Result Summary -->
+                <div class="card-footer">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex gap-3">
+                                <span class="text-success">
+                                    <i class="bi bi-check-circle"></i>
+                                    Passed: @stepExecutions.Count(s => s.Result == TestResult.Passed)
+                                </span>
+                                <span class="text-danger">
+                                    <i class="bi bi-x-circle"></i>
+                                    Failed: @stepExecutions.Count(s => s.Result == TestResult.Failed)
+                                </span>
+                                <span class="text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Blocked: @stepExecutions.Count(s => s.Result == TestResult.Blocked)
+                                </span>
+                                <span class="text-secondary">
+                                    <i class="bi bi-circle"></i>
+                                    Not Run: @stepExecutions.Count(s => s.Result == TestResult.NotRun)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-success btn-sm" @onclick="() => SetAllStepsResult(TestResult.Passed)">
+                                    Pass All
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => SetAllStepsResult(TestResult.Failed)">
+                                    Fail All
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => SetAllStepsResult(TestResult.NotRun)">
+                                    Reset All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <p class="text-muted">This test case has no defined steps.</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int ExecutionId { get; set; }
+
+    private TestCaseExecutionDto? execution;
+    private TestCaseDto? testCase;
+    private List<TestStepExecutionDto> stepExecutions = new List<TestStepExecutionDto>();
+
+    private bool isLoading = true;
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExecutionData();
+    }
+
+    private async Task LoadExecutionData()
+    {
+        isLoading = true;
+        
+        try
+        {
+            // Load step executions
+            stepExecutions = await TestExecutionService.GetStepExecutionsForCaseAsync(ExecutionId);
+            
+            // For now, create placeholder execution and test case
+            // TODO: This would need to be implemented in the backend to get execution by ID
+            execution = new TestCaseExecutionDto
+            {
+                Id = ExecutionId,
+                TestRunSessionId = 1, // This would come from the backend
+                TestCaseId = 1, // This would come from the backend
+                OverallResult = TestResult.NotRun
+            };
+
+            // Load test case - this would need the actual test case ID from execution
+            var testCases = await TestCaseService.GetAllAsync();
+            testCase = testCases.FirstOrDefault(); // Placeholder - would use execution.TestCaseId
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading execution data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task UpdateStepResult(TestStepExecutionDto stepExecution)
+    {
+        try
+        {
+            stepExecution.ExecutedAt = DateTime.Now;
+            await TestExecutionService.UpdateStepResultAsync(stepExecution);
+            
+            // Update overall test case result based on step results
+            UpdateOverallResult();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating step result: {ex.Message}");
+        }
+    }
+
+    private void UpdateOverallResult()
+    {
+        if (execution == null) return;
+
+        var hasFailures = stepExecutions.Any(s => s.Result == TestResult.Failed);
+        var hasBlocked = stepExecutions.Any(s => s.Result == TestResult.Blocked);
+        var allExecuted = stepExecutions.All(s => s.Result != TestResult.NotRun);
+
+        if (hasFailures)
+        {
+            execution.OverallResult = TestResult.Failed;
+        }
+        else if (hasBlocked)
+        {
+            execution.OverallResult = TestResult.Blocked;
+        }
+        else if (allExecuted)
+        {
+            execution.OverallResult = TestResult.Passed;
+        }
+        else
+        {
+            execution.OverallResult = TestResult.NotRun;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SetAllStepsResult(TestResult result)
+    {
+        foreach (var stepExecution in stepExecutions)
+        {
+            stepExecution.Result = result;
+            stepExecution.ExecutedAt = DateTime.Now;
+            await TestExecutionService.UpdateStepResultAsync(stepExecution);
+        }
+        
+        UpdateOverallResult();
+    }
+
+    private async Task SaveProgress()
+    {
+        if (execution == null) return;
+
+        isSaving = true;
+        try
+        {
+            execution.ExecutedAt = DateTime.Now;
+            await TestExecutionService.UpdateTestCaseExecutionAsync(execution);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving progress: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task SaveAndComplete()
+    {
+        await SaveProgress();
+        Navigation.NavigateTo($"/test-execution/{execution?.TestRunSessionId}");
+    }
+
+    private void BackToSessions()
+    {
+        Navigation.NavigateTo("/test-run-sessions");
+    }
+
+    private string GetResultBadgeClass(TestResult result)
+    {
+        return result switch
+        {
+            TestResult.Passed => "bg-success",
+            TestResult.Failed => "bg-danger",
+            TestResult.Blocked => "bg-warning text-dark",
+            TestResult.NotRun => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetStepRowClass(TestResult result)
+    {
+        return result switch
+        {
+            TestResult.Failed => "table-danger",
+            TestResult.Blocked => "table-warning",
+            TestResult.Passed => "table-success",
+            _ => ""
+        };
+    }
+}
