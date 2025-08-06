@@ -21,7 +21,7 @@ public class RequirementsListTests : ComponentTestBase
         mockService.Setup(s => s.GetAllAsync())
             .ReturnsAsync(new List<RequirementDto>
             {
-                new RequirementDto { Id = 1, Title = "Test Requirement", Type = "CRS", Status = "Active" }
+                new RequirementDto { Id = 1, Title = "Test Requirement", Type = RequirementType.CRS, Status = RequirementStatus.Approved }
             });
         
         // Act

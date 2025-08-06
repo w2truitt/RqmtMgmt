@@ -21,8 +21,8 @@ public static class ComponentTestHelpers
             Id = 1,
             Title = $"Test Requirement {testId}",
             Description = $"Test description for {testId}",
-            Type = "CRS",
-            Status = "Draft",
+            Type = RequirementType.CRS,
+            Status = RequirementStatus.Draft,
             CreatedBy = 1,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
