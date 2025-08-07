@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace backend.Controllers
 {
     /// <summary>
-    /// API controller for managing requirements.
+    /// API controller for managing requirements with full CRUD operations.
+    /// Provides endpoints for creating, reading, updating, and deleting requirements.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -14,11 +15,20 @@ namespace backend.Controllers
     {
         private readonly RqmtMgmtShared.IRequirementService _requirementService;
 
+        /// <summary>
+        /// Initializes a new instance of the RequirementController with the specified requirement service.
+        /// </summary>
+        /// <param name="requirementService">The service for requirement operations.</param>
         public RequirementController(RqmtMgmtShared.IRequirementService requirementService)
         {
             _requirementService = requirementService;
         }
 
+        /// <summary>
+        /// Retrieves all requirements from the system.
+        /// </summary>
+        /// <returns>A list of all requirements.</returns>
+        /// <response code="200">Returns the list of requirements.</response>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RequirementDto>>> GetAll()
         {
@@ -26,6 +36,13 @@ namespace backend.Controllers
             return Ok(requirements);
         }
 
+        /// <summary>
+        /// Retrieves a specific requirement by its ID.
+        /// </summary>
+        /// <param name="id">The unique identifier of the requirement.</param>
+        /// <returns>The requirement if found.</returns>
+        /// <response code="200">Returns the requested requirement.</response>
+        /// <response code="404">If the requirement is not found.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<RequirementDto>> GetById(int id)
         {
@@ -34,6 +51,13 @@ namespace backend.Controllers
             return Ok(requirement);
         }
 
+        /// <summary>
+        /// Creates a new requirement in the system.
+        /// </summary>
+        /// <param name="dto">The requirement data to create.</param>
+        /// <returns>The created requirement with its assigned ID.</returns>
+        /// <response code="201">Returns the newly created requirement.</response>
+        /// <response code="400">If the requirement data is invalid or creation fails.</response>
         [HttpPost]
         public async Task<ActionResult<RequirementDto>> Create([FromBody] RequirementDto dto)
         {
@@ -42,6 +66,15 @@ namespace backend.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
+        /// <summary>
+        /// Updates an existing requirement with new data.
+        /// </summary>
+        /// <param name="id">The ID of the requirement to update.</param>
+        /// <param name="dto">The updated requirement data.</param>
+        /// <returns>No content if successful.</returns>
+        /// <response code="204">If the requirement was successfully updated.</response>
+        /// <response code="400">If the ID in the URL doesn't match the ID in the request body.</response>
+        /// <response code="404">If the requirement is not found.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] RequirementDto dto)
         {
@@ -51,6 +84,13 @@ namespace backend.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Deletes a requirement from the system.
+        /// </summary>
+        /// <param name="id">The ID of the requirement to delete.</param>
+        /// <returns>No content if successful.</returns>
+        /// <response code="204">If the requirement was successfully deleted.</response>
+        /// <response code="404">If the requirement is not found.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

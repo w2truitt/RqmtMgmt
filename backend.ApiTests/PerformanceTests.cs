@@ -44,7 +44,10 @@ namespace backend.ApiTests
                 var response = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
                 response.EnsureSuccessStatusCode();
                 var created = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-                createdRequirements.Add(created);
+                if (created != null)
+                {
+                    createdRequirements.Add(created);
+                }
             }
 
             stopwatch.Stop();
@@ -141,7 +144,7 @@ namespace backend.ApiTests
             stopwatch.Stop();
 
             Assert.NotNull(created);
-            Assert.Equal(stepCount, created.Steps.Count);
+            Assert.Equal(stepCount, created.Steps?.Count ?? 0);
             Assert.True(stopwatch.ElapsedMilliseconds < 10000, $"Creating test case with {stepCount} steps took {stopwatch.ElapsedMilliseconds}ms, expected < 10000ms");
 
             // Test retrieval performance
@@ -152,7 +155,7 @@ namespace backend.ApiTests
             retrievalStopwatch.Stop();
 
             Assert.NotNull(retrieved);
-            Assert.Equal(stepCount, retrieved.Steps.Count);
+            Assert.Equal(stepCount, retrieved.Steps?.Count ?? 0);
             Assert.True(retrievalStopwatch.ElapsedMilliseconds < 5000, $"Retrieving test case with {stepCount} steps took {retrievalStopwatch.ElapsedMilliseconds}ms, expected < 5000ms");
         }
 
@@ -174,32 +177,35 @@ namespace backend.ApiTests
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
 
-            const int updateCount = 20;
-            var stopwatch = Stopwatch.StartNew();
-
-            // Perform multiple updates to create versions
-            for (int i = 0; i < updateCount; i++)
+            if (created != null)
             {
-                created.Title = $"Versioning Performance Test - Update {i + 1}";
-                created.Description = $"Updated description {i + 1}";
-                
-                var updateResponse = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created, _jsonOptions);
-                updateResponse.EnsureSuccessStatusCode();
+                const int updateCount = 20;
+                var stopwatch = Stopwatch.StartNew();
+
+                // Perform multiple updates to create versions
+                for (int i = 0; i < updateCount; i++)
+                {
+                    created.Title = $"Versioning Performance Test - Update {i + 1}";
+                    created.Description = $"Updated description {i + 1}";
+                    
+                    var updateResponse = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created, _jsonOptions);
+                    updateResponse.EnsureSuccessStatusCode();
+                }
+
+                stopwatch.Stop();
+
+                // Verify version history performance
+                var versionStopwatch = Stopwatch.StartNew();
+                var versionsResponse = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
+                versionsResponse.EnsureSuccessStatusCode();
+                var versions = await versionsResponse.Content.ReadFromJsonAsync<List<RequirementVersionDto>>(_jsonOptions);
+                versionStopwatch.Stop();
+
+                Assert.NotNull(versions);
+                Assert.True(versions.Count >= updateCount + 1); // Initial + updates
+                Assert.True(stopwatch.ElapsedMilliseconds < 20000, $"Creating {updateCount} versions took {stopwatch.ElapsedMilliseconds}ms, expected < 20000ms");
+                Assert.True(versionStopwatch.ElapsedMilliseconds < 3000, $"Retrieving version history took {versionStopwatch.ElapsedMilliseconds}ms, expected < 3000ms");
             }
-
-            stopwatch.Stop();
-
-            // Verify version history performance
-            var versionStopwatch = Stopwatch.StartNew();
-            var versionsResponse = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-            versionsResponse.EnsureSuccessStatusCode();
-            var versions = await versionsResponse.Content.ReadFromJsonAsync<List<RequirementVersionDto>>(_jsonOptions);
-            versionStopwatch.Stop();
-
-            Assert.NotNull(versions);
-            Assert.True(versions.Count >= updateCount + 1); // Initial + updates
-            Assert.True(stopwatch.ElapsedMilliseconds < 20000, $"Creating {updateCount} versions took {stopwatch.ElapsedMilliseconds}ms, expected < 20000ms");
-            Assert.True(versionStopwatch.ElapsedMilliseconds < 3000, $"Retrieving version history took {versionStopwatch.ElapsedMilliseconds}ms, expected < 3000ms");
         }
 
         [Fact]
@@ -226,7 +232,10 @@ namespace backend.ApiTests
                 if (response.IsSuccessStatusCode)
                 {
                     var created = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-                    createdIds.Add(created.Id);
+                    if (created != null)
+                    {
+                        createdIds.Add(created.Id);
+                    }
                 }
             }
 

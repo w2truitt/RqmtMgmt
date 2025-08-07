@@ -4,13 +4,23 @@ using Microsoft.Extensions.Hosting;
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
 
+/// <summary>
+/// Main program class for the Requirements Management System backend API.
+/// Configures services, middleware, authentication, and database seeding for the application.
+/// </summary>
 public class Program
 {
+    /// <summary>
+    /// Main entry point for the application.
+    /// Configures and starts the web application with all necessary services and middleware.
+    /// </summary>
+    /// <param name="args">Command line arguments passed to the application.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add authentication (JWT Bearer for OAuth2/OIDC)
+        // Add JWT Bearer authentication for OAuth2/OIDC integration
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
@@ -25,7 +35,7 @@ public class Program
                 };
             });
 
-        // Add CORS policy to allow frontend connection
+        // Configure CORS policy to allow frontend connections from various development ports
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
@@ -37,7 +47,7 @@ public class Program
             });
         });
 
-        // Add services
+        // Add MVC controllers with JSON enum string conversion
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
@@ -45,7 +55,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         
-        // Register all services for DI
+        // Register all business services for dependency injection
         builder.Services.AddScoped<RqmtMgmtShared.IRequirementService, backend.Services.RequirementService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestCaseService, backend.Services.TestCaseService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestPlanService, backend.Services.TestPlanService>();
@@ -59,23 +69,23 @@ public class Program
         builder.Services.AddScoped<RqmtMgmtShared.ITestRunSessionService, backend.Services.TestRunSessionService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestExecutionService, backend.Services.TestExecutionService>();
         
-        // Register DbContext with appropriate provider based on environment
+        // Configure database context based on environment
         if (builder.Environment.IsEnvironment("Testing"))
         {
-            // Use InMemory database for testing
+            // Use InMemory database for testing to avoid conflicts and ensure isolation
             builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
                 options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}"));
         }
         else
         {
-            // Use SQL Server for development and production
+            // Use SQL Server for development and production environments
             builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
         }
 
         var app = builder.Build();
 
-        // Seed the database in development
+        // Seed the database with initial data in development environment
         if (app.Environment.IsDevelopment())
         {
             using (var scope = app.Services.CreateScope())
@@ -85,7 +95,7 @@ public class Program
             }
         }
 
-        // Seed the database in testing environment
+        // Seed the database with test data in testing environment
         if (app.Environment.IsEnvironment("Testing"))
         {
             using (var scope = app.Services.CreateScope())
@@ -95,6 +105,7 @@ public class Program
             }
         }
 
+        // Configure middleware pipeline based on environment
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -107,16 +118,16 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        // Enable CORS
+        // Enable CORS for frontend communication
         app.UseCors("AllowFrontend");
 
-        // Enable authentication and authorization middleware
+        // Enable authentication middleware
         app.UseAuthentication();
 
-        // Impersonation Middleware
+        // Custom impersonation middleware for development and testing
         app.Use(async (context, next) =>
         {
-            // Look for a header 'X-User-Id' for impersonation
+            // Look for a header 'X-User-Id' for user impersonation in development
             if (context.Request.Headers.TryGetValue("X-User-Id", out var userId))
             {
                 context.Items["UserId"] = userId.ToString();
@@ -127,6 +138,8 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
+        
+        // Global error handling endpoint
         app.Map("/error", (HttpContext context) =>
         {
             return Results.Problem("An unexpected error occurred. Please contact support if the issue persists.");

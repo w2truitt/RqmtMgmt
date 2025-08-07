@@ -35,7 +35,7 @@ namespace backend.ApiTests
             // Test with null title
             var invalidRequirement = new RequirementDto
             {
-                Title = null, // Invalid
+                Title = "", // Invalid - use empty string instead of null
                 Type = RequirementType.CRS,
                 Status = RequirementStatus.Draft,
                 Description = "Valid description",
@@ -73,7 +73,7 @@ namespace backend.ApiTests
                 {
                     new TestStepDto
                     {
-                        Description = null, // Invalid
+                        Description = "", // Invalid - use empty string instead of null
                         ExpectedResult = "Some result"
                     }
                 }

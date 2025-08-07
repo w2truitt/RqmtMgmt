@@ -39,6 +39,59 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
   - `DTOs/`: Data transfer objects
   - `Configurations/`: Settings and DI
 
+### 3. Frontend Component Tests (bUnit + xUnit)
+
+- **Location:** `frontend.ComponentTests/`
+- **Description:**
+  - Component-level testing for Blazor components using bUnit framework.
+  - Isolated testing with mocked services and dependencies.
+  - Fast-running unit tests for component logic and rendering.
+- **Key Folders:**
+  - `Components/`: Component test suites organized by feature
+  - `TestHelpers/`: Test utilities and helper classes
+  - `ComponentTestBase.cs`: Base class with common test setup
+- **Test Results:** ✅ **65 tests passing** - Complete component coverage
+
+### 4. Frontend E2E Tests (Playwright + xUnit)
+
+- **Location:** `frontend.E2ETests/`
+- **Description:**
+  - End-to-end browser automation testing using Playwright.
+  - Full application testing with real backend integration.
+  - Cross-browser testing capabilities for comprehensive coverage.
+- **Key Folders:**
+  - `PageObjects/`: Page object model classes for maintainable tests
+  - `Workflows/`: E2E test suites organized by user workflows
+  - `TestData/`: Test data factories and seeding utilities
+  - `E2ETestBase.cs`: Base class with Playwright setup and utilities
+- **Test Results:** ✅ **53 tests passing** - Complete page coverage
+
+### 5. Backend Unit Tests (xUnit)
+
+- **Location:** `backend.Tests/`
+- **Description:**
+  - Unit tests for backend services, controllers, and business logic.
+  - Isolated testing with mocked dependencies.
+  - Fast-running tests for individual component validation.
+- **Test Results:** ✅ **267 tests passing** - Comprehensive backend coverage
+
+### 6. Backend API Tests (xUnit)
+
+- **Location:** `backend.ApiTests/`
+- **Description:**
+  - Integration tests for API endpoints and workflows.
+  - End-to-end backend testing with real database integration.
+  - Performance and error handling validation.
+- **Test Results:** ✅ **107 tests passing** - Complete API coverage
+
+### 7. Shared Library (RqmtMgmtShared)
+
+- **Location:** `RqmtMgmtShared/`
+- **Description:**
+  - Common DTOs, interfaces, enums, and models shared between projects.
+  - Packaged as a local NuGet package for consistent versioning.
+  - Service interfaces for dependency injection and testing.
+
 ---
 
 ## Architecture
@@ -48,8 +101,35 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
 - Azure SQL Database for enterprise-grade data storage
 - Azure Blob Storage for attachments
 - OAuth 2.0 / OpenID Connect authentication (e.g., Azure AD, Okta, Google, IdentityServer)
+- **Comprehensive Test Coverage:** Component, E2E, Unit, and Integration tests
 
 See `architecture.md` for detailed architecture decisions and diagrams.
+
+---
+
+## Test Infrastructure
+
+The solution includes a comprehensive testing framework with **492 total tests** across all layers:
+
+### **Frontend Testing (118 tests)**
+- **Component Tests (65):** bUnit-based isolated component testing
+- **E2E Tests (53):** Playwright-based browser automation testing
+
+### **Backend Testing (374 tests)**  
+- **Unit Tests (267):** Service and business logic testing
+- **API Tests (107):** Integration and endpoint testing
+
+### **Test Commands**
+```bash
+# Run all tests
+dotnet test RqmtMgmt.sln
+
+# Run specific test suites
+dotnet test frontend.ComponentTests/
+dotnet test frontend.E2ETests/
+dotnet test backend.Tests/
+dotnet test backend.ApiTests/
+```
 
 ---
 
@@ -115,6 +195,8 @@ The solution uses a shared library (`RqmtMgmtShared`) that contains common DTOs,
    - `backend.Tests/backend.Tests.csproj`  
    - `backend.ApiTests/backend.ApiTests.csproj`
    - `frontend/frontend.csproj`
+   - `frontend.ComponentTests/frontend.ComponentTests.csproj`
+   - `frontend.E2ETests/frontend.E2ETests.csproj`
    
    Update the PackageReference:
    ```xml
@@ -227,6 +309,7 @@ The recommended way to create and update your database schema is with Entity Fra
 - Follow the project structure and naming conventions.
 - Write clear commit messages and document code.
 - Add or update tests for new features and bug fixes.
+- Ensure all tests pass before submitting changes: `dotnet test RqmtMgmt.sln`
 - See `.structure.md` in each project for organizational guidance.
 
 ---
@@ -235,6 +318,7 @@ The recommended way to create and update your database schema is with Entity Fra
 
 - [requirements.md](requirements.md): Product requirements
 - [architecture.md](architecture.md): Architecture decisions and diagrams
+- [FRONTEND_TESTING_STATUS.md](FRONTEND_TESTING_STATUS.md): Frontend testing infrastructure status
 
 ---
 

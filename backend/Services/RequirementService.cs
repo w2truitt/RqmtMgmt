@@ -9,29 +9,47 @@ namespace backend.Services
 {
     /// <summary>
     /// Service implementation for managing requirements using the database context.
+    /// Provides CRUD operations, versioning, and circular reference validation.
     /// </summary>
     public class RequirementService : RqmtMgmtShared.IRequirementService
     {
         private readonly RqmtMgmtDbContext _context;
 
+        /// <summary>
+        /// Initializes a new instance of the RequirementService with the specified database context.
+        /// </summary>
+        /// <param name="context">The database context for requirement operations.</param>
         public RequirementService(RqmtMgmtDbContext context)
         {
             _context = context;
         }
 
-
+        /// <summary>
+        /// Retrieves all requirements from the database.
+        /// </summary>
+        /// <returns>A list of all requirements as DTOs.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
         {
             var entities = await _context.Requirements.ToListAsync();
             return entities.Select(EntityToDto).ToList();
         }
 
+        /// <summary>
+        /// Retrieves a specific requirement by its ID.
+        /// </summary>
+        /// <param name="id">The unique identifier of the requirement.</param>
+        /// <returns>The requirement DTO if found; otherwise, null.</returns>
         public async Task<RequirementDto?> GetByIdAsync(int id)
         {
             var entity = await _context.Requirements.FindAsync(id);
             return entity == null ? null : EntityToDto(entity);
         }
 
+        /// <summary>
+        /// Creates a new requirement with validation and initial versioning.
+        /// </summary>
+        /// <param name="dto">The requirement data to create.</param>
+        /// <returns>The created requirement DTO if successful; otherwise, null.</returns>
         public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
         {
             // Validate required fields
@@ -67,6 +85,11 @@ namespace backend.Services
             return EntityToDto(entity);
         }
 
+        /// <summary>
+        /// Updates an existing requirement with validation, versioning, and circular reference checking.
+        /// </summary>
+        /// <param name="dto">The requirement data to update.</param>
+        /// <returns>True if the update was successful; otherwise, false.</returns>
         public async Task<bool> UpdateAsync(RequirementDto dto)
         {
             var entity = await _context.Requirements.FindAsync(dto.Id);
@@ -114,6 +137,11 @@ namespace backend.Services
             return true;
         }
 
+        /// <summary>
+        /// Deletes a requirement by its ID.
+        /// </summary>
+        /// <param name="id">The unique identifier of the requirement to delete.</param>
+        /// <returns>True if the deletion was successful; otherwise, false.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             var req = await _context.Requirements.FindAsync(id);
@@ -123,6 +151,11 @@ namespace backend.Services
             return true;
         }
 
+        /// <summary>
+        /// Retrieves all versions of a specific requirement for audit and change tracking.
+        /// </summary>
+        /// <param name="requirementId">The unique identifier of the requirement.</param>
+        /// <returns>A list of requirement versions ordered by version number.</returns>
         public async Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId)
         {
             var versions = await _context.RequirementVersions
@@ -132,6 +165,13 @@ namespace backend.Services
             return versions.Select(EntityToVersionDto).ToList();
         }
 
+        /// <summary>
+        /// Checks if setting a parent would create a circular reference in the requirement hierarchy.
+        /// Uses depth-first traversal with cycle detection to prevent infinite loops.
+        /// </summary>
+        /// <param name="requirementId">The ID of the requirement being updated.</param>
+        /// <param name="parentId">The proposed parent ID.</param>
+        /// <returns>True if a circular reference would be created; otherwise, false.</returns>
         private async Task<bool> WouldCreateCircularReference(int requirementId, int parentId)
         {
             // Check if parentId is a descendant of requirementId
@@ -151,6 +191,11 @@ namespace backend.Services
             return false;
         }
 
+        /// <summary>
+        /// Converts a Requirement entity to a RequirementDto for API responses.
+        /// </summary>
+        /// <param name="r">The requirement entity to convert.</param>
+        /// <returns>A RequirementDto with all properties mapped.</returns>
         private static RequirementDto EntityToDto(Requirement r) => new()
         {
             Id = r.Id,
@@ -165,6 +210,11 @@ namespace backend.Services
             UpdatedAt = r.UpdatedAt
         };
 
+        /// <summary>
+        /// Converts a RequirementVersion entity to a RequirementVersionDto for API responses.
+        /// </summary>
+        /// <param name="v">The requirement version entity to convert.</param>
+        /// <returns>A RequirementVersionDto with all properties mapped.</returns>
         private static RequirementVersionDto EntityToVersionDto(RequirementVersion v) => new()
         {
             Id = v.Id,
@@ -178,6 +228,11 @@ namespace backend.Services
             ModifiedAt = v.ModifiedAt
         };
 
+        /// <summary>
+        /// Converts a RequirementDto to a Requirement entity for database operations.
+        /// </summary>
+        /// <param name="d">The requirement DTO to convert.</param>
+        /// <returns>A Requirement entity with all properties mapped.</returns>
         private static Requirement DtoToEntity(RequirementDto d) => new()
         {
             Id = d.Id,

@@ -1,6 +1,9 @@
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">frontend</a>
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-clipboard-check me-2"></i>
+            TestFlow Pro
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -9,15 +12,32 @@
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="nav flex-column">
+        <!-- DASHBOARD -->
+        <div class="nav-section-header">
+            <i class="bi bi-bar-chart-fill me-2"></i>
+            DASHBOARD
+        </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
         </div>
+
+        <!-- REQUIREMENTS MANAGEMENT -->
+        <div class="nav-section-header">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            REQUIREMENTS MANAGEMENT
+        </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="requirements">
                 <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
             </NavLink>
+        </div>
+
+        <!-- TEST MANAGEMENT -->
+        <div class="nav-section-header">
+            <i class="bi bi-clipboard-check me-2"></i>
+            TEST MANAGEMENT
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="testsuites">
@@ -34,10 +54,22 @@
                 <span class="bi bi-journal-code-nav-menu" aria-hidden="true"></span> Test Plans
             </NavLink>
         </div>
+
+        <!-- TEST EXECUTION -->
+        <div class="nav-section-header">
+            <i class="bi bi-play-circle me-2"></i>
+            TEST EXECUTION
+        </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="test-run-sessions">
                 <span class="bi bi-play-circle-nav-menu" aria-hidden="true"></span> Test Execution
             </NavLink>
+        </div>
+
+        <!-- ADMINISTRATION -->
+        <div class="nav-section-header">
+            <i class="bi bi-gear me-2"></i>
+            ADMINISTRATION
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="users">

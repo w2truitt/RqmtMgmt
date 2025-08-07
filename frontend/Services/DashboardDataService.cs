@@ -4,13 +4,19 @@ using RqmtMgmtShared;
 namespace frontend.Services
 {
     /// <summary>
-    /// Frontend service for dashboard data operations
+    /// Frontend data service for dashboard operations providing system statistics and activity feeds.
+    /// Implements IDashboardService with HTTP client-based communication to the backend API and comprehensive error handling.
     /// </summary>
     public class DashboardDataService : IDashboardService
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
 
+        /// <summary>
+        /// Initializes a new instance of the DashboardDataService with the specified HTTP client.
+        /// Configures JSON serialization options for case-insensitive property matching and enum conversion.
+        /// </summary>
+        /// <param name="httpClient">The HTTP client for making API requests.</param>
         public DashboardDataService(HttpClient httpClient)
         {
             _httpClient = httpClient;
@@ -21,6 +27,11 @@ namespace frontend.Services
             };
         }
 
+        /// <summary>
+        /// Retrieves dashboard statistics from the backend API including requirement, test case, test suite, and test plan metrics.
+        /// Provides comprehensive error handling and returns empty statistics on failure.
+        /// </summary>
+        /// <returns>Dashboard statistics with system counts and breakdowns, or empty statistics if the request fails.</returns>
         public async Task<DashboardStatisticsDto> GetStatisticsAsync()
         {
             try
@@ -42,12 +53,18 @@ namespace frontend.Services
             }
             catch (Exception ex)
             {
-                // Log error
+                // Log error and return fallback data
                 Console.WriteLine($"Error getting dashboard statistics: {ex.Message}");
                 return new DashboardStatisticsDto(); // Return empty statistics
             }
         }
 
+        /// <summary>
+        /// Retrieves recent system activities from the backend API for the dashboard activity feed.
+        /// Includes activities from requirements, test cases, test suites, and test plans with error handling.
+        /// </summary>
+        /// <param name="count">The maximum number of recent activities to return (default: 5).</param>
+        /// <returns>A list of recent activities sorted by most recent first, or an empty list if the request fails.</returns>
         public async Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5)
         {
             try
@@ -69,7 +86,7 @@ namespace frontend.Services
             }
             catch (Exception ex)
             {
-                // Log error
+                // Log error and return fallback data
                 Console.WriteLine($"Error getting recent activity: {ex.Message}");
                 return new List<RecentActivityDto>(); // Return empty list
             }

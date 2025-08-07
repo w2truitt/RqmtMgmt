@@ -29,7 +29,7 @@ public class RequirementsWorkflowTests : E2ETestBase
     }
     
     [Fact]
-    public async Task CanCreateRequirement_WhenFrontendIsAvailable()
+    public Task CanCreateRequirement_WhenFrontendIsAvailable()
     {
         // Arrange
         var testId = CreateTestId();
@@ -61,10 +61,12 @@ public class RequirementsWorkflowTests : E2ETestBase
         Assert.Contains(testId, testRequirement.Title);
         Assert.Equal(RqmtMgmtShared.RequirementType.CRS, testRequirement.Type);
         Assert.Equal(RqmtMgmtShared.RequirementStatus.Draft, testRequirement.Status);
+        
+        return Task.CompletedTask;
     }
     
     [Fact]
-    public async Task CanSearchRequirements_WhenFrontendIsAvailable()
+    public Task CanSearchRequirements_WhenFrontendIsAvailable()
     {
         // Arrange
         var testId = CreateTestId();
@@ -83,5 +85,7 @@ public class RequirementsWorkflowTests : E2ETestBase
         
         // For now, just verify page object setup
         Assert.NotNull(requirementsPage);
+        
+        return Task.CompletedTask;
     }
 }

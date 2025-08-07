@@ -5,17 +5,27 @@ using backend.Data;
 namespace backend.Services
 {
     /// <summary>
-    /// Enhanced dashboard service with optimized statistics queries
+    /// Enhanced dashboard service implementation with optimized statistics queries and comprehensive metrics.
+    /// Provides advanced dashboard analytics with performance-optimized database queries and detailed breakdowns.
     /// </summary>
     public class EnhancedDashboardService : IEnhancedDashboardService
     {
         private readonly RqmtMgmtDbContext _context;
 
+        /// <summary>
+        /// Initializes a new instance of the EnhancedDashboardService with the specified database context.
+        /// </summary>
+        /// <param name="context">The database context for dashboard data operations.</param>
         public EnhancedDashboardService(RqmtMgmtDbContext context)
         {
             _context = context;
         }
 
+        /// <summary>
+        /// Retrieves comprehensive dashboard statistics combining all system metrics.
+        /// Executes queries sequentially to avoid DbContext threading issues while providing complete system overview.
+        /// </summary>
+        /// <returns>A DashboardStatsDto containing all dashboard metrics and recent activities.</returns>
         public async Task<DashboardStatsDto> GetDashboardStatsAsync()
         {
             // Execute all queries sequentially to avoid DbContext threading issues
@@ -35,9 +45,14 @@ namespace backend.Services
             return dashboardStats;
         }
 
+        /// <summary>
+        /// Retrieves detailed requirement statistics with optimized grouping queries.
+        /// Provides comprehensive breakdowns by status and type with efficient single-query execution.
+        /// </summary>
+        /// <returns>RequirementStatsDto with detailed requirement metrics and distributions.</returns>
         public async Task<RequirementStatsDto> GetRequirementStatsAsync()
         {
-            // Optimized single query for requirement statistics
+            // Optimized single query for requirement statistics with grouping
             var requirementStats = await _context.Requirements
                 .GroupBy(r => new { r.Status, r.Type })
                 .Select(g => new { g.Key.Status, g.Key.Type, Count = g.Count() })
@@ -48,13 +63,14 @@ namespace backend.Services
                 TotalRequirements = requirementStats.Sum(s => s.Count)
             };
 
-            // Group by status
+            // Group by status for detailed breakdown
             var statusGroups = requirementStats.GroupBy(s => s.Status);
             foreach (var group in statusGroups)
             {
                 var count = group.Sum(g => g.Count);
                 stats.ByStatus[group.Key] = count;
 
+                // Map to individual status properties
                 switch (group.Key)
                 {
                     case RequirementStatus.Draft:
@@ -72,7 +88,7 @@ namespace backend.Services
                 }
             }
 
-            // Group by type
+            // Group by type for type distribution
             var typeGroups = requirementStats.GroupBy(s => s.Type);
             foreach (var group in typeGroups)
             {
@@ -82,6 +98,11 @@ namespace backend.Services
             return stats;
         }
 
+        /// <summary>
+        /// Retrieves test management statistics including coverage calculations.
+        /// Executes sequential queries to gather comprehensive test organization metrics.
+        /// </summary>
+        /// <returns>TestManagementStatsDto with test suite, plan, case metrics and coverage percentage.</returns>
         public async Task<TestManagementStatsDto> GetTestManagementStatsAsync()
         {
             // Execute queries sequentially to avoid DbContext threading issues
@@ -101,6 +122,7 @@ namespace backend.Services
                 TotalTestCases = testCaseCount,
                 TestCasesWithSteps = testCasesWithSteps,
                 RequirementTestCaseLinks = requirementTestCaseLinks,
+                // Calculate test coverage percentage based on requirement-test case links
                 TestCoveragePercentage = totalRequirements > 0 
                     ? Math.Round((double)requirementTestCaseLinks / totalRequirements * 100, 2)
                     : 0
@@ -109,9 +131,14 @@ namespace backend.Services
             return stats;
         }
 
+        /// <summary>
+        /// Retrieves test execution statistics with optimized grouping and pass rate calculations.
+        /// Provides comprehensive execution metrics including pass rates and execution trends.
+        /// </summary>
+        /// <returns>TestExecutionStatsDto with execution results, pass rates, and timing information.</returns>
         public async Task<TestExecutionStatsDto> GetTestExecutionStatsAsync()
         {
-            // Optimized queries for test execution statistics
+            // Optimized queries for test execution statistics with grouping
             var testRunSessionStats = await _context.TestRunSessions
                 .GroupBy(trs => trs.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
@@ -128,6 +155,7 @@ namespace backend.Services
                 .Select(tce => tce.ExecutedAt)
                 .FirstOrDefaultAsync();
 
+            // Calculate session statistics
             var totalTestRuns = testRunSessionStats.Sum(s => s.Count);
             var activeTestRuns = testRunSessionStats
                 .Where(s => s.Status == TestRunStatus.InProgress || s.Status == TestRunStatus.Paused)
@@ -136,6 +164,7 @@ namespace backend.Services
                 .Where(s => s.Status == TestRunStatus.Completed)
                 .Sum(s => s.Count);
 
+            // Calculate execution statistics
             var totalExecutions = testCaseExecutionStats.Sum(s => s.Count);
             var passedExecutions = testCaseExecutionStats
                 .Where(s => s.Result == TestResult.Passed)
@@ -160,6 +189,7 @@ namespace backend.Services
                 FailedExecutions = failedExecutions,
                 BlockedExecutions = blockedExecutions,
                 NotRunExecutions = notRunExecutions,
+                // Calculate pass rate percentage
                 PassRate = totalExecutions > 0 
                     ? Math.Round((double)passedExecutions / totalExecutions * 100, 2)
                     : 0,
@@ -169,11 +199,17 @@ namespace backend.Services
             return stats;
         }
 
+        /// <summary>
+        /// Retrieves recent system activities including requirements, test executions, and test run sessions.
+        /// Combines multiple activity types and sorts by most recent for comprehensive activity feed.
+        /// </summary>
+        /// <param name="count">The maximum number of recent activities to return (default: 5).</param>
+        /// <returns>A list of recent activities across all entity types sorted by most recent first.</returns>
         public async Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5)
         {
             var activities = new List<RecentActivityDto>();
 
-            // Get recent requirements (created or updated)
+            // Get recent requirements (created or updated) with creator information
             var recentRequirements = await _context.Requirements
                 .Include(r => r.Creator)
                 .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
@@ -193,7 +229,7 @@ namespace backend.Services
 
             activities.AddRange(recentRequirements);
 
-            // Get recent test case executions
+            // Get recent test case executions with test case and executor information
             var recentExecutions = await _context.TestCaseExecutions
                 .Include(tce => tce.TestCase)
                 .Include(tce => tce.Executor)
@@ -215,7 +251,7 @@ namespace backend.Services
 
             activities.AddRange(recentExecutions);
 
-            // Get recent test run sessions
+            // Get recent test run sessions with executor and test plan information
             var recentTestRuns = await _context.TestRunSessions
                 .Include(trs => trs.Executor)
                 .Include(trs => trs.TestPlan)

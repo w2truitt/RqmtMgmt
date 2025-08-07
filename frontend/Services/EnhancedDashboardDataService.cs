@@ -4,13 +4,19 @@ using RqmtMgmtShared;
 namespace frontend.Services
 {
     /// <summary>
-    /// Frontend service for enhanced dashboard data operations
+    /// Frontend data service for enhanced dashboard operations providing advanced metrics and analytics.
+    /// Implements IEnhancedDashboardService with HTTP client-based communication to the backend API and comprehensive error handling.
     /// </summary>
     public class EnhancedDashboardDataService : IEnhancedDashboardService
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerOptions _jsonOptions;
 
+        /// <summary>
+        /// Initializes a new instance of the EnhancedDashboardDataService with the specified HTTP client.
+        /// Configures JSON serialization options for case-insensitive property matching and enum conversion.
+        /// </summary>
+        /// <param name="httpClient">The HTTP client for making API requests.</param>
         public EnhancedDashboardDataService(HttpClient httpClient)
         {
             _httpClient = httpClient;
@@ -21,6 +27,11 @@ namespace frontend.Services
             };
         }
 
+        /// <summary>
+        /// Retrieves comprehensive enhanced dashboard statistics from the backend API.
+        /// Combines requirement, test management, and execution metrics with recent activities.
+        /// </summary>
+        /// <returns>DashboardStatsDto with complete system metrics, or empty statistics if the request fails.</returns>
         public async Task<DashboardStatsDto> GetDashboardStatsAsync()
         {
             try
@@ -46,6 +57,11 @@ namespace frontend.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves detailed requirement statistics from the backend API with type and status breakdowns.
+        /// Provides comprehensive requirement metrics including distributions and totals.
+        /// </summary>
+        /// <returns>RequirementStatsDto with detailed requirement metrics, or empty statistics if the request fails.</returns>
         public async Task<RequirementStatsDto> GetRequirementStatsAsync()
         {
             try
@@ -71,6 +87,11 @@ namespace frontend.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves test management statistics from the backend API including coverage metrics.
+        /// Provides comprehensive test organization metrics and coverage calculations.
+        /// </summary>
+        /// <returns>TestManagementStatsDto with test suite, plan, and coverage metrics, or empty statistics if the request fails.</returns>
         public async Task<TestManagementStatsDto> GetTestManagementStatsAsync()
         {
             try
@@ -96,6 +117,11 @@ namespace frontend.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves test execution statistics from the backend API including pass rates and execution trends.
+        /// Provides comprehensive execution metrics with results analysis and timing information.
+        /// </summary>
+        /// <returns>TestExecutionStatsDto with execution results and pass rate analysis, or empty statistics if the request fails.</returns>
         public async Task<TestExecutionStatsDto> GetTestExecutionStatsAsync()
         {
             try
@@ -121,6 +147,12 @@ namespace frontend.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves recent system activities from the backend API for enhanced dashboard activity feed.
+        /// Includes comprehensive activity tracking across requirements, test executions, and test run sessions.
+        /// </summary>
+        /// <param name="count">The maximum number of recent activities to return (default: 5).</param>
+        /// <returns>A list of recent activities with enhanced detail, or an empty list if the request fails.</returns>
         public async Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5)
         {
             try

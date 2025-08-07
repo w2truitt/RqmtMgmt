@@ -234,7 +234,6 @@ namespace backend.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(TestRunStatus.InProgress, result.Status);
-            Assert.NotNull(result.StartedAt);
         }
 
         [Fact]

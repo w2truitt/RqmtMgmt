@@ -5,22 +5,32 @@ using backend.Data;
 namespace backend.Services
 {
     /// <summary>
-    /// Service for dashboard statistics and recent activity
+    /// Service implementation for dashboard statistics and recent activity tracking.
+    /// Provides aggregated data for dashboard display including requirement stats, test metrics, and recent activities.
     /// </summary>
     public class DashboardService : IDashboardService
     {
         private readonly RqmtMgmtDbContext _context;
 
+        /// <summary>
+        /// Initializes a new instance of the DashboardService with the specified database context.
+        /// </summary>
+        /// <param name="context">The database context for dashboard data operations.</param>
         public DashboardService(RqmtMgmtDbContext context)
         {
             _context = context;
         }
 
+        /// <summary>
+        /// Retrieves comprehensive dashboard statistics including requirement, test suite, test case, and test plan metrics.
+        /// Aggregates data from multiple entities to provide a complete system overview.
+        /// </summary>
+        /// <returns>A DashboardStatisticsDto containing all system metrics and counts.</returns>
         public async Task<DashboardStatisticsDto> GetStatisticsAsync()
         {
             var statistics = new DashboardStatisticsDto();
 
-            // Get requirement statistics
+            // Get requirement statistics grouped by status for detailed breakdown
             var requirementStats = await _context.Requirements
                 .GroupBy(r => r.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
@@ -60,11 +70,17 @@ namespace backend.Services
             return statistics;
         }
 
+        /// <summary>
+        /// Retrieves recent system activities across all entity types for dashboard activity feed.
+        /// Combines activities from requirements, test cases, test suites, and test plans to provide a unified view.
+        /// </summary>
+        /// <param name="count">The maximum number of recent activities to return (default: 5).</param>
+        /// <returns>A list of recent activities sorted by most recent first.</returns>
         public async Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5)
         {
             var activities = new List<RecentActivityDto>();
 
-            // Get recent requirements (created or updated)
+            // Get recent requirements (created or updated) with creator information
             var recentRequirements = await _context.Requirements
                 .Include(r => r.Creator)
                 .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
@@ -84,7 +100,7 @@ namespace backend.Services
 
             activities.AddRange(recentRequirements);
 
-            // Get recent test cases
+            // Get recent test cases with creator information
             var recentTestCases = await _context.TestCases
                 .Include(tc => tc.Creator)
                 .OrderByDescending(tc => tc.CreatedAt)
@@ -104,7 +120,7 @@ namespace backend.Services
 
             activities.AddRange(recentTestCases);
 
-            // Get recent test suites
+            // Get recent test suites with creator information
             var recentTestSuites = await _context.TestSuites
                 .Include(ts => ts.Creator)
                 .OrderByDescending(ts => ts.CreatedAt)
@@ -124,7 +140,7 @@ namespace backend.Services
 
             activities.AddRange(recentTestSuites);
 
-            // Get recent test plans
+            // Get recent test plans with creator information
             var recentTestPlans = await _context.TestPlans
                 .Include(tp => tp.Creator)
                 .OrderByDescending(tp => tp.CreatedAt)
