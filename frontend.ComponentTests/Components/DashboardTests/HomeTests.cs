@@ -37,7 +37,7 @@ public class HomeTests : ComponentTestBase
         
         // Assert
         var dashboardCards = component.FindAll(".dashboard-card");
-        Assert.Equal(4, dashboardCards.Count);
+        Assert.Equal(5, dashboardCards.Count);
         
         // Check that all expected cards are present
         var cardTitles = dashboardCards.Select(card => card.QuerySelector("h3")?.TextContent).ToList();
@@ -45,6 +45,7 @@ public class HomeTests : ComponentTestBase
         Assert.Contains("Test Suites", cardTitles);
         Assert.Contains("Test Cases", cardTitles);
         Assert.Contains("Test Plans", cardTitles);
+        Assert.Contains("Test Execution", cardTitles);
     }
     
     [Fact]
@@ -206,7 +207,7 @@ public class HomeTests : ComponentTestBase
         
         // Assert
         var dashboardCards = component.FindAll(".dashboard-card");
-        Assert.Equal(4, dashboardCards.Count);
+        Assert.Equal(5, dashboardCards.Count);
         
         // Check that each card has quick action buttons
         foreach (var card in dashboardCards)

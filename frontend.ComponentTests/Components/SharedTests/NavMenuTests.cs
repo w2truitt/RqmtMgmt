@@ -19,7 +19,7 @@ public class NavMenuTests : ComponentTestBase
         var component = RenderComponent<NavMenu>();
         
         // Assert
-        Assert.Contains("frontend", component.Markup); // Brand name
+        Assert.Contains("TestFlow Pro", component.Markup); // Brand name
         
         // Check all navigation links are present
         var navLinks = component.FindAll("a.nav-link");

@@ -17,8 +17,16 @@ namespace backend.Data
         /// <param name="includeTestData">Whether to include sample test data</param>
         public static async Task SeedAsync(RqmtMgmtDbContext context, bool includeTestData = false)
         {
-            // Apply any pending migrations (this will create the database if it doesn't exist)
-            await context.Database.MigrateAsync();
+            // Apply any pending migrations only for relational databases (not InMemory)
+            if (context.Database.IsRelational())
+            {
+                await context.Database.MigrateAsync();
+            }
+            else
+            {
+                // For InMemory databases, ensure the database is created
+                await context.Database.EnsureCreatedAsync();
+            }
 
             // Seed Roles
             if (!await context.Roles.AnyAsync())

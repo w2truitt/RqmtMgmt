@@ -1,10 +1,50 @@
 @page "/requirements"
 @using RqmtMgmtShared
 @inject RqmtMgmtShared.IRequirementService ReqService
+@inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
+@inject RqmtMgmtShared.ITestCaseService TestCaseService
 
 <PageTitle>Requirements</PageTitle>
 
 <h1>Requirements</h1>
+
+<!-- Search and Controls -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search requirements..." 
+                   @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+            <button class="btn btn-outline-secondary" @onclick="SearchRequirements">
+                <i class="fas fa-search"></i> Search
+            </button>
+            @if (!string.IsNullOrEmpty(searchTerm))
+            {
+                <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            }
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" @bind="sortBy" @bind:after="OnSortChanged">
+            <option value="">Sort by...</option>
+            <option value="title">Title</option>
+            <option value="status">Status</option>
+            <option value="type">Type</option>
+            <option value="createdat">Created Date</option>
+            <option value="updatedat">Updated Date</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" @bind="sortDescending" @bind:after="OnSortChanged" />
+            <label class="form-check-label">Descending</label>
+        </div>
+    </div>
+    <div class="col-md-1">
+        <button class="btn btn-success" @onclick="ShowAddForm">Add Requirement</button>
+    </div>
+</div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -19,13 +59,14 @@ else
 {
     @if (pagedResult.Items.Any())
     {
-        <table class="table">
+        <table class="table table-striped">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Title</th>
                     <th>Status</th>
                     <th>Type</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,6 +77,12 @@ else
                         <td>@req.Title</td>
                         <td>@req.Status</td>
                         <td>@req.Type</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" @onclick="() => ShowLinkModal(req.Id)">Link Test Cases</button>
+                            <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(req.Id)">Details</button>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -58,10 +105,134 @@ else
     }
 }
 
+@if (showLinkModal)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Link Test Cases to Requirement</h5>
+                    <button type="button" class="close" @onclick="HideLinkModal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @foreach (var tc in allTestCases)
+                    {
+                        <div>
+                            <input type="checkbox"
+                                   checked="@linkedTestCaseIds.Contains(tc.Id)"
+                                   @onchange="e => ToggleLink(tc.Id, (e.Value as bool?) == true)" /> @tc.Title
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideLinkModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@if (showDetails && selectedRequirement != null)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Requirement Details</h5>
+                    <button type="button" class="close" @onclick="HideDetails" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p><b>Title:</b> @selectedRequirement.Title</p>
+                    <p><b>Description:</b> @selectedRequirement.Description</p>
+                    <p><b>Status:</b> @selectedRequirement.Status</p>
+                    <h6>Version History</h6>
+                    <ul>
+                        @foreach (var v in versionHistory)
+                        {
+                            <li>Version @v.Version: @v.Title (@v.ModifiedAt)</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@((editRequirement == null ? "Add" : "Edit")) Requirement</h5>
+                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input class="form-control" @bind="formModel.Title" />
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea class="form-control" @bind="formModel.Description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" @bind="formModel.Status">
+                            <option value="@RequirementStatus.Draft">Draft</option>
+                            <option value="@RequirementStatus.Approved">Approved</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select class="form-control" @bind="formModel.Type">
+                            <option value="@RequirementType.CRS">Customer Requirement</option>
+                            <option value="@RequirementType.PRS">Product Requirement</option>
+                            <option value="@RequirementType.SRS">Software Requirement</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="SaveRequirement">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
+}
+
 @code {
     private PagedResult<RequirementDto>? pagedResult;
     private PaginationParameters paginationParams = new() { PageNumber = 1, PageSize = 20 };
     private string? errorMessage;
+
+    RequirementDto formModel = new() { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
+    RequirementDto? editRequirement = null;
+    bool showForm = false;
+
+    RequirementDto? selectedRequirement = null;
+    List<RequirementVersionDto> versionHistory = new();
+    bool showDetails = false;
+
+    // Linking logic
+    bool showLinkModal = false;
+    int linkRequirementId;
+    List<TestCaseDto> allTestCases = new();
+    HashSet<int> linkedTestCaseIds = new();
+
+    // Search and sort parameters
+    string searchTerm = string.Empty;
+    string sortBy = string.Empty;
+    bool sortDescending = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,6 +244,10 @@ else
         errorMessage = null; // Clear previous errors
         try
         {
+            paginationParams.SearchTerm = searchTerm;
+            paginationParams.SortBy = sortBy;
+            paginationParams.SortDescending = sortDescending;
+            
             pagedResult = await ReqService.GetPagedAsync(paginationParams);
         }
         catch (Exception ex)
@@ -98,6 +273,126 @@ else
         {
             paginationParams.PageNumber++;
             await LoadData();
+        }
+    }
+
+    async Task SearchRequirements()
+    {
+        paginationParams.PageNumber = 1; // Reset to first page when searching
+        await LoadData();
+    }
+
+    async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        paginationParams.PageNumber = 1;
+        await LoadData();
+    }
+
+    async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchRequirements();
+        }
+    }
+
+    async Task OnSortChanged()
+    {
+        paginationParams.PageNumber = 1; // Reset to first page when sorting
+        await LoadData();
+    }
+
+    async Task DeleteRequirement(RequirementDto req)
+    {
+        if (await ReqService.DeleteAsync(req.Id))
+            await LoadData();
+    }
+
+    void ShowAddForm()
+    {
+        formModel = new RequirementDto { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
+        editRequirement = null;
+        showForm = true;
+    }
+
+    void HideForm()
+    {
+        showForm = false;
+    }
+
+    void EditRequirement(RequirementDto req)
+    {
+        formModel = new RequirementDto
+        {
+            Id = req.Id,
+            Type = req.Type,
+            Title = req.Title,
+            Description = req.Description,
+            ParentId = req.ParentId,
+            Status = req.Status,
+            Version = req.Version,
+            CreatedBy = req.CreatedBy,
+            CreatedAt = req.CreatedAt,
+            UpdatedAt = req.UpdatedAt
+        };
+        editRequirement = req;
+        showForm = true;
+    }
+
+    async Task SaveRequirement()
+    {
+        if (editRequirement != null)
+        {
+            await ReqService.UpdateAsync(formModel);
+        }
+        else
+        {
+            await ReqService.CreateAsync(formModel);
+        }
+        await LoadData();
+        showForm = false;
+    }
+
+    async Task ShowDetails(int id)
+    {
+        selectedRequirement = await ReqService.GetByIdAsync(id);
+        versionHistory = await ReqService.GetVersionsAsync(id);
+        showDetails = true;
+    }
+
+    void HideDetails()
+    {
+        showDetails = false;
+        selectedRequirement = null;
+        versionHistory = new();
+    }
+
+    async Task ShowLinkModal(int requirementId)
+    {
+        showLinkModal = true;
+        linkRequirementId = requirementId;
+        allTestCases = await TestCaseService.GetAllAsync();
+        var links = await LinkService.GetLinksForRequirement(requirementId);
+        linkedTestCaseIds = links.Select(l => l.TestCaseId).ToHashSet();
+    }
+
+    void HideLinkModal()
+    {
+        showLinkModal = false;
+    }
+
+    async Task ToggleLink(int testCaseId, bool linked)
+    {
+        if (linked)
+        {
+            await LinkService.AddLink(linkRequirementId, testCaseId);
+            linkedTestCaseIds.Add(testCaseId);
+        }
+        else
+        {
+            await LinkService.RemoveLink(linkRequirementId, testCaseId);
+            linkedTestCaseIds.Remove(testCaseId);
         }
     }
 }

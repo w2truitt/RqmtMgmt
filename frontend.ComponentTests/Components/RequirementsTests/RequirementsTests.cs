@@ -24,14 +24,18 @@ public class RequirementsTests : ComponentTestBase
         
         // Assert
         Assert.Contains("Requirements", component.Markup);
-        Assert.Contains("<h3>Requirements</h3>", component.Markup);
+        Assert.Contains("<h1>Requirements</h1>", component.Markup);
     }
     
     [Fact]
     public void Requirements_RendersTable_WithCorrectHeaders()
     {
         // Arrange
-        SetupMockServices();
+        var mockRequirements = new List<RequirementDto>
+        {
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS }
+        };
+        SetupMockServices(mockRequirements);
         
         // Act
         var component = RenderComponent<Requirements>();
@@ -41,11 +45,12 @@ public class RequirementsTests : ComponentTestBase
         Assert.NotNull(table);
         
         var headers = table.QuerySelectorAll("th");
-        Assert.Equal(4, headers.Length);
+        Assert.Equal(5, headers.Length);
         Assert.Equal("ID", headers[0].TextContent);
         Assert.Equal("Title", headers[1].TextContent);
         Assert.Equal("Status", headers[2].TextContent);
-        Assert.Equal("Actions", headers[3].TextContent);
+        Assert.Equal("Type", headers[3].TextContent);
+        Assert.Equal("Actions", headers[4].TextContent);
     }
     
     [Fact]
@@ -179,7 +184,14 @@ public class RequirementsTests : ComponentTestBase
         };
         
         var mockReqService = GetMockService<IRequirementService>();
-        mockReqService.Setup(s => s.GetAllAsync()).ReturnsAsync(mockRequirements);
+        var pagedResult = new PagedResult<RequirementDto>
+        {
+            Items = mockRequirements,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalItems = mockRequirements.Count
+        };
+        mockReqService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(pagedResult);
         mockReqService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(mockRequirements[0]);
         mockReqService.Setup(s => s.GetVersionsAsync(1)).ReturnsAsync(new List<RequirementVersionDto>());
         
@@ -216,7 +228,14 @@ public class RequirementsTests : ComponentTestBase
         };
         
         var mockReqService = GetMockService<IRequirementService>();
-        mockReqService.Setup(s => s.GetAllAsync()).ReturnsAsync(mockRequirements);
+        var pagedResult = new PagedResult<RequirementDto>
+        {
+            Items = mockRequirements,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalItems = mockRequirements.Count
+        };
+        mockReqService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(pagedResult);
 
         var mockTestCaseService = GetMockService<ITestCaseService>();
         mockTestCaseService.Setup(s => s.GetAllAsync()).ReturnsAsync(mockTestCases);
@@ -271,7 +290,14 @@ public class RequirementsTests : ComponentTestBase
         };
         
         var mockReqService = GetMockService<IRequirementService>();
-        mockReqService.Setup(s => s.GetAllAsync()).ReturnsAsync(mockRequirements);
+        var pagedResult = new PagedResult<RequirementDto>
+        {
+            Items = mockRequirements,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalItems = mockRequirements.Count
+        };
+        mockReqService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(pagedResult);
         mockReqService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
 
         SetupOtherMockServices();
@@ -287,7 +313,7 @@ public class RequirementsTests : ComponentTestBase
         
         // Assert
         mockReqService.Verify(s => s.DeleteAsync(1), Times.Once);
-        mockReqService.Verify(s => s.GetAllAsync(), Times.AtLeast(2)); // Initial load + after delete
+        mockReqService.Verify(s => s.GetPagedAsync(It.IsAny<PaginationParameters>()), Times.AtLeast(2)); // Initial load + after delete
     }
     
     private void SetupMockServices(List<RequirementDto>? requirements = null)
@@ -295,7 +321,14 @@ public class RequirementsTests : ComponentTestBase
         requirements ??= new List<RequirementDto>();
         
         var mockReqService = GetMockService<IRequirementService>();
-        mockReqService.Setup(s => s.GetAllAsync()).ReturnsAsync(requirements);
+        var pagedResult = new PagedResult<RequirementDto>
+        {
+            Items = requirements,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalItems = requirements.Count
+        };
+        mockReqService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(pagedResult);
         
         SetupOtherMockServices();
     }
