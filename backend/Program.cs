@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Main program class for the Requirements Management System backend API.
@@ -85,25 +86,8 @@ public class Program
 
         var app = builder.Build();
 
-        // Seed the database with initial data in development environment
-        if (app.Environment.IsDevelopment())
-        {
-            using (var scope = app.Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
-                await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
-            }
-        }
-
-        // Seed the database with test data in testing environment
-        if (app.Environment.IsEnvironment("Testing"))
-        {
-            using (var scope = app.Services.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
-                await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
-            }
-        }
+        // Initialize database with retry logic for Docker environments
+        await InitializeDatabaseWithRetryAsync(app);
 
         // Configure middleware pipeline based on environment
         if (app.Environment.IsDevelopment())
@@ -139,6 +123,21 @@ public class Program
 
         app.MapControllers();
         
+        // Health check endpoint for Docker container monitoring
+        app.MapGet("/health", async (RqmtMgmtDbContext context) =>
+        {
+            try
+            {
+                // Test database connectivity
+                await context.Database.CanConnectAsync();
+                return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(detail: ex.Message, statusCode: 503);
+            }
+        });
+        
         // Global error handling endpoint
         app.Map("/error", (HttpContext context) =>
         {
@@ -146,5 +145,69 @@ public class Program
         });
 
         await app.RunAsync();
+    }
+
+    /// <summary>
+    /// Initializes the database with retry logic to handle Docker container startup timing issues.
+    /// </summary>
+    /// <param name="app">The web application instance</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    private static async Task InitializeDatabaseWithRetryAsync(WebApplication app)
+    {
+        const int maxRetries = 10;
+        const int delayMs = 3000; // 3 seconds between retries
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                using var scope = app.Services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+                logger.LogInformation("Database initialization attempt {Attempt}/{MaxRetries}", attempt, maxRetries);
+
+                // Test database connectivity first
+                await context.Database.CanConnectAsync();
+                logger.LogInformation("Database connection established successfully");
+
+                // Apply migrations and seed data based on environment
+                if (app.Environment.IsDevelopment())
+                {
+                    await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+                    logger.LogInformation("Database seeded with development data successfully");
+                }
+                else if (app.Environment.IsEnvironment("Testing"))
+                {
+                    await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+                    logger.LogInformation("Database seeded with test data successfully");
+                }
+                else
+                {
+                    // Production - only apply migrations, no test data
+                    await context.Database.MigrateAsync();
+                    logger.LogInformation("Database migrations applied successfully");
+                }
+
+                logger.LogInformation("Database initialization completed successfully");
+                return; // Success - exit retry loop
+            }
+            catch (Exception ex)
+            {
+                using var scope = app.Services.CreateScope();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                
+                if (attempt == maxRetries)
+                {
+                    logger.LogCritical(ex, "Database initialization failed after {MaxRetries} attempts. Application will exit.", maxRetries);
+                    throw; // Re-throw on final attempt
+                }
+
+                logger.LogWarning(ex, "Database initialization attempt {Attempt}/{MaxRetries} failed. Retrying in {DelayMs}ms...", 
+                    attempt, maxRetries, delayMs);
+                
+                await Task.Delay(delayMs);
+            }
+        }
     }
 }

@@ -1,242 +1,103 @@
 @page "/requirements"
 @using RqmtMgmtShared
 @inject RqmtMgmtShared.IRequirementService ReqService
-@inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
-@inject RqmtMgmtShared.ITestCaseService TestCaseService
 
-<h3>Requirements</h3>
-<table class="table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var req in requirements)
-        {
-            <tr>
-                <td>@req.Id</td>
-                <td>@req.Title</td>
-                <td>@req.Status</td>
-                <td>
-                    <button class="btn btn-sm btn-secondary" @onclick="() => ShowLinkModal(req.Id)">Link Test Cases</button>
-                    <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(req.Id)">Details</button>
-                    <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
-                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-<button class="btn btn-success" @onclick="ShowAddForm">Add Requirement</button>
+<PageTitle>Requirements</PageTitle>
 
-@if (showLinkModal)
+<h1>Requirements</h1>
+
+@if (!string.IsNullOrEmpty(errorMessage))
 {
-    <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Link Test Cases to Requirement</h5>
-                    <button type="button" class="close" @onclick="HideLinkModal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    @foreach (var tc in allTestCases)
-                    {
-                        <div>
-                            <input type="checkbox"
-                                   checked="@linkedTestCaseIds.Contains(tc.Id)"
-                                   @onchange="e => ToggleLink(tc.Id, (e.Value as bool?) == true)" /> @tc.Title
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideLinkModal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop show"></div>
+    <div class="alert alert-danger">@errorMessage</div>
 }
 
-@if (showDetails && selectedRequirement != null)
+@if (pagedResult == null)
 {
-    <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Requirement Details</h5>
-                    <button type="button" class="close" @onclick="HideDetails" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p><b>Title:</b> @selectedRequirement.Title</p>
-                    <p><b>Description:</b> @selectedRequirement.Description</p>
-                    <p><b>Status:</b> @selectedRequirement.Status</p>
-                    <h6>Version History</h6>
-                    <ul>
-                        @foreach (var v in versionHistory)
-                        {
-                            <li>Version @v.Version: @v.Title (@v.ModifiedAt)</li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop show"></div>
+    <p><em>Loading requirements...</em></p>
 }
-
-@if (showForm)
+else
 {
-    <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@((editRequirement == null ? "Add" : "Edit")) Requirement</h5>
-                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input class="form-control" @bind="formModel.Title" />
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select class="form-control" @bind="formModel.Status">
-                            <option value="@RequirementStatus.Draft">Draft</option>
-                            <option value="@RequirementStatus.Approved">Approved</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="SaveRequirement">Save</button>
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
-                </div>
+    @if (pagedResult.Items.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var req in pagedResult.Items)
+                {
+                    <tr>
+                        <td>@req.Id</td>
+                        <td>@req.Title</td>
+                        <td>@req.Status</td>
+                        <td>@req.Type</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <button class="btn btn-primary" @onclick="PreviousPage" disabled="@(!pagedResult.HasPreviousPage)">Previous</button>
+                <span class="mx-3">Page @pagedResult.PageNumber of @pagedResult.TotalPages</span>
+                <button class="btn btn-primary" @onclick="NextPage" disabled="@(!pagedResult.HasNextPage)">Next</button>
+            </div>
+            <div class="text-muted">
+                Showing @pagedResult.FirstItemIndex - @pagedResult.LastItemIndex of @pagedResult.TotalItems requirements
             </div>
         </div>
-    </div>
-    <div class="modal-backdrop show"></div>
+    }
+    else
+    {
+        <p><em>No requirements found.</em></p>
+    }
 }
 
 @code {
-    List<RequirementDto> requirements = new();
-    RequirementDto formModel = new() { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
-    RequirementDto? editRequirement = null;
-    bool showForm = false;
-
-    RequirementDto? selectedRequirement = null;
-    List<RequirementVersionDto> versionHistory = new();
-    bool showDetails = false;
-
-    // Linking logic
-    bool showLinkModal = false;
-    int linkRequirementId;
-    List<TestCaseDto> allTestCases = new();
-    HashSet<int> linkedTestCaseIds = new();
+    private PagedResult<RequirementDto>? pagedResult;
+    private PaginationParameters paginationParams = new() { PageNumber = 1, PageSize = 20 };
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        requirements = await ReqService.GetAllAsync();
+        await LoadData();
     }
 
-    async Task DeleteRequirement(RequirementDto req)
+    private async Task LoadData()
     {
-        if (await ReqService.DeleteAsync(req.Id))
-            requirements = await ReqService.GetAllAsync();
-    }
-
-    void ShowAddForm()
-    {
-        formModel = new RequirementDto { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
-        editRequirement = null;
-        showForm = true;
-    }
-
-    void HideForm()
-    {
-        showForm = false;
-    }
-
-    void EditRequirement(RequirementDto req)
-    {
-        formModel = new RequirementDto
+        errorMessage = null; // Clear previous errors
+        try
         {
-            Id = req.Id,
-            Type = req.Type,
-            Title = req.Title,
-            Description = req.Description,
-            ParentId = req.ParentId,
-            Status = req.Status,
-            Version = req.Version,
-            CreatedBy = req.CreatedBy,
-            CreatedAt = req.CreatedAt,
-            UpdatedAt = req.UpdatedAt
-        };
-        editRequirement = req;
-        showForm = true;
-    }
-
-    async Task SaveRequirement()
-    {
-        if (editRequirement != null)
-        {
-            await ReqService.UpdateAsync(formModel);
+            pagedResult = await ReqService.GetPagedAsync(paginationParams);
         }
-        else
+        catch (Exception ex)
         {
-            await ReqService.CreateAsync(formModel);
+            // In a real app, you'd use a proper logging framework
+            Console.Error.WriteLine($"Error loading requirements: {ex.Message}");
+            errorMessage = "Could not load requirements. Please try again later.";
         }
-        requirements = await ReqService.GetAllAsync();
-        showForm = false;
     }
 
-    async Task ShowDetails(int id)
+    private async Task PreviousPage()
     {
-        selectedRequirement = await ReqService.GetByIdAsync(id);
-        versionHistory = await ReqService.GetVersionsAsync(id);
-        showDetails = true;
-    }
-
-    void HideDetails()
-    {
-        showDetails = false;
-        selectedRequirement = null;
-        versionHistory = new();
-    }
-
-    async Task ShowLinkModal(int requirementId)
-    {
-        showLinkModal = true;
-        linkRequirementId = requirementId;
-        allTestCases = await TestCaseService.GetAllAsync();
-        var links = await LinkService.GetLinksForRequirement(requirementId);
-        linkedTestCaseIds = links.Select(l => l.TestCaseId).ToHashSet();
-    }
-
-    void HideLinkModal()
-    {
-        showLinkModal = false;
-    }
-
-    async Task ToggleLink(int testCaseId, bool linked)
-    {
-        if (linked)
+        if (pagedResult?.HasPreviousPage == true)
         {
-            await LinkService.AddLink(linkRequirementId, testCaseId);
-            linkedTestCaseIds.Add(testCaseId);
+            paginationParams.PageNumber--;
+            await LoadData();
         }
-        else
+    }
+
+    private async Task NextPage()
+    {
+        if (pagedResult?.HasNextPage == true)
         {
-            await LinkService.RemoveLink(linkRequirementId, testCaseId);
-            linkedTestCaseIds.Remove(testCaseId);
+            paginationParams.PageNumber++;
+            await LoadData();
         }
     }
 }

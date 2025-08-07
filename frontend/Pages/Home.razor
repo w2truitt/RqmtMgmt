@@ -102,6 +102,28 @@ else
                 <a href="/testplans/new" class="quick-action-btn">Create New</a>
             </div>
         </div>
+
+        <div class="dashboard-card">
+            <h3>Test Execution</h3>
+            <div class="dashboard-card-content">
+                <div class="dashboard-stat">
+                    <span class="dashboard-stat-number">@totalTestRuns</span>
+                    <span class="dashboard-stat-label">Total Sessions</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-stat-number">@activeTestRuns</span>
+                    <span class="dashboard-stat-label">Active</span>
+                </div>
+                <div class="dashboard-stat">
+                    <span class="dashboard-stat-number">@completedTestRuns</span>
+                    <span class="dashboard-stat-label">Completed</span>
+                </div>
+            </div>
+            <div class="quick-actions">
+                <a href="/test-run-sessions" class="quick-action-btn">View Sessions</a>
+                <a href="/test-run-sessions" class="quick-action-btn">Start Testing</a>
+            </div>
+        </div>
     </div>
 
     <div class="dashboard-secondary">
@@ -159,6 +181,10 @@ else
     private double executionProgress = 0;
     private double coveragePercentage = 0;
     
+    private int totalTestRuns = 0;
+    private int activeTestRuns = 0;
+    private int completedTestRuns = 0;
+    
     // Recent activity
     private List<RecentActivityDto> recentActivities = new();
 
@@ -193,6 +219,11 @@ else
             testCasesCount = dashboardStats.TestManagement.TotalTestCases;
             testPlansCount = dashboardStats.TestManagement.TotalTestPlans;
             coveragePercentage = dashboardStats.TestManagement.TestCoveragePercentage;
+            
+            // Map test execution session statistics
+            totalTestRuns = dashboardStats.TestExecution.TotalTestRuns;
+            activeTestRuns = dashboardStats.TestExecution.ActiveTestRuns;
+            completedTestRuns = dashboardStats.TestExecution.CompletedTestRuns;
             
             // Map test execution statistics
             passedTests = dashboardStats.TestExecution.PassedExecutions;

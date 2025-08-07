@@ -6,6 +6,7 @@ namespace RqmtMgmtShared;
 public interface IRequirementService
 {
     Task<List<RequirementDto>> GetAllAsync();
+    Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters);
     Task<RequirementDto?> GetByIdAsync(int id);
     Task<RequirementDto?> CreateAsync(RequirementDto requirement);
     Task<bool> UpdateAsync(RequirementDto requirement);

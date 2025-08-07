@@ -37,6 +37,37 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Retrieves a paginated list of requirements with optional filtering and sorting.
+        /// </summary>
+        /// <param name="pageNumber">The page number to retrieve (1-based).</param>
+        /// <param name="pageSize">The number of items per page (1-100).</param>
+        /// <param name="searchTerm">Optional search term to filter by title or description.</param>
+        /// <param name="sortBy">Optional field to sort by (title, status, type, createdat, updatedat).</param>
+        /// <param name="sortDescending">Whether to sort in descending order.</param>
+        /// <returns>A paginated result containing requirements and pagination metadata.</returns>
+        /// <response code="200">Returns the paginated list of requirements.</response>
+        [HttpGet("paged")]
+        public async Task<ActionResult<PagedResult<RequirementDto>>> GetPaged(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            var parameters = new PaginationParameters
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                SearchTerm = searchTerm,
+                SortBy = sortBy,
+                SortDescending = sortDescending
+            };
+
+            var pagedResult = await _requirementService.GetPagedAsync(parameters);
+            return Ok(pagedResult);
+        }
+
+        /// <summary>
         /// Retrieves a specific requirement by its ID.
         /// </summary>
         /// <param name="id">The unique identifier of the requirement.</param>

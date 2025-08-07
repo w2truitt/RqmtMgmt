@@ -28,6 +28,28 @@ namespace frontend.Services
             => await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement") ?? new();
 
         /// <summary>
+        /// Retrieves a paginated list of requirements from the backend API.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing requirements and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var queryString = $"?pageNumber={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<RequirementDto>>($"/api/Requirement/paged{queryString}");
+            return result ?? new PagedResult<RequirementDto>();
+        }
+
+        /// <summary>
         /// Retrieves a specific requirement by its ID from the backend API.
         /// </summary>
         /// <param name="id">The unique identifier of the requirement.</param>

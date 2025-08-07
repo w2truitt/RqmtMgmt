@@ -19,42 +19,11 @@ namespace backend.Services
 
         public async Task<TestCaseExecutionDto?> ExecuteTestCaseAsync(TestCaseExecutionDto execution)
         {
-            var entity = new TestCaseExecution
-            {
-                TestRunSessionId = execution.TestRunSessionId,
-                TestCaseId = execution.TestCaseId,
-                OverallResult = execution.OverallResult,
-                ExecutedAt = execution.ExecutedAt ?? DateTime.UtcNow,
-                ExecutedBy = execution.ExecutedBy,
-                Notes = execution.Notes,
-                DefectId = execution.DefectId
-            };
-
+            var entity = CreateTestCaseExecutionEntity(execution);
             _context.TestCaseExecutions.Add(entity);
             await _context.SaveChangesAsync();
 
-            // If test step executions are provided, add them
-            if (execution.TestStepExecutions?.Any() == true)
-            {
-                foreach (var stepExecution in execution.TestStepExecutions)
-                {
-                    var stepEntity = new TestStepExecution
-                    {
-                        TestCaseExecutionId = entity.Id,
-                        TestStepId = stepExecution.TestStepId,
-                        StepOrder = stepExecution.StepOrder,
-                        Result = stepExecution.Result,
-                        ActualResult = stepExecution.ActualResult,
-                        Notes = stepExecution.Notes,
-                        ExecutedAt = stepExecution.ExecutedAt ?? DateTime.UtcNow
-                    };
-
-                    _context.TestStepExecutions.Add(stepEntity);
-                }
-
-                await _context.SaveChangesAsync();
-            }
-
+            await AddTestStepExecutionsIfProvidedAsync(execution, entity.Id);
             return await GetTestCaseExecutionByIdAsync(entity.Id);
         }
 
@@ -134,79 +103,163 @@ namespace backend.Services
 
         public async Task<TestExecutionStatsDto> GetExecutionStatsAsync()
         {
-            var stats = new TestExecutionStatsDto();
+            var testRunStats = await GetTestRunStatsAsync();
+            var executionStats = await GetTestCaseExecutionStatsAsync();
+            var lastExecutionDate = await GetLastExecutionDateAsync();
 
-            // Get test run session statistics
-            var testRunStats = await _context.TestRunSessions
-                .GroupBy(trs => trs.Status)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .ToListAsync();
-
-            stats.TotalTestRuns = testRunStats.Sum(s => s.Count);
-            stats.ActiveTestRuns = testRunStats.FirstOrDefault(s => s.Status == TestRunStatus.InProgress)?.Count ?? 0;
-            stats.CompletedTestRuns = testRunStats.FirstOrDefault(s => s.Status == TestRunStatus.Completed)?.Count ?? 0;
-
-            // Get test case execution statistics
-            var executionStats = await _context.TestCaseExecutions
-                .GroupBy(tce => tce.OverallResult)
-                .Select(g => new { Result = g.Key, Count = g.Count() })
-                .ToListAsync();
-
-            stats.TotalTestCaseExecutions = executionStats.Sum(s => s.Count);
-            stats.PassedExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.Passed)?.Count ?? 0;
-            stats.FailedExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.Failed)?.Count ?? 0;
-            stats.BlockedExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.Blocked)?.Count ?? 0;
-            stats.NotRunExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.NotRun)?.Count ?? 0;
-
-            // Calculate pass rate
-            if (stats.TotalTestCaseExecutions > 0)
-            {
-                stats.PassRate = (double)stats.PassedExecutions / stats.TotalTestCaseExecutions * 100;
-            }
-
-            // Get last execution date
-            stats.LastExecutionDate = await _context.TestCaseExecutions
-                .Where(tce => tce.ExecutedAt.HasValue)
-                .MaxAsync(tce => (DateTime?)tce.ExecutedAt);
-
-            return stats;
+            return BuildExecutionStats(testRunStats, executionStats, lastExecutionDate);
         }
 
         public async Task<TestExecutionStatsDto> GetExecutionStatsForSessionAsync(int testRunSessionId)
         {
-            var stats = new TestExecutionStatsDto();
+            var executionStats = await GetTestCaseExecutionStatsForSessionAsync(testRunSessionId);
+            var lastExecutionDate = await GetLastExecutionDateForSessionAsync(testRunSessionId);
 
-            // Get test case execution statistics for the specific session
-            var executionStats = await _context.TestCaseExecutions
-                .Where(tce => tce.TestRunSessionId == testRunSessionId)
-                .GroupBy(tce => tce.OverallResult)
-                .Select(g => new { Result = g.Key, Count = g.Count() })
-                .ToListAsync();
+            return BuildSessionExecutionStats(executionStats, lastExecutionDate);
+        }
 
-            stats.TotalTestCaseExecutions = executionStats.Sum(s => s.Count);
-            stats.PassedExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.Passed)?.Count ?? 0;
-            stats.FailedExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.Failed)?.Count ?? 0;
-            stats.BlockedExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.Blocked)?.Count ?? 0;
-            stats.NotRunExecutions = executionStats.FirstOrDefault(s => s.Result == TestResult.NotRun)?.Count ?? 0;
+        #region Private Helper Methods
 
-            // Calculate pass rate
-            if (stats.TotalTestCaseExecutions > 0)
+        private static TestCaseExecution CreateTestCaseExecutionEntity(TestCaseExecutionDto execution)
+        {
+            return new TestCaseExecution
             {
-                stats.PassRate = (double)stats.PassedExecutions / stats.TotalTestCaseExecutions * 100;
+                TestRunSessionId = execution.TestRunSessionId,
+                TestCaseId = execution.TestCaseId,
+                OverallResult = execution.OverallResult,
+                ExecutedAt = execution.ExecutedAt ?? DateTime.UtcNow,
+                ExecutedBy = execution.ExecutedBy,
+                Notes = execution.Notes,
+                DefectId = execution.DefectId
+            };
+        }
+
+        private async Task AddTestStepExecutionsIfProvidedAsync(TestCaseExecutionDto execution, int testCaseExecutionId)
+        {
+            if (execution.TestStepExecutions?.Any() != true)
+                return;
+
+            foreach (var stepExecution in execution.TestStepExecutions)
+            {
+                var stepEntity = new TestStepExecution
+                {
+                    TestCaseExecutionId = testCaseExecutionId,
+                    TestStepId = stepExecution.TestStepId,
+                    StepOrder = stepExecution.StepOrder,
+                    Result = stepExecution.Result,
+                    ActualResult = stepExecution.ActualResult,
+                    Notes = stepExecution.Notes,
+                    ExecutedAt = stepExecution.ExecutedAt ?? DateTime.UtcNow
+                };
+
+                _context.TestStepExecutions.Add(stepEntity);
             }
 
-            // Get last execution date for this session
-            stats.LastExecutionDate = await _context.TestCaseExecutions
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task<List<TestRunStatusCount>> GetTestRunStatsAsync()
+        {
+            return await _context.TestRunSessions
+                .GroupBy(trs => trs.Status)
+                .Select(g => new TestRunStatusCount { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+        }
+
+        private async Task<List<TestResultCount>> GetTestCaseExecutionStatsAsync()
+        {
+            return await _context.TestCaseExecutions
+                .GroupBy(tce => tce.OverallResult)
+                .Select(g => new TestResultCount { Result = g.Key, Count = g.Count() })
+                .ToListAsync();
+        }
+
+        private async Task<List<TestResultCount>> GetTestCaseExecutionStatsForSessionAsync(int testRunSessionId)
+        {
+            return await _context.TestCaseExecutions
+                .Where(tce => tce.TestRunSessionId == testRunSessionId)
+                .GroupBy(tce => tce.OverallResult)
+                .Select(g => new TestResultCount { Result = g.Key, Count = g.Count() })
+                .ToListAsync();
+        }
+
+        private async Task<DateTime?> GetLastExecutionDateAsync()
+        {
+            return await _context.TestCaseExecutions
+                .Where(tce => tce.ExecutedAt.HasValue)
+                .MaxAsync(tce => (DateTime?)tce.ExecutedAt);
+        }
+
+        private async Task<DateTime?> GetLastExecutionDateForSessionAsync(int testRunSessionId)
+        {
+            return await _context.TestCaseExecutions
                 .Where(tce => tce.TestRunSessionId == testRunSessionId && tce.ExecutedAt.HasValue)
                 .MaxAsync(tce => (DateTime?)tce.ExecutedAt);
+        }
+
+        private static TestExecutionStatsDto BuildExecutionStats(
+            List<TestRunStatusCount> testRunStats, 
+            List<TestResultCount> executionStats, 
+            DateTime? lastExecutionDate)
+        {
+            var stats = new TestExecutionStatsDto();
+
+            // Set test run statistics
+            stats.TotalTestRuns = testRunStats.Sum(s => s.Count);
+            stats.ActiveTestRuns = GetCountByStatus(testRunStats, TestRunStatus.InProgress);
+            stats.CompletedTestRuns = GetCountByStatus(testRunStats, TestRunStatus.Completed);
+
+            // Set test case execution statistics
+            PopulateTestCaseExecutionStats(stats, executionStats);
+            stats.LastExecutionDate = lastExecutionDate;
+
+            return stats;
+        }
+
+        private static TestExecutionStatsDto BuildSessionExecutionStats(
+            List<TestResultCount> executionStats, 
+            DateTime? lastExecutionDate)
+        {
+            var stats = new TestExecutionStatsDto();
 
             // For session-specific stats, set test run counts to 1 (this session)
             stats.TotalTestRuns = 1;
             stats.ActiveTestRuns = 0;
             stats.CompletedTestRuns = 0;
 
+            // Set test case execution statistics
+            PopulateTestCaseExecutionStats(stats, executionStats);
+            stats.LastExecutionDate = lastExecutionDate;
+
             return stats;
         }
+
+        private static void PopulateTestCaseExecutionStats(TestExecutionStatsDto stats, List<TestResultCount> executionStats)
+        {
+            stats.TotalTestCaseExecutions = executionStats.Sum(s => s.Count);
+            stats.PassedExecutions = GetCountByResult(executionStats, TestResult.Passed);
+            stats.FailedExecutions = GetCountByResult(executionStats, TestResult.Failed);
+            stats.BlockedExecutions = GetCountByResult(executionStats, TestResult.Blocked);
+            stats.NotRunExecutions = GetCountByResult(executionStats, TestResult.NotRun);
+
+            // Calculate pass rate
+            if (stats.TotalTestCaseExecutions > 0)
+            {
+                stats.PassRate = (double)stats.PassedExecutions / stats.TotalTestCaseExecutions * 100;
+            }
+        }
+
+        private static int GetCountByStatus(List<TestRunStatusCount> stats, TestRunStatus status)
+        {
+            return stats.FirstOrDefault(s => s.Status == status)?.Count ?? 0;
+        }
+
+        private static int GetCountByResult(List<TestResultCount> stats, TestResult result)
+        {
+            return stats.FirstOrDefault(s => s.Result == result)?.Count ?? 0;
+        }
+
+        #endregion
 
         private async Task<TestCaseExecutionDto?> GetTestCaseExecutionByIdAsync(int id)
         {
@@ -263,5 +316,39 @@ namespace backend.Services
                 ExpectedResult = entity.TestStep?.ExpectedResult
             };
         }
+    }
+
+    /// <summary>
+    /// Helper class for grouping test run sessions by status with their counts.
+    /// Used internally for statistical aggregation operations.
+    /// </summary>
+    public class TestRunStatusCount
+    {
+        /// <summary>
+        /// Gets or sets the test run session status.
+        /// </summary>
+        public TestRunStatus Status { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the count of test run sessions with this status.
+        /// </summary>
+        public int Count { get; set; }
+    }
+
+    /// <summary>
+    /// Helper class for grouping test case executions by result with their counts.
+    /// Used internally for statistical aggregation operations.
+    /// </summary>
+    public class TestResultCount
+    {
+        /// <summary>
+        /// Gets or sets the test case execution result.
+        /// </summary>
+        public TestResult Result { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the count of test case executions with this result.
+        /// </summary>
+        public int Count { get; set; }
     }
 }

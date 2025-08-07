@@ -35,6 +35,52 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves a paginated list of requirements from the database with optional filtering and sorting.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing requirements and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.Requirements.AsQueryable();
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                var searchTerm = parameters.SearchTerm.ToLower();
+                query = query.Where(r => r.Title.ToLower().Contains(searchTerm) || 
+                                        (r.Description != null && r.Description.ToLower().Contains(searchTerm)));
+            }
+
+            // Apply sorting
+            query = parameters.SortBy?.ToLower() switch
+            {
+                "title" => parameters.SortDescending ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title),
+                "status" => parameters.SortDescending ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status),
+                "type" => parameters.SortDescending ? query.OrderByDescending(r => r.Type) : query.OrderBy(r => r.Type),
+                "createdat" => parameters.SortDescending ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt),
+                "updatedat" => parameters.SortDescending ? query.OrderByDescending(r => r.UpdatedAt) : query.OrderBy(r => r.UpdatedAt),
+                _ => parameters.SortDescending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id) // Default sort by ID
+            };
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var entities = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<RequirementDto>
+            {
+                Items = entities.Select(EntityToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
         /// Retrieves a specific requirement by its ID.
         /// </summary>
         /// <param name="id">The unique identifier of the requirement.</param>
