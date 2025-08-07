@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 using Xunit;
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace frontend.E2ETests;
 
@@ -18,6 +15,7 @@ public abstract class E2ETestBase : IAsyncLifetime
     protected IPlaywright PlaywrightInstance { get; private set; } = null!;
     protected IBrowser Browser { get; private set; } = null!;
     protected IPage Page { get; private set; } = null!;
+    protected string BaseUrl { get; private set; } = null!;
     
     /// <summary>
     /// Initialize test setup
@@ -29,19 +27,7 @@ public abstract class E2ETestBase : IAsyncLifetime
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Testing");
-                builder.ConfigureServices(services =>
-                {
-                    // Remove all existing DbContext-related services
-                    services.RemoveAll(typeof(DbContextOptions));
-                    services.RemoveAll(typeof(DbContextOptions<RqmtMgmtDbContext>));
-                    services.RemoveAll(typeof(RqmtMgmtDbContext));
-                    
-                    // Add in-memory database for testing
-                    services.AddDbContext<RqmtMgmtDbContext>(options =>
-                    {
-                        options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
-                    });
-                });
+                // No need to configure services - backend handles database provider automatically
             });
         
         // Initialize Playwright
@@ -54,9 +40,8 @@ public abstract class E2ETestBase : IAsyncLifetime
         // Create a new page for each test
         Page = await Browser.NewPageAsync();
         
-        // Set base URL to the test server
-        var baseUrl = Factory.Server.BaseAddress.ToString();
-        await Page.GotoAsync(baseUrl);
+        // Store base URL for page objects to use
+        BaseUrl = Factory.Server.BaseAddress.ToString().TrimEnd('/');
     }
     
     /// <summary>

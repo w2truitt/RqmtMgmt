@@ -59,9 +59,19 @@ public class Program
         builder.Services.AddScoped<RqmtMgmtShared.ITestRunSessionService, backend.Services.TestRunSessionService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestExecutionService, backend.Services.TestExecutionService>();
         
-        // Register DbContext with connection string from configuration
-        builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        // Register DbContext with appropriate provider based on environment
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            // Use InMemory database for testing
+            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+                options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}"));
+        }
+        else
+        {
+            // Use SQL Server for development and production
+            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        }
 
         var app = builder.Build();
 

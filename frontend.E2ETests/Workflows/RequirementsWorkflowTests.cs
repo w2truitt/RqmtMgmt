@@ -15,7 +15,7 @@ public class RequirementsWorkflowTests : E2ETestBase
     public async Task CanNavigateToDashboard()
     {
         // Arrange
-        var dashboardPage = new DashboardPage(Page);
+        var dashboardPage = new DashboardPage(Page, BaseUrl);
         
         // Act
         await dashboardPage.NavigateToAsync();
@@ -33,7 +33,7 @@ public class RequirementsWorkflowTests : E2ETestBase
     {
         // Arrange
         var testId = CreateTestId();
-        var requirementsPage = new RequirementsPage(Page);
+        var requirementsPage = new RequirementsPage(Page, BaseUrl);
         var testRequirement = TestDataFactory.CreateRequirement(testId);
         
         // TODO: Uncomment when frontend is available
@@ -68,7 +68,7 @@ public class RequirementsWorkflowTests : E2ETestBase
     {
         // Arrange
         var testId = CreateTestId();
-        var requirementsPage = new RequirementsPage(Page);
+        var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // TODO: Uncomment when frontend is available
         /*

@@ -8,10 +8,12 @@ namespace frontend.E2ETests.PageObjects;
 public class RequirementsPage
 {
     private readonly IPage _page;
+    private readonly string _baseUrl;
     
-    public RequirementsPage(IPage page)
+    public RequirementsPage(IPage page, string baseUrl)
     {
         _page = page;
+        _baseUrl = baseUrl;
     }
     
     /// <summary>
@@ -19,7 +21,7 @@ public class RequirementsPage
     /// </summary>
     public async Task NavigateToAsync()
     {
-        await _page.GotoAsync("/requirements");
+        await _page.GotoAsync($"{_baseUrl}/requirements");
     }
     
     /// <summary>

@@ -8,10 +8,12 @@ namespace frontend.E2ETests.PageObjects;
 public class DashboardPage
 {
     private readonly IPage _page;
+    private readonly string _baseUrl;
     
-    public DashboardPage(IPage page)
+    public DashboardPage(IPage page, string baseUrl)
     {
         _page = page;
+        _baseUrl = baseUrl;
     }
     
     /// <summary>
@@ -19,7 +21,7 @@ public class DashboardPage
     /// </summary>
     public async Task NavigateToAsync()
     {
-        await _page.GotoAsync("/");
+        await _page.GotoAsync($"{_baseUrl}/");
     }
     
     /// <summary>
