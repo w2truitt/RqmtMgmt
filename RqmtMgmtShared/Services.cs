@@ -135,4 +135,24 @@ public interface ITestExecutionService
     Task<List<TestStepExecutionDto>> GetStepExecutionsForCaseAsync(int testCaseExecutionId);
     Task<TestExecutionStatsDto> GetExecutionStatsAsync();
     Task<TestExecutionStatsDto> GetExecutionStatsForSessionAsync(int testRunSessionId);
-}
+}  
+/// <summary>  
+/// Service interface for managing projects and project team members.  
+/// </summary>  
+public interface IProjectService  
+{  
+    Task<PagedResult<ProjectDto>> GetProjectsAsync(ProjectFilterDto filter);  
+    Task<ProjectDto?> GetProjectByIdAsync(int projectId);  
+    Task<ProjectDto?> GetProjectByCodeAsync(string code);  
+    Task<ProjectDto> CreateProjectAsync(CreateProjectDto createProjectDto);  
+    Task<ProjectDto?> UpdateProjectAsync(int projectId, UpdateProjectDto updateProjectDto);  
+    Task<bool> DeleteProjectAsync(int projectId);  
+    Task<List<ProjectTeamMemberDto>> GetProjectTeamMembersAsync(int projectId);  
+    Task<ProjectTeamMemberDto?> AddTeamMemberAsync(int projectId, AddProjectTeamMemberDto addTeamMemberDto);  
+    Task<ProjectTeamMemberDto?> UpdateTeamMemberAsync(int projectId, int userId, UpdateProjectTeamMemberDto updateTeamMemberDto);  
+    Task<bool> RemoveTeamMemberAsync(int projectId, int userId);  
+    Task<List<ProjectDto>> GetUserProjectsAsync(int userId);  
+    Task<bool> UserHasAccessToProjectAsync(int userId, int projectId);  
+    Task<bool> UserHasRoleInProjectAsync(int userId, int projectId, ProjectRole role);  
+    Task<string> GenerateNextRequirementIdAsync(int projectId);  
+} 

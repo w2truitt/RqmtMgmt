@@ -17,7 +17,7 @@ namespace backend.ApiTests
     /// </summary>
     public class PerformanceTests : BaseApiTest
     {
-        public PerformanceTests(WebApplicationFactory<Program> factory) : base(factory)
+        public PerformanceTests(TestWebApplicationFactory<Program> factory) : base(factory)
         {
         }
 

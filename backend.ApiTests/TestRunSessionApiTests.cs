@@ -13,7 +13,7 @@ namespace backend.ApiTests
 {
     public class TestRunSessionApiTests : BaseApiTest
     {
-        public TestRunSessionApiTests(WebApplicationFactory<Program> factory) : base(factory)
+        public TestRunSessionApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
         {
         }
 

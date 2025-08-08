@@ -32,5 +32,20 @@ namespace RqmtMgmtShared
         /// Gets or sets the timestamp when the test suite was created.
         /// </summary>
         public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the project this test suite belongs to.
+        /// </summary>
+        public int ProjectId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the project this test suite belongs to.
+        /// </summary>
+        public string ProjectName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the number of test cases in this test suite.
+        /// </summary>
+        public int TestCaseCount { get; set; }
     }
 }

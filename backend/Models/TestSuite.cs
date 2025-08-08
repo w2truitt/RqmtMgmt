@@ -33,9 +33,19 @@ namespace backend.Models
         public DateTime CreatedAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the project this test suite belongs to.
+        /// </summary>
+        public int ProjectId { get; set; }
+
+        /// <summary>
         /// Gets or sets the navigation property to the creator user.
         /// </summary>
         public User? Creator { get; set; }
+
+        /// <summary>
+        /// Gets or sets the navigation property to the project.
+        /// </summary>
+        public Project? Project { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of test cases in this suite.

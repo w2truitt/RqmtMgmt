@@ -103,7 +103,8 @@ namespace backend.Services
             Name = s.Name,
             Description = s.Description,
             CreatedBy = s.CreatedBy,
-            CreatedAt = s.CreatedAt
+            CreatedAt = s.CreatedAt,
+            ProjectId = s.ProjectId
         };
 
         /// <summary>
@@ -117,7 +118,8 @@ namespace backend.Services
             Name = dto.Name,
             Description = dto.Description,
             CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt
+            CreatedAt = dto.CreatedAt,
+            ProjectId = dto.ProjectId
         };
     }
 }

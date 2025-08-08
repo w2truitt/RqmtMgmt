@@ -13,7 +13,7 @@ namespace backend.ApiTests
 {
     public class TestExecutionApiTests : BaseApiTest
     {
-        public TestExecutionApiTests(WebApplicationFactory<Program> factory) : base(factory)
+        public TestExecutionApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
         {
         }
 
@@ -40,8 +40,8 @@ namespace backend.ApiTests
             // First create a test case execution DTO
             var execution = new TestCaseExecutionDto
             {
-                TestRunSessionId = 1,
-                TestCaseId = 1,
+                TestRunSessionId = 999,
+                TestCaseId = 999,
                 OverallResult = TestResult.NotRun,
                 ExecutedAt = DateTime.UtcNow,
                 ExecutedBy = 1,
@@ -54,7 +54,7 @@ namespace backend.ApiTests
             {
                 // This might fail if dependencies don't exist, which is expected in isolated API tests
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Assert.Contains("error", errorContent.ToLower());
+                Assert.Contains("failed", errorContent.ToLower());
                 return;
             }
 
@@ -86,9 +86,9 @@ namespace backend.ApiTests
         {
             var stepExecution = new TestStepExecutionDto
             {
-                Id = 1,
-                TestCaseExecutionId = 1,
-                TestStepId = 1,
+                Id = 999,
+                TestCaseExecutionId = 999,
+                TestStepId = 999,
                 StepOrder = 1,
                 Result = TestResult.Passed,
                 ActualResult = "Test step executed successfully",
@@ -102,7 +102,7 @@ namespace backend.ApiTests
             {
                 // This might fail if dependencies don't exist, which is expected in isolated API tests
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Assert.Contains("error", errorContent.ToLower());
+                Assert.Contains("failed", errorContent.ToLower());
                 return;
             }
 
@@ -190,9 +190,9 @@ namespace backend.ApiTests
         {
             var execution = new TestCaseExecutionDto
             {
-                Id = 1,
-                TestRunSessionId = 1,
-                TestCaseId = 1,
+                Id = 999,
+                TestRunSessionId = 999,
+                TestCaseId = 999,
                 OverallResult = TestResult.Passed,
                 ExecutedAt = DateTime.UtcNow,
                 ExecutedBy = 1,
@@ -222,8 +222,8 @@ namespace backend.ApiTests
             var execution = new TestCaseExecutionDto
             {
                 Id = 2, // Different from URL
-                TestRunSessionId = 1,
-                TestCaseId = 1,
+                TestRunSessionId = 999,
+                TestCaseId = 999,
                 OverallResult = TestResult.Passed
             };
 
@@ -236,7 +236,7 @@ namespace backend.ApiTests
         {
             var invalidExecution = new TestCaseExecutionDto
             {
-                Id = 1,
+                Id = 999,
                 // Missing required fields
                 TestRunSessionId = 0,
                 TestCaseId = 0

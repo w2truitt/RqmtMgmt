@@ -105,7 +105,8 @@ namespace backend.Services
             Type = tp.Type.ToString(),
             Description = tp.Description,
             CreatedBy = tp.CreatedBy,
-            CreatedAt = tp.CreatedAt
+            CreatedAt = tp.CreatedAt,
+            ProjectId = tp.ProjectId
         };
 
         /// <summary>
@@ -121,7 +122,8 @@ namespace backend.Services
             Type = Enum.TryParse<TestPlanType>(dto.Type, out var t) ? t : TestPlanType.UserValidation,
             Description = dto.Description,
             CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt
+            CreatedAt = dto.CreatedAt,
+            ProjectId = dto.ProjectId
         };
     }
 }

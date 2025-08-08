@@ -69,6 +69,7 @@ public class Program
         builder.Services.AddScoped<RqmtMgmtShared.IEnhancedDashboardService, backend.Services.EnhancedDashboardService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestRunSessionService, backend.Services.TestRunSessionService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestExecutionService, backend.Services.TestExecutionService>();
+        builder.Services.AddScoped<RqmtMgmtShared.IProjectService, backend.Services.ProjectService>();
         
         // Configure database context based on environment
         if (builder.Environment.IsEnvironment("Testing"))

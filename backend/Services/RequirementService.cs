@@ -253,7 +253,8 @@ namespace backend.Services
             Version = r.Version,
             CreatedBy = r.CreatedBy,
             CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
+            UpdatedAt = r.UpdatedAt,
+            ProjectId = r.ProjectId
         };
 
         /// <summary>
@@ -290,7 +291,8 @@ namespace backend.Services
             Version = d.Version,
             CreatedBy = d.CreatedBy,
             CreatedAt = d.CreatedAt,
-            UpdatedAt = d.UpdatedAt
+            UpdatedAt = d.UpdatedAt,
+            ProjectId = d.ProjectId
         };
     }
 }

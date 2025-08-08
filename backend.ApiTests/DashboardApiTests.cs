@@ -11,7 +11,7 @@ namespace backend.ApiTests
 {
     public class DashboardApiTests : BaseApiTest
     {
-        public DashboardApiTests(WebApplicationFactory<Program> factory) : base(factory)
+        public DashboardApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
         {
         }
 
