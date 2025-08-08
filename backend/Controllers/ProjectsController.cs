@@ -82,9 +82,17 @@ namespace backend.Controllers
         [HttpPost]
         public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectDto createProjectDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var project = await _projectService.CreateProjectAsync(createProjectDto);
+                if (project == null)
+                {
+                    return BadRequest("Failed to create project.");
+                }
                 return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
             }
             catch (Exception ex)
@@ -99,6 +107,10 @@ namespace backend.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<ProjectDto>> UpdateProject(int id, [FromBody] UpdateProjectDto updateProjectDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var project = await _projectService.UpdateProjectAsync(id, updateProjectDto);
@@ -158,6 +170,10 @@ namespace backend.Controllers
         [HttpPost("{id}/team")]
         public async Task<ActionResult<ProjectTeamMemberDto>> AddTeamMember(int id, [FromBody] AddProjectTeamMemberDto addTeamMemberDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var teamMember = await _projectService.AddTeamMemberAsync(id, addTeamMemberDto);
@@ -179,6 +195,10 @@ namespace backend.Controllers
         [HttpPut("{projectId}/team/{userId}")]
         public async Task<ActionResult<ProjectTeamMemberDto>> UpdateTeamMember(int projectId, int userId, [FromBody] UpdateProjectTeamMemberDto updateTeamMemberDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 var teamMember = await _projectService.UpdateTeamMemberAsync(projectId, userId, updateTeamMemberDto);

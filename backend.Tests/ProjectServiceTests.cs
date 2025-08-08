@@ -78,8 +78,7 @@ namespace backend.Tests
             var service = new ProjectService(db);
             // UserId 999 does not exist
             var result = await service.AddTeamMemberAsync(project.Id, new AddProjectTeamMemberDto { UserId = 999, Role = ProjectRole.Developer });
-            Assert.NotNull(result); // The service adds the member even if the user doesn't exist, but navigation property is null
-            Assert.Equal(999, result.UserId);
+            Assert.Null(result);
         }
 
         [Fact]
