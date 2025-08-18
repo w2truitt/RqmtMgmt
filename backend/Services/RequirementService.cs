@@ -43,6 +43,12 @@ namespace backend.Services
         {
             var query = _context.Requirements.AsQueryable();
 
+            // Apply project filter if provided
+            if (parameters.ProjectId.HasValue)
+            {
+                query = query.Where(r => r.ProjectId == parameters.ProjectId.Value);
+            }
+
             // Apply search filter if provided
             if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
             {

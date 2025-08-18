@@ -1,0 +1,274 @@
+@inject NavigationManager Navigation
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <ol class="breadcrumb mb-0">
+        @if (breadcrumbItems?.Any() == true)
+        {
+            @for (int i = 0; i < breadcrumbItems.Count; i++)
+            {
+                var item = breadcrumbItems[i];
+                var isLast = i == breadcrumbItems.Count - 1;
+                
+                <li class="breadcrumb-item @(isLast ? "active" : "")">
+                    @if (isLast || string.IsNullOrEmpty(item.Url))
+                    {
+                        <span class="breadcrumb-text">
+                            @if (!string.IsNullOrEmpty(item.Icon))
+                            {
+                                <i class="@item.Icon me-1"></i>
+                            }
+                            @item.Title
+                        </span>
+                    }
+                    else
+                    {
+                        <a href="@item.Url" class="breadcrumb-link">
+                            @if (!string.IsNullOrEmpty(item.Icon))
+                            {
+                                <i class="@item.Icon me-1"></i>
+                            }
+                            @item.Title
+                        </a>
+                    }
+                    
+                    @if (!isLast)
+                    {
+                        <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                    }
+                </li>
+            }
+        }
+    </ol>
+</nav>
+
+@code {
+    [Parameter] public int? ProjectId { get; set; }
+    [Parameter] public string? ProjectName { get; set; }
+    [Parameter] public string? Section { get; set; }
+    [Parameter] public string? SubSection { get; set; }
+    [Parameter] public string? ItemName { get; set; }
+    [Parameter] public List<frontend.Models.BreadcrumbItem>? CustomItems { get; set; }
+    
+    private List<frontend.Models.BreadcrumbItem> breadcrumbItems = new();
+
+    protected override void OnParametersSet()
+    {
+        BuildBreadcrumb();
+    }
+
+    private void BuildBreadcrumb()
+    {
+        breadcrumbItems.Clear();
+
+        // Use custom items if provided
+        if (CustomItems?.Any() == true)
+        {
+            breadcrumbItems.AddRange(CustomItems);
+            return;
+        }
+
+        // Build automatic breadcrumb based on current route and parameters
+        var uri = Navigation.Uri;
+        var relativePath = Navigation.ToBaseRelativePath(uri);
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        // Always start with Home
+        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+        {
+            Title = "Home",
+            Icon = "bi bi-house-door",
+            Url = "/"
+        });
+
+        // If we have project context
+        if (ProjectId.HasValue)
+        {
+            // Add Projects
+            breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+            {
+                Title = "Projects",
+                Icon = "bi bi-folder",
+                Url = "/projects"
+            });
+
+            // Add specific project
+            breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+            {
+                Title = ProjectName ?? $"Project {ProjectId}",
+                Icon = "bi bi-folder-fill",
+                Url = $"/projects/{ProjectId}"
+            });
+
+            // Add section if specified
+            if (!string.IsNullOrEmpty(Section))
+            {
+                var sectionUrl = $"/projects/{ProjectId}/{Section.ToLower()}";
+                var sectionIcon = GetSectionIcon(Section);
+                
+                breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                {
+                    Title = Section,
+                    Icon = sectionIcon,
+                    Url = sectionUrl
+                });
+
+                // Add sub-section if specified
+                if (!string.IsNullOrEmpty(SubSection))
+                {
+                    breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                    {
+                        Title = SubSection,
+                        Url = null // Current page
+                    });
+                }
+            }
+        }
+        else
+        {
+            // No project context - build based on current route
+            if (segments.Length > 0)
+            {
+                var firstSegment = segments[0].ToLower();
+                switch (firstSegment)
+                {
+                    case "projects":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Projects",
+                            Icon = "bi bi-folder",
+                            Url = "/projects"
+                        });
+                        break;
+                    case "requirements":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Requirements",
+                            Icon = "bi bi-file-earmark-text",
+                            Url = "/requirements"
+                        });
+                        break;
+                    case "testsuites":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Test Suites",
+                            Icon = "bi bi-collection",
+                            Url = "/testsuites"
+                        });
+                        break;
+                    case "testcases":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Test Cases",
+                            Icon = "bi bi-file-earmark-check",
+                            Url = "/testcases"
+                        });
+                        break;
+                    case "testplans":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Test Plans",
+                            Icon = "bi bi-journal-code",
+                            Url = "/testplans"
+                        });
+                        break;
+                    case "test-run-sessions":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Test Execution",
+                            Icon = "bi bi-play-circle",
+                            Url = "/test-run-sessions"
+                        });
+                        break;
+                    case "users":
+                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+                        {
+                            Title = "Users",
+                            Icon = "bi bi-person-lines-fill",
+                            Url = "/users"
+                        });
+                        break;
+                }
+            }
+        }
+
+        // Add item name if specified
+        if (!string.IsNullOrEmpty(ItemName))
+        {
+            breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+            {
+                Title = ItemName,
+                Url = null // Current page
+            });
+        }
+    }
+
+    private string GetSectionIcon(string section)
+    {
+        return section.ToLower() switch
+        {
+            "requirements" => "bi bi-file-earmark-text",
+            "testsuites" => "bi bi-collection",
+            "testcases" => "bi bi-file-earmark-check", 
+            "testplans" => "bi bi-journal-code",
+            "execution" => "bi bi-play-circle",
+            "reports" => "bi bi-graph-up",
+            "team" => "bi bi-people",
+            "settings" => "bi bi-gear",
+            _ => "bi bi-circle"
+        };
+    }
+}
+
+<style>
+.breadcrumb-nav {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb {
+    background: transparent;
+    margin-bottom: 0;
+    padding: 0.5rem 0;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+    color: var(--bs-secondary);
+}
+
+.breadcrumb-item.active {
+    color: var(--bs-primary);
+    font-weight: 500;
+}
+
+.breadcrumb-link {
+    color: var(--bs-link-color);
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+}
+
+.breadcrumb-link:hover {
+    color: var(--bs-link-hover-color);
+    text-decoration: underline;
+}
+
+.breadcrumb-text {
+    color: inherit;
+}
+
+.breadcrumb-separator {
+    color: var(--bs-secondary);
+    margin: 0 0.5rem;
+    font-size: 0.8rem;
+}
+
+.breadcrumb-item:last-child .breadcrumb-separator {
+    display: none;
+}
+
+/* Override Bootstrap default breadcrumb separators */
+.breadcrumb-item + .breadcrumb-item::before {
+    content: none;
+}
+</style>

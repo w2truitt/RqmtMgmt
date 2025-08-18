@@ -1,9 +1,15 @@
+@using frontend.Components.Navigation
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
             <i class="bi bi-clipboard-check me-2"></i>
             TestFlow Pro
         </a>
+        
+        <!-- Project Selector in header -->
+        <ProjectSelector />
+        
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <i class="bi bi-list" style="color: white; font-size: 1.25rem;"></i>
         </button>

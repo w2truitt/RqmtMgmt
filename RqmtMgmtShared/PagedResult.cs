@@ -94,5 +94,10 @@ namespace RqmtMgmtShared
         /// Gets or sets whether to sort in descending order. Default is false (ascending).
         /// </summary>
         public bool SortDescending { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the project ID to filter results by. When provided, only results for this project are returned.
+        /// </summary>
+        public int? ProjectId { get; set; }
     }
 }

@@ -33,5 +33,6 @@ builder.Services.AddScoped<IEnhancedDashboardService, EnhancedDashboardDataServi
 builder.Services.AddScoped<ITestRunSessionDataService, TestRunSessionDataService>();
 builder.Services.AddScoped<ITestExecutionDataService, TestExecutionDataService>();
 builder.Services.AddScoped<IProjectService, ProjectsDataService>();
+builder.Services.AddScoped<IProjectContextService, ProjectContextService>();
 
 await builder.Build().RunAsync();

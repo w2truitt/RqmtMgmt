@@ -11,10 +11,12 @@ namespace backend.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;
+        private readonly IRequirementService _requirementService;
 
-        public ProjectsController(IProjectService projectService)
+        public ProjectsController(IProjectService projectService, IRequirementService requirementService)
         {
             _projectService = projectService;
+            _requirementService = requirementService;
         }
 
         /// <summary>
@@ -256,19 +258,37 @@ namespace backend.Controllers
         /// Gets requirements for a specific project.
         /// </summary>
         [HttpGet("{id}/requirements")]
-        public async Task<ActionResult<PagedResult<RequirementDto>>> GetProjectRequirements(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PagedResult<RequirementDto>>> GetProjectRequirements(
+            int id, 
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
         {
             try
             {
-                // This would need to be implemented in a RequirementService with project filtering
-                // For now, return a placeholder
-                return Ok(new PagedResult<RequirementDto>
+                // Verify project exists
+                var project = await _projectService.GetProjectByIdAsync(id);
+                if (project == null)
                 {
-                    Items = new List<RequirementDto>(),
-                    TotalItems = 0,
+                    return NotFound($"Project with ID {id} not found.");
+                }
+
+                // Create pagination parameters with project filtering
+                var parameters = new PaginationParameters
+                {
                     PageNumber = page,
-                    PageSize = pageSize
-                });
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending,
+                    ProjectId = id
+                };
+
+                // Get filtered requirements for this project
+                var result = await _requirementService.GetPagedAsync(parameters);
+                return Ok(result);
             }
             catch (Exception ex)
             {
