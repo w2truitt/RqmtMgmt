@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using RqmtMgmtShared;
 
 namespace frontend.Services
@@ -10,6 +11,7 @@ namespace frontend.Services
     public class RequirementsDataService : IRequirementService
     {
         private readonly HttpClient _http;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         /// <summary>
         /// Initializes a new instance of the RequirementsDataService with the specified HTTP client.
@@ -18,6 +20,11 @@ namespace frontend.Services
         public RequirementsDataService(HttpClient http)
         {
             _http = http;
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+            };
         }
 
         /// <summary>
@@ -25,7 +32,7 @@ namespace frontend.Services
         /// </summary>
         /// <returns>A list of all requirements, or an empty list if the request fails.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
-            => await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement") ?? new();
+            => await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement", _jsonOptions) ?? new();
 
         /// <summary>
         /// Retrieves a paginated list of requirements from the backend API.
@@ -45,7 +52,7 @@ namespace frontend.Services
             if (parameters.SortDescending)
                 queryString += "&sortDescending=true";
 
-            var result = await _http.GetFromJsonAsync<PagedResult<RequirementDto>>($"/api/Requirement/paged{queryString}");
+            var result = await _http.GetFromJsonAsync<PagedResult<RequirementDto>>($"/api/Requirement/paged{queryString}", _jsonOptions);
             return result ?? new PagedResult<RequirementDto>();
         }
 
@@ -55,7 +62,7 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the requirement.</param>
         /// <returns>The requirement if found; otherwise, null.</returns>
         public async Task<RequirementDto?> GetByIdAsync(int id)
-            => await _http.GetFromJsonAsync<RequirementDto>($"/api/Requirement/{id}");
+            => await _http.GetFromJsonAsync<RequirementDto>($"/api/Requirement/{id}", _jsonOptions);
 
         /// <summary>
         /// Creates a new requirement by sending a POST request to the backend API.
@@ -64,8 +71,8 @@ namespace frontend.Services
         /// <returns>The created requirement with its assigned ID if successful; otherwise, null.</returns>
         public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
         {
-            var resp = await _http.PostAsJsonAsync("/api/Requirement", dto);
-            return await resp.Content.ReadFromJsonAsync<RequirementDto>();
+            var resp = await _http.PostAsJsonAsync("/api/Requirement", dto, _jsonOptions);
+            return await resp.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
         }
 
         /// <summary>
@@ -75,7 +82,7 @@ namespace frontend.Services
         /// <returns>True if the update was successful; otherwise, false.</returns>
         public async Task<bool> UpdateAsync(RequirementDto dto)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/Requirement/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/Requirement/{dto.Id}", dto, _jsonOptions);
             return resp.IsSuccessStatusCode;
         }
 
@@ -96,6 +103,6 @@ namespace frontend.Services
         /// <param name="requirementId">The unique identifier of the requirement.</param>
         /// <returns>A list of requirement versions, or an empty list if the request fails.</returns>
         public async Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId)
-            => await _http.GetFromJsonAsync<List<RequirementVersionDto>>($"/api/Redline/requirement/{requirementId}/versions") ?? new();
+            => await _http.GetFromJsonAsync<List<RequirementVersionDto>>($"/api/Redline/requirement/{requirementId}/versions", _jsonOptions) ?? new();
     }
 }

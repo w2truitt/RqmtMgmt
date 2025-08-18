@@ -72,7 +72,7 @@ else
             <tbody>
                 @foreach (var req in pagedResult.Items)
                 {
-                    <tr>
+                    <tr data-testid="requirement-row">
                         <td>@req.Id</td>
                         <td>@req.Title</td>
                         <td>@req.Status</td>
@@ -80,8 +80,8 @@ else
                         <td>
                             <button class="btn btn-sm btn-secondary" @onclick="() => ShowLinkModal(req.Id)">Link Test Cases</button>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(req.Id)">Details</button>
-                            <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)" data-testid="edit-@req.Title">Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)" data-testid="delete-@req.Title">Delete</button>
                         </td>
                     </tr>
                 }
@@ -178,22 +178,22 @@ else
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Title</label>
-                        <input class="form-control" @bind="formModel.Title" />
+                        <input class="form-control" @bind="formModel.Title" data-testid="title-input" />
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <textarea class="form-control" @bind="formModel.Description" rows="3"></textarea>
+                        <textarea class="form-control" @bind="formModel.Description" rows="3" data-testid="description-input"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Status</label>
-                        <select class="form-control" @bind="formModel.Status">
+                        <select class="form-control" @bind="formModel.Status" data-testid="status-select">
                             <option value="@RequirementStatus.Draft">Draft</option>
                             <option value="@RequirementStatus.Approved">Approved</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Type</label>
-                        <select class="form-control" @bind="formModel.Type">
+                        <select class="form-control" @bind="formModel.Type" data-testid="type-select">
                             <option value="@RequirementType.CRS">Customer Requirement</option>
                             <option value="@RequirementType.PRS">Product Requirement</option>
                             <option value="@RequirementType.SRS">Software Requirement</option>
@@ -215,7 +215,16 @@ else
     private PaginationParameters paginationParams = new() { PageNumber = 1, PageSize = 20 };
     private string? errorMessage;
 
-    RequirementDto formModel = new() { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
+    RequirementDto formModel = new() 
+    { 
+        Type = RequirementType.CRS, 
+        Title = string.Empty, 
+        Status = RequirementStatus.Draft,
+        CreatedBy = 1, // Default user ID
+        ProjectId = 1, // Default project ID
+        ProjectCode = "DEFAULT", // Default project code
+        CreatedAt = DateTime.UtcNow
+    };
     RequirementDto? editRequirement = null;
     bool showForm = false;
 
@@ -311,7 +320,16 @@ else
 
     void ShowAddForm()
     {
-        formModel = new RequirementDto { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
+        formModel = new RequirementDto 
+        { 
+            Type = RequirementType.CRS, 
+            Title = string.Empty, 
+            Status = RequirementStatus.Draft,
+            CreatedBy = 1, // Default user ID
+            ProjectId = 1, // Default project ID  
+            ProjectCode = "DEFAULT", // Default project code
+            CreatedAt = DateTime.UtcNow
+        };
         editRequirement = null;
         showForm = true;
     }

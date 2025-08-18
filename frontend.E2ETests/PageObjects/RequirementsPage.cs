@@ -25,11 +25,35 @@ public class RequirementsPage
     }
     
     /// <summary>
+    /// Waits for the page to load
+    /// </summary>
+    public async Task WaitForPageLoadAsync()
+    {
+        await _page.WaitForSelectorAsync("h1:has-text('Requirements')", new PageWaitForSelectorOptions { Timeout = 30000 });
+    }
+    
+    /// <summary>
     /// Clicks the create requirement button
     /// </summary>
     public async Task ClickCreateRequirementAsync()
     {
-        await _page.ClickAsync("[data-testid='create-requirement-button']");
+        await _page.ClickAsync("text=Add Requirement");
+    }
+    
+    /// <summary>
+    /// Waits for the form modal to appear
+    /// </summary>
+    public async Task WaitForFormModalAsync()
+    {
+        await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { Timeout = 10000 });
+    }
+    
+    /// <summary>
+    /// Waits for the form modal to hide
+    /// </summary>
+    public async Task WaitForFormModalToHideAsync()
+    {
+        await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
     }
     
     /// <summary>
@@ -52,7 +76,7 @@ public class RequirementsPage
     /// </summary>
     public async Task SaveRequirementAsync()
     {
-        await _page.ClickAsync("[data-testid='save-button']");
+        await _page.ClickAsync("text=Save");
     }
     
     /// <summary>
@@ -60,7 +84,15 @@ public class RequirementsPage
     /// </summary>
     public async Task CancelRequirementAsync()
     {
-        await _page.ClickAsync("[data-testid='cancel-button']");
+        await _page.ClickAsync("text=Cancel");
+    }
+    
+    /// <summary>
+    /// Gets the current value of the requirement title input
+    /// </summary>
+    public async Task<string> GetRequirementTitleInputValueAsync()
+    {
+        return await _page.InputValueAsync("[data-testid='title-input']");
     }
     
     /// <summary>
@@ -105,8 +137,8 @@ public class RequirementsPage
     /// <param name="searchTerm">Search term</param>
     public async Task SearchRequirementsAsync(string searchTerm)
     {
-        await _page.FillAsync("[data-testid='search-input']", searchTerm);
-        await _page.PressAsync("[data-testid='search-input']", "Enter");
+        await _page.FillAsync("input[placeholder*='Search requirements']", searchTerm);
+        await _page.ClickAsync("text=Search");
     }
     
     /// <summary>
