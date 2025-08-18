@@ -2,6 +2,7 @@ using frontend.E2ETests.PageObjects;
 using frontend.E2ETests.TestData;
 using Microsoft.Playwright;
 using Xunit;
+using static Microsoft.Playwright.Assertions;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -52,18 +53,16 @@ public class TestPlansPageTests : E2ETestBase
         
         // Assert
         var title = await Page.TitleAsync();
-        // Page title may not be implemented yet, so just check it's not null`n        Assert.NotNull(title);`n        // TODO: Uncomment when page titles are implemented`n        // Assert.Contains("Test Plans", title, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(title);
         
-        // TODO: Add more specific element checks when frontend is implemented
-        /*
+        // Verify main page elements are visible
         await Expect(Page.Locator("[data-testid='create-testplan-button']")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-testid='search-input']")).ToBeVisibleAsync();
-        await Expect(Page.Locator("[data-testid='testplans-table']")).ToBeVisibleAsync();
-        */
+        await Expect(Page.Locator("h3:has-text('Test Plans')")).ToBeVisibleAsync();
     }
     
     [Fact]
-    public async Task TestPlans_CanCreateNewTestPlan_WhenImplemented()
+    public async Task TestPlans_CanCreateNewTestPlan()
     {
         // Arrange
         var testId = CreateTestId();
@@ -72,9 +71,6 @@ public class TestPlansPageTests : E2ETestBase
         
         // Act
         await testPlansPage.NavigateToAsync();
-        
-        // TODO: Uncomment when test plan creation is implemented
-        /*
         await testPlansPage.ClickCreateTestPlanAsync();
         await testPlansPage.FillTestPlanFormAsync(
             testPlan.Name, 
@@ -82,20 +78,21 @@ public class TestPlansPageTests : E2ETestBase
             testPlan.Description ?? "");
         await testPlansPage.SaveTestPlanAsync();
         
+        // Wait for operation to complete
+        await Page.WaitForTimeoutAsync(2000);
+        
         // Verify test plan was created
         var isVisible = await testPlansPage.IsTestPlanVisibleAsync(testPlan.Name);
         Assert.True(isVisible);
-        */
         
         // Assert
-        // For now, just verify test data creation and page navigation
         Assert.NotNull(testPlan);
         Assert.Contains(testId, testPlan.Name);
         Assert.Contains("/testplans", Page.Url);
     }
     
     [Fact]
-    public async Task TestPlans_CanSearchTestPlans_WhenImplemented()
+    public async Task TestPlans_CanSearchTestPlans()
     {
         // Arrange
         var testId = CreateTestId();
@@ -104,17 +101,18 @@ public class TestPlansPageTests : E2ETestBase
         // Act
         await testPlansPage.NavigateToAsync();
         
-        // TODO: Uncomment when search functionality is implemented
-        /*
-        await testPlansPage.SearchTestPlansAsync(testId);
+        // Get initial count
+        var initialCount = await testPlansPage.GetTestPlanCountAsync();
         
-        // Should show filtered results
-        var count = await testPlansPage.GetTestPlanCountAsync();
-        Assert.Equal(0, count); // Should find no results for unique test ID
-        */
+        // Search for something that shouldn't exist
+        await testPlansPage.SearchTestPlansAsync(testId);
+        await Page.WaitForTimeoutAsync(1000);
+        
+        // Should show filtered results (likely 0 for unique test ID)
+        var filteredCount = await testPlansPage.GetTestPlanCountAsync();
+        Assert.True(filteredCount <= initialCount);
         
         // Assert
-        // For now, just verify page object setup
         Assert.NotNull(testPlansPage);
         Assert.Contains("/testplans", Page.Url);
     }
@@ -129,8 +127,6 @@ public class TestPlansPageTests : E2ETestBase
         await testPlansPage.NavigateToAsync();
         
         // Assert
-        // TODO: Uncomment when test plans display is implemented
-        /*
         // Should display test plans from seeded data
         var count = await testPlansPage.GetTestPlanCountAsync();
         Assert.True(count >= 0);
@@ -140,9 +136,8 @@ public class TestPlansPageTests : E2ETestBase
         {
             await Expect(Page.Locator("[data-testid='testplan-row']").First).ToBeVisibleAsync();
         }
-        */
         
-        // For now, just verify navigation
+        // Verify navigation
         Assert.Contains("/testplans", Page.Url);
     }
     
@@ -227,6 +222,63 @@ public class TestPlansPageTests : E2ETestBase
         */
         
         // Assert
+        Assert.Contains("/testplans", Page.Url);
+    }
+    
+    [Fact]
+    public async Task TestPlans_CanPerformFullCrudWorkflow()
+    {
+        // Arrange
+        var testId = CreateTestId();
+        var testPlansPage = new TestPlansPage(Page, BaseUrl);
+        var testPlan = TestDataFactory.CreateTestPlan(testId);
+        var updatedName = $"Updated {testPlan.Name}";
+        
+        // Act & Assert - Create
+        await testPlansPage.NavigateToAsync();
+        await testPlansPage.ClickCreateTestPlanAsync();
+        await testPlansPage.FillTestPlanFormAsync(testPlan.Name, testPlan.Type, testPlan.Description ?? "");
+        await testPlansPage.SaveTestPlanAsync();
+        await Page.WaitForTimeoutAsync(2000);
+        
+        var isVisible = await testPlansPage.IsTestPlanVisibleAsync(testPlan.Name);
+        Assert.True(isVisible, "Test plan should be visible after creation");
+        
+        // Act & Assert - Edit
+        await testPlansPage.EditTestPlanAsync(testPlan.Name);
+        await Page.FillAsync("[data-testid='name-input']", updatedName);
+        await testPlansPage.SaveTestPlanAsync();
+        await Page.WaitForTimeoutAsync(2000);
+        
+        var isUpdatedVisible = await testPlansPage.IsTestPlanVisibleAsync(updatedName);
+        Assert.True(isUpdatedVisible, "Updated test plan should be visible after edit");
+        
+        // Act & Assert - Delete
+        await testPlansPage.DeleteTestPlanAsync(updatedName);
+        await testPlansPage.ConfirmDeleteAsync();
+        await Page.WaitForTimeoutAsync(2000);
+        
+        var isDeletedVisible = await testPlansPage.IsTestPlanVisibleAsync(updatedName);
+        Assert.False(isDeletedVisible, "Test plan should not be visible after deletion");
+    }
+    
+    [Fact]
+    public async Task TestPlans_ValidatesRequiredFields()
+    {
+        // Arrange
+        var testPlansPage = new TestPlansPage(Page, BaseUrl);
+        
+        // Act
+        await testPlansPage.NavigateToAsync();
+        await testPlansPage.ClickCreateTestPlanAsync();
+        
+        // Try to save without filling required fields
+        await testPlansPage.SaveTestPlanAsync();
+        
+        // Assert - Form should still be open (validation should prevent saving)
+        await Expect(Page.Locator("[data-testid='name-input']")).ToBeVisibleAsync();
+        
+        // Verify we're still on the test plans page
         Assert.Contains("/testplans", Page.Url);
     }
 }

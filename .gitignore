@@ -11,7 +11,7 @@ obj/
 .vscode/
 
 # Node modules
-frontend/node_modules/
+node_modules/
 
 # Log files
 *.log
