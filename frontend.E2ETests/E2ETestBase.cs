@@ -22,14 +22,6 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Create web application factory
-        Factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UseEnvironment("Testing");
-                // No need to configure services - backend handles database provider automatically
-            });
-        
         // Initialize Playwright
         PlaywrightInstance = await Playwright.CreateAsync();
         Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
@@ -40,8 +32,11 @@ public abstract class E2ETestBase : IAsyncLifetime
         // Create a new page for each test
         Page = await Browser.NewPageAsync();
         
-        // Store base URL for page objects to use
-        BaseUrl = Factory.Server.BaseAddress.ToString().TrimEnd('/');
+        // Use the actual running frontend URL (Docker containers with nginx proxy)
+        BaseUrl = "http://localhost:8080";
+        
+        // Create a minimal factory just for cleanup purposes (some tests might reference it)
+        Factory = new WebApplicationFactory<Program>();
     }
     
     /// <summary>

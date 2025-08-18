@@ -405,7 +405,13 @@
     private void ShowAddForm()
     {
         editTestSuite = null;
-        formModel = new TestSuiteDto() { Name = string.Empty };
+        formModel = new TestSuiteDto() 
+        { 
+            Name = string.Empty,
+            ProjectId = 1,
+            CreatedBy = 1,
+            CreatedAt = DateTime.UtcNow
+        };
         formErrorMessage = string.Empty;
         showForm = true;
     }

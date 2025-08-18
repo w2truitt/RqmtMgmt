@@ -78,12 +78,12 @@ public class TestPlansPageTests : E2ETestBase
             testPlan.Description ?? "");
         await testPlansPage.SaveTestPlanAsync();
         
-        // Wait for operation to complete
-        await Page.WaitForTimeoutAsync(2000);
+        // Wait for operation to complete - allow more time for backend processing
+        await Page.WaitForTimeoutAsync(5000);
         
         // Verify test plan was created
         var isVisible = await testPlansPage.IsTestPlanVisibleAsync(testPlan.Name);
-        Assert.True(isVisible);
+        Assert.True(isVisible, $"Test plan '{testPlan.Name}' should be visible after creation");
         
         // Assert
         Assert.NotNull(testPlan);

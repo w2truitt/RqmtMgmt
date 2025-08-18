@@ -30,6 +30,8 @@ public class TestPlansPage
     public async Task ClickCreateTestPlanAsync()
     {
         await _page.ClickAsync("[data-testid='create-testplan-button']");
+        // Wait for the modal to appear
+        await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible });
     }
     
     /// <summary>
@@ -40,9 +42,18 @@ public class TestPlansPage
     /// <param name="description">Test plan description</param>
     public async Task FillTestPlanFormAsync(string name, string type, string description)
     {
-        await _page.FillAsync("[data-testid='name-input']", name);
-        await _page.SelectOptionAsync("[data-testid='type-select']", type);
-        await _page.FillAsync("[data-testid='description-input']", description);
+        // Wait for modal to be fully loaded
+        await _page.WaitForSelectorAsync(".modal.show [data-testid='name-input']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible });
+        
+        await _page.FillAsync(".modal.show [data-testid='name-input']", name);
+        
+        // Wait for the select element to be visible and ready (within the modal)
+        await _page.WaitForSelectorAsync(".modal.show [data-testid='type-select']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible });
+        
+        // Use SelectOptionAsync with the modal-scoped selector
+        await _page.SelectOptionAsync(".modal.show [data-testid='type-select']", type);
+        
+        await _page.FillAsync(".modal.show [data-testid='description-input']", description);
     }
     
     /// <summary>
@@ -50,7 +61,7 @@ public class TestPlansPage
     /// </summary>
     public async Task SaveTestPlanAsync()
     {
-        await _page.ClickAsync("[data-testid='save-button']");
+        await _page.ClickAsync(".modal.show [data-testid='save-button']");
     }
     
     /// <summary>

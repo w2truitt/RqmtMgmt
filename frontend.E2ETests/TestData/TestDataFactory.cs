@@ -98,10 +98,11 @@ public static class TestDataFactory
         return new TestPlanDto
         {
             Name = $"E2E Test Plan {testId}",
-            Type = "Functional",
+            Type = "UserValidation",
             Description = $"This is a test plan created for E2E testing with ID {testId}",
             CreatedBy = 1,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ProjectId = 1  // Set valid project ID
         };
     }
 }

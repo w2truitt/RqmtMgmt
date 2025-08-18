@@ -451,7 +451,14 @@
 
     void ShowAddForm()
     {
-        formModel = new TestPlanDto { Name = string.Empty, Type = "UserValidation" };
+        formModel = new TestPlanDto 
+        { 
+            Name = string.Empty, 
+            Type = "UserValidation", 
+            ProjectId = 1,  // Default to project 1 since test plans require a valid project
+            CreatedBy = 1,  // Default to user 1 since test plans require a valid user
+            CreatedAt = DateTime.UtcNow  // Set current timestamp
+        };
         editTestPlan = null;
         showForm = true;
         formErrorMessage = string.Empty;
