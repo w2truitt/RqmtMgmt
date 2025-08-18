@@ -105,4 +105,21 @@ public static class TestDataFactory
             ProjectId = 1  // Set valid project ID
         };
     }
+    
+    /// <summary>
+    /// Creates a test project with unique data
+    /// </summary>
+    /// <param name="testId">Unique test identifier</param>
+    /// <returns>Test project</returns>
+    public static CreateProjectDto CreateProject(string testId)
+    {
+        return new CreateProjectDto
+        {
+            Name = $"E2E Test Project {testId}",
+            Code = $"E2E{testId}",
+            Description = $"This is a test project created for E2E testing with ID {testId}",
+            Status = ProjectStatus.Planning,
+            OwnerId = 1  // Set valid owner ID
+        };
+    }
 }

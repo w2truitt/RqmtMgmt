@@ -1,0 +1,512 @@
+@page "/projects"
+@using RqmtMgmtShared
+@inject IProjectService ProjectService
+@inject IUserService UserService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Projects</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Projects</h3>
+                <button class="btn btn-success" @onclick="ShowAddForm" data-testid="create-project-button">
+                    <i class="fas fa-plus me-1"></i>Add Project
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search projects..." 
+                       @bind="searchTerm" @onkeypress="OnSearchKeyPress" data-testid="search-input" />
+                <button class="btn btn-outline-secondary" @onclick="SearchProjects">
+                    <i class="fas fa-search"></i>
+                </button>
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                        <i class="fas fa-times"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="filterStatus" @bind:after="FilterProjects">
+                <option value="">All Statuses</option>
+                <option value="Planning">Planning</option>
+                <option value="Active">Active</option>
+                <option value="OnHold">On Hold</option>
+                <option value="Archived">Archived</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="sortBy" @bind:after="SortProjects">
+                <option value="name">Sort by Name</option>
+                <option value="status">Sort by Status</option>
+                <option value="created">Sort by Created Date</option>
+                <option value="owner">Sort by Owner</option>
+            </select>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (projects == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading projects...</p>
+        </div>
+    }
+    else
+    {
+        @if (!filteredProjects.Any())
+        {
+            <div class="text-center py-3 mb-3">
+                <i class="fas fa-folder fa-2x text-muted mb-2"></i>
+                <h5 class="text-muted">No Projects Found</h5>
+                <p class="text-muted mb-0">
+                    @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(filterStatus))
+                    {
+                        <span>No projects match your current filters.</span>
+                    }
+                    else
+                    {
+                        <span>Get started by creating your first project.</span>
+                    }
+                </p>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" style="width: 80px;">ID</th>
+                                <th scope="col">Name</th>
+                                <th scope="col" style="width: 100px;">Code</th>
+                                <th scope="col" style="width: 120px;">Status</th>
+                                <th scope="col" style="width: 150px;">Owner</th>
+                                <th scope="col" style="width: 100px;">Items</th>
+                                <th scope="col" style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var project in filteredProjects)
+                            {
+                                <tr data-testid="project-row">
+                                    <td class="align-middle">@project.Id</td>
+                                    <td class="align-middle">
+                                        <div class="fw-medium">@project.Name</div>
+                                        @if (!string.IsNullOrEmpty(project.Description))
+                                        {
+                                            <br><small class="text-muted">@project.Description</small>
+                                        }
+                                        <br><small class="text-muted">Created: @project.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="badge bg-secondary">@project.Code</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="badge @GetStatusBadgeClass(project.Status)">
+                                            @project.Status
+                                        </span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="fw-medium">@project.OwnerName</div>
+                                        @if (project.TeamMembers.Any())
+                                        {
+                                            <br><small class="text-muted">@project.TeamMembers.Count team member@(project.TeamMembers.Count == 1 ? "" : "s")</small>
+                                        }
+                                    </td>
+                                    <td class="align-middle">
+                                        <small class="text-muted">
+                                            @project.RequirementCount REQ<br>
+                                            @project.TestSuiteCount TS<br>
+                                            @project.TestPlanCount TP
+                                        </small>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    @onclick="() => ShowEditForm(project)" 
+                                                    title="Edit" data-testid="edit-@project.Name">
+                                                Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    @onclick="() => DeleteProject(project)" 
+                                                    title="Delete" data-testid="delete-@project.Name">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    Showing @filteredProjects.Count of @projects.Count project@(projects.Count == 1 ? "" : "s")
+                    @if (projects.Any())
+                    {
+                        <span class="ms-3">Total Requirements: @projects.Sum(p => p.RequirementCount)</span>
+                        <span class="ms-3">Total Test Suites: @projects.Sum(p => p.TestSuiteCount)</span>
+                        <span class="ms-3">Total Test Plans: @projects.Sum(p => p.TestPlanCount)</span>
+                    }
+                </small>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add/Edit Project Modal -->
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas @(editProject == null ? "fa-plus" : "fa-edit") me-2"></i>
+                        @(editProject == null ? "Add New Project" : "Edit Project")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HideForm" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(formErrorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>@formErrorMessage
+                        </div>
+                    }
+                    
+                    <form @onsubmit="SaveProject" @onsubmit:preventDefault="true">
+                        <div class="mb-3">
+                            <label for="projectName" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="projectName" @bind="formModel.Name" 
+                                   placeholder="Enter project name" required maxlength="200" data-testid="name-input" />
+                            <div class="form-text">Maximum 200 characters</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="projectCode" class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="projectCode" @bind="formModel.Code" 
+                                   placeholder="Enter project code (e.g., PROJ1)" required maxlength="20" data-testid="code-input" />
+                            <div class="form-text">Unique identifier for the project (maximum 20 characters)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="projectDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="projectDescription" @bind="formModel.Description" 
+                                      rows="3" placeholder="Enter project description" maxlength="1000" data-testid="description-input"></textarea>
+                            <div class="form-text">Optional description (maximum 1000 characters)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="projectStatus" class="form-label">Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="projectStatus" @bind="formModel.Status" required data-testid="status-select">
+                                <option value="">Select status</option>
+                                @foreach (var status in Enum.GetValues<ProjectStatus>())
+                                {
+                                    <option value="@status">@status</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="projectOwner" class="form-label">Owner <span class="text-danger">*</span></label>
+                            <select class="form-select" id="projectOwner" @bind="formModel.OwnerId" required data-testid="owner-select">
+                                <option value="0">Select owner</option>
+                                @if (users != null)
+                                {
+                                    @foreach (var user in users)
+                                    {
+                                        <option value="@user.Id">@user.UserName (@user.Email)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveProject" data-testid="save-button">
+                        <i class="fas fa-save me-1"></i>Save Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProjectDto>? projects;
+    private List<ProjectDto> filteredProjects = new();
+    private List<UserDto>? users;
+    private string searchTerm = string.Empty;
+    private string filterStatus = string.Empty;
+    private string sortBy = "name";
+    private string errorMessage = string.Empty;
+    private string formErrorMessage = string.Empty;
+    private bool showForm;
+    private ProjectDto? editProject;
+    private ProjectFormModel formModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+        await LoadUsers();
+    }
+
+    private async Task LoadProjects()
+    {
+        try
+        {
+            var filter = new ProjectFilterDto { Page = 1, PageSize = 1000 };
+            var result = await ProjectService.GetProjectsAsync(filter);
+            projects = result.Items;
+            filteredProjects = projects;
+            ApplyFiltersAndSort();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading projects: {ex.Message}";
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            users = await UserService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading users: {ex.Message}";
+        }
+    }
+
+    private void ApplyFiltersAndSort()
+    {
+        if (projects == null) return;
+
+        filteredProjects = projects.ToList();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filteredProjects = filteredProjects.Where(p => 
+                p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                p.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(p.Description) && p.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                p.OwnerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+
+        // Apply status filter
+        if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<ProjectStatus>(filterStatus, out var status))
+        {
+            filteredProjects = filteredProjects.Where(p => p.Status == status).ToList();
+        }
+
+        // Apply sorting
+        filteredProjects = sortBy switch
+        {
+            "name" => filteredProjects.OrderBy(p => p.Name).ToList(),
+            "status" => filteredProjects.OrderBy(p => p.Status).ThenBy(p => p.Name).ToList(),
+            "created" => filteredProjects.OrderByDescending(p => p.CreatedAt).ToList(),
+            "owner" => filteredProjects.OrderBy(p => p.OwnerName).ThenBy(p => p.Name).ToList(),
+            _ => filteredProjects.OrderBy(p => p.Name).ToList()
+        };
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchProjects();
+        }
+    }
+
+    private async Task SearchProjects()
+    {
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private async Task FilterProjects()
+    {
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private async Task SortProjects()
+    {
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private void ShowAddForm()
+    {
+        editProject = null;
+        formModel = new ProjectFormModel() 
+        { 
+            Name = string.Empty,
+            Code = string.Empty,
+            Status = ProjectStatus.Planning,
+            OwnerId = 1  // Default to first user
+        };
+        formErrorMessage = string.Empty;
+        showForm = true;
+    }
+
+    private void ShowEditForm(ProjectDto project)
+    {
+        editProject = project;
+        formModel = new ProjectFormModel
+        {
+            Name = project.Name,
+            Code = project.Code,
+            Description = project.Description,
+            Status = project.Status,
+            OwnerId = project.OwnerId
+        };
+        formErrorMessage = string.Empty;
+        showForm = true;
+    }
+
+    private void HideForm()
+    {
+        showForm = false;
+        editProject = null;
+        formModel = new();
+        formErrorMessage = string.Empty;
+    }
+
+    private async Task SaveProject()
+    {
+        if (string.IsNullOrWhiteSpace(formModel.Name))
+        {
+            formErrorMessage = "Project name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(formModel.Code))
+        {
+            formErrorMessage = "Project code is required.";
+            return;
+        }
+
+        if (formModel.OwnerId <= 0)
+        {
+            formErrorMessage = "Project owner is required.";
+            return;
+        }
+
+        try
+        {
+            if (editProject == null)
+            {
+                // Create new project
+                var createDto = new CreateProjectDto
+                {
+                    Name = formModel.Name.Trim(),
+                    Code = formModel.Code.Trim().ToUpper(),
+                    Description = formModel.Description?.Trim(),
+                    Status = formModel.Status,
+                    OwnerId = formModel.OwnerId
+                };
+
+                await ProjectService.CreateProjectAsync(createDto);
+            }
+            else
+            {
+                // Update existing project
+                var updateDto = new UpdateProjectDto
+                {
+                    Name = formModel.Name.Trim(),
+                    Code = formModel.Code.Trim().ToUpper(),
+                    Description = formModel.Description?.Trim(),
+                    Status = formModel.Status,
+                    OwnerId = formModel.OwnerId
+                };
+
+                await ProjectService.UpdateProjectAsync(editProject.Id, updateDto);
+            }
+
+            HideForm();
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            formErrorMessage = $"Error saving project: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteProject(ProjectDto project)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete the project '{project.Name}'? This action cannot be undone and will delete all associated requirements, test suites, and test plans.");
+        
+        if (!confirmed) return;
+
+        try
+        {
+            var success = await ProjectService.DeleteProjectAsync(project.Id);
+            if (success)
+            {
+                await LoadProjects();
+            }
+            else
+            {
+                errorMessage = "Failed to delete project. It may be referenced by other data.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting project: {ex.Message}";
+        }
+    }
+
+    private static string GetStatusBadgeClass(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Planning => "bg-secondary",
+        ProjectStatus.Active => "bg-success",
+        ProjectStatus.OnHold => "bg-warning",
+        ProjectStatus.Archived => "bg-dark",
+        _ => "bg-secondary"
+    };
+
+    private class ProjectFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public ProjectStatus Status { get; set; } = ProjectStatus.Planning;
+        public int OwnerId { get; set; }
+    }
+}
