@@ -23,7 +23,7 @@ public class NavMenuTests : ComponentTestBase
         
         // Check all navigation links are present
         var navLinks = component.FindAll("a.nav-link");
-        Assert.Equal(7, navLinks.Count);
+        Assert.Equal(8, navLinks.Count);
         
         // Verify specific navigation links
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "/" && link.TextContent.Contains("Home"));

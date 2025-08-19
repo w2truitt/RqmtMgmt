@@ -1,4 +1,6 @@
 @using frontend.Components.Navigation
+@inject IProjectContextService ProjectContextService
+@implements IDisposable
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -35,9 +37,18 @@
             REQUIREMENTS MANAGEMENT
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="requirements">
-                <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
-            </NavLink>
+            @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+            {
+                <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/requirements")">
+                    <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="requirements">
+                    <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
+                </NavLink>
+            }
         </div>
 
         <!-- PROJECT MANAGEMENT -->
@@ -101,8 +112,29 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to project changes to update navigation
+        ProjectContextService.ProjectChanged += OnProjectChanged;
+        
+        // Load persisted project context if available
+        await ProjectContextService.LoadPersistedProjectContextAsync();
+    }
+
+    private void OnProjectChanged(ProjectDto? project)
+    {
+        // Update UI when project context changes
+        InvokeAsync(StateHasChanged);
+    }
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe to prevent memory leaks
+        ProjectContextService.ProjectChanged -= OnProjectChanged;
     }
 }

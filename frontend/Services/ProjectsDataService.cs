@@ -104,7 +104,7 @@ namespace frontend.Services
         /// <param name="projectId">The unique identifier of the project.</param>
         /// <returns>A list of team members for the project.</returns>
         public async Task<List<ProjectTeamMemberDto>> GetProjectTeamMembersAsync(int projectId)
-            => await _http.GetFromJsonAsync<List<ProjectTeamMemberDto>>($"/api/Projects/{projectId}/team-members", _jsonOptions) ?? new();
+            => await _http.GetFromJsonAsync<List<ProjectTeamMemberDto>>($"/api/Projects/{projectId}/team", _jsonOptions) ?? new();
 
         /// <summary>
         /// Adds a team member to a project.
@@ -114,7 +114,7 @@ namespace frontend.Services
         /// <returns>The added team member if successful; otherwise, null.</returns>
         public async Task<ProjectTeamMemberDto?> AddTeamMemberAsync(int projectId, AddProjectTeamMemberDto addTeamMemberDto)
         {
-            var response = await _http.PostAsJsonAsync($"/api/Projects/{projectId}/team-members", addTeamMemberDto, _jsonOptions);
+            var response = await _http.PostAsJsonAsync($"/api/Projects/{projectId}/team", addTeamMemberDto, _jsonOptions);
             return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<ProjectTeamMemberDto>(_jsonOptions) : null;
         }
 
@@ -127,7 +127,7 @@ namespace frontend.Services
         /// <returns>The updated team member if successful; otherwise, null.</returns>
         public async Task<ProjectTeamMemberDto?> UpdateTeamMemberAsync(int projectId, int userId, UpdateProjectTeamMemberDto updateTeamMemberDto)
         {
-            var response = await _http.PutAsJsonAsync($"/api/Projects/{projectId}/team-members/{userId}", updateTeamMemberDto, _jsonOptions);
+            var response = await _http.PutAsJsonAsync($"/api/Projects/{projectId}/team/{userId}", updateTeamMemberDto, _jsonOptions);
             return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<ProjectTeamMemberDto>(_jsonOptions) : null;
         }
 
@@ -139,7 +139,7 @@ namespace frontend.Services
         /// <returns>True if the removal was successful; otherwise, false.</returns>
         public async Task<bool> RemoveTeamMemberAsync(int projectId, int userId)
         {
-            var response = await _http.DeleteAsync($"/api/Projects/{projectId}/team-members/{userId}");
+            var response = await _http.DeleteAsync($"/api/Projects/{projectId}/team/{userId}");
             return response.IsSuccessStatusCode;
         }
 

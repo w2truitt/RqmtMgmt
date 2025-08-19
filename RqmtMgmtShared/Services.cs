@@ -7,6 +7,8 @@ public interface IRequirementService
 {
     Task<List<RequirementDto>> GetAllAsync();
     Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<RequirementDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<RequirementDto?> GetByIdAsync(int id);
     Task<RequirementDto?> CreateAsync(RequirementDto requirement);
     Task<bool> UpdateAsync(RequirementDto requirement);

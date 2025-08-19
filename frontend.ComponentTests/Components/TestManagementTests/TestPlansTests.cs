@@ -223,8 +223,13 @@ public class TestPlansTests : ComponentTestBase
         var component = RenderComponent<TestPlans>();
         
         // Act
-        var deleteButton = component.FindAll("button").First(b => b.TextContent.Contains("Delete"));
+        // Step 1: Click the initial Delete button to show the confirmation modal
+        var deleteButton = component.FindAll("button").First(b => b.TextContent.Contains("Delete") && !b.TextContent.Contains("Test Plan"));
         deleteButton.Click();
+        
+        // Step 2: Click the confirmation button in the modal to actually delete
+        var confirmDeleteButton = component.Find("button[data-testid='confirm-delete']");
+        confirmDeleteButton.Click();
         
         // Wait for async operation
         await Task.Delay(100);
