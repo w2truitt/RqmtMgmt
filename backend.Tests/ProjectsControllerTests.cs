@@ -171,7 +171,7 @@ namespace backend.Tests
         {
             var serviceMock = new Mock<IProjectService>();
             serviceMock.Setup(s => s.GetProjectByIdAsync(1)).ReturnsAsync(new ProjectDto { Id = 1 });
-            var controller = CreateController();
+            var controller = CreateController(serviceMock);
             var result = await controller.GetProject(1);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var dto = Assert.IsType<ProjectDto>(ok.Value);
@@ -358,7 +358,24 @@ namespace backend.Tests
         [Fact]
         public async Task GetProjectRequirements_ReturnsOk()
         {
-            var controller = CreateController();
+            var projectServiceMock = new Mock<IProjectService>();
+            var requirementServiceMock = new Mock<IRequirementService>();
+            
+            // Mock project exists
+            projectServiceMock.Setup(s => s.GetProjectByIdAsync(1))
+                .ReturnsAsync(new ProjectDto { Id = 1, Name = "Test Project" });
+            
+            var emptyPagedResult = new PagedResult<RequirementDto>
+            {
+                Items = new List<RequirementDto>(),
+                TotalItems = 0,
+                PageNumber = 1,
+                PageSize = 10
+            };
+            requirementServiceMock.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>()))
+                .ReturnsAsync(emptyPagedResult);
+            
+            var controller = CreateController(projectServiceMock, requirementServiceMock);
             var result = await controller.GetProjectRequirements(1);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var paged = Assert.IsType<PagedResult<RequirementDto>>(ok.Value);

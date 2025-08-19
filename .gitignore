@@ -29,6 +29,8 @@ backend/bin/
 backend/obj/
 frontend/dist/
 coveragereport/
+coverage-report/
+TestResults/
 
 # Misc
 *.swp

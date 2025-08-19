@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using backend.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -159,5 +160,151 @@ namespace backend.Tests
             var obj = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, obj.StatusCode);
         }
+
+        #region GetExecutionsForSession Tests
+
+        [Fact]
+        public async Task GetExecutionsForSession_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestExecutionService>();
+            mock.Setup(s => s.GetExecutionsForSessionAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
+            var controller = new TestExecutionController(mock.Object);
+            var result = await controller.GetExecutionsForSession(1);
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetExecutionsForSession_ReturnsOkWithExecutions()
+        {
+            var mockService = new Mock<ITestExecutionService>();
+            var controller = new TestExecutionController(mockService.Object);
+            var executions = new List<TestCaseExecutionDto> 
+            { 
+                new TestCaseExecutionDto { Id = 1, TestCaseId = 1, TestRunSessionId = 1 }, 
+                new TestCaseExecutionDto { Id = 2, TestCaseId = 2, TestRunSessionId = 1 } 
+            };
+            mockService.Setup(s => s.GetExecutionsForSessionAsync(1)).ReturnsAsync(executions);
+            var result = await controller.GetExecutionsForSession(1);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedExecutions = Assert.IsType<List<TestCaseExecutionDto>>(okResult.Value);
+            Assert.Equal(2, returnedExecutions.Count);
+        }
+
+        [Fact]
+        public async Task GetExecutionsForSession_EmptyList_ReturnsOkWithEmptyList()
+        {
+            var mockService = new Mock<ITestExecutionService>();
+            var controller = new TestExecutionController(mockService.Object);
+            var executions = new List<TestCaseExecutionDto>();
+            mockService.Setup(s => s.GetExecutionsForSessionAsync(1)).ReturnsAsync(executions);
+            var result = await controller.GetExecutionsForSession(1);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedExecutions = Assert.IsType<List<TestCaseExecutionDto>>(okResult.Value);
+            Assert.Empty(returnedExecutions);
+        }
+
+        #endregion
+
+        #region GetStepExecutionsForCase Tests
+
+        [Fact]
+        public async Task GetStepExecutionsForCase_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestExecutionService>();
+            mock.Setup(s => s.GetStepExecutionsForCaseAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
+            var controller = new TestExecutionController(mock.Object);
+            var result = await controller.GetStepExecutionsForCase(1);
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetStepExecutionsForCase_ReturnsOkWithStepExecutions()
+        {
+            var mockService = new Mock<ITestExecutionService>();
+            var controller = new TestExecutionController(mockService.Object);
+            var stepExecutions = new List<TestStepExecutionDto> 
+            { 
+                new TestStepExecutionDto { Id = 1, TestCaseExecutionId = 1 }, 
+                new TestStepExecutionDto { Id = 2, TestCaseExecutionId = 1 } 
+            };
+            mockService.Setup(s => s.GetStepExecutionsForCaseAsync(1)).ReturnsAsync(stepExecutions);
+            var result = await controller.GetStepExecutionsForCase(1);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedStepExecutions = Assert.IsType<List<TestStepExecutionDto>>(okResult.Value);
+            Assert.Equal(2, returnedStepExecutions.Count);
+        }
+
+        [Fact]
+        public async Task GetStepExecutionsForCase_EmptyList_ReturnsOkWithEmptyList()
+        {
+            var mockService = new Mock<ITestExecutionService>();
+            var controller = new TestExecutionController(mockService.Object);
+            var stepExecutions = new List<TestStepExecutionDto>();
+            mockService.Setup(s => s.GetStepExecutionsForCaseAsync(1)).ReturnsAsync(stepExecutions);
+            var result = await controller.GetStepExecutionsForCase(1);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedStepExecutions = Assert.IsType<List<TestStepExecutionDto>>(okResult.Value);
+            Assert.Empty(returnedStepExecutions);
+        }
+
+        #endregion
+
+        #region GetExecutionStats Tests
+
+        [Fact]
+        public async Task GetExecutionStats_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestExecutionService>();
+            mock.Setup(s => s.GetExecutionStatsAsync()).ThrowsAsync(new Exception("fail"));
+            var controller = new TestExecutionController(mock.Object);
+            var result = await controller.GetExecutionStats();
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetExecutionStats_ReturnsOkWithStats()
+        {
+            var mockService = new Mock<ITestExecutionService>();
+            var controller = new TestExecutionController(mockService.Object);
+            var stats = new TestExecutionStatsDto { TotalTestCaseExecutions = 100, PassedExecutions = 85, FailedExecutions = 15 };
+            mockService.Setup(s => s.GetExecutionStatsAsync()).ReturnsAsync(stats);
+            var result = await controller.GetExecutionStats();
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedStats = Assert.IsType<TestExecutionStatsDto>(okResult.Value);
+            Assert.Equal(100, returnedStats.TotalTestCaseExecutions);
+        }
+
+        #endregion
+
+        #region GetExecutionStatsForSession Tests
+
+        [Fact]
+        public async Task GetExecutionStatsForSession_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestExecutionService>();
+            mock.Setup(s => s.GetExecutionStatsForSessionAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
+            var controller = new TestExecutionController(mock.Object);
+            var result = await controller.GetExecutionStatsForSession(1);
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetExecutionStatsForSession_ReturnsOkWithStats()
+        {
+            var mockService = new Mock<ITestExecutionService>();
+            var controller = new TestExecutionController(mockService.Object);
+            var stats = new TestExecutionStatsDto { TotalTestCaseExecutions = 50, PassedExecutions = 40, FailedExecutions = 10 };
+            mockService.Setup(s => s.GetExecutionStatsForSessionAsync(1)).ReturnsAsync(stats);
+            var result = await controller.GetExecutionStatsForSession(1);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedStats = Assert.IsType<TestExecutionStatsDto>(okResult.Value);
+            Assert.Equal(50, returnedStats.TotalTestCaseExecutions);
+        }
+
+        #endregion
     }
 }

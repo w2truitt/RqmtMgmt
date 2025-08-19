@@ -162,53 +162,91 @@ public class Program
         {
             try
             {
-                using var scope = app.Services.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-                logger.LogInformation("Database initialization attempt {Attempt}/{MaxRetries}", attempt, maxRetries);
-
-                // Test database connectivity first
-                await context.Database.CanConnectAsync();
-                logger.LogInformation("Database connection established successfully");
-
-                // Apply migrations and seed data based on environment
-                if (app.Environment.IsDevelopment())
-                {
-                    await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
-                    logger.LogInformation("Database seeded with development data successfully");
-                }
-                else if (app.Environment.IsEnvironment("Testing"))
-                {
-                    await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
-                    logger.LogInformation("Database seeded with test data successfully");
-                }
-                else
-                {
-                    // Production - only apply migrations, no test data
-                    await context.Database.MigrateAsync();
-                    logger.LogInformation("Database migrations applied successfully");
-                }
-
-                logger.LogInformation("Database initialization completed successfully");
+                await InitializeDatabaseAsync(app, attempt, maxRetries);
                 return; // Success - exit retry loop
             }
             catch (Exception ex)
             {
-                using var scope = app.Services.CreateScope();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                
-                if (attempt == maxRetries)
-                {
-                    logger.LogCritical(ex, "Database initialization failed after {MaxRetries} attempts. Application will exit.", maxRetries);
-                    throw; // Re-throw on final attempt
-                }
-
-                logger.LogWarning(ex, "Database initialization attempt {Attempt}/{MaxRetries} failed. Retrying in {DelayMs}ms...", 
-                    attempt, maxRetries, delayMs);
-                
-                await Task.Delay(delayMs);
+                await HandleDatabaseInitializationError(app, ex, attempt, maxRetries, delayMs);
             }
         }
+    }
+
+    /// <summary>
+    /// Performs the actual database initialization logic.
+    /// </summary>
+    /// <param name="app">The web application instance</param>
+    /// <param name="attempt">Current attempt number</param>
+    /// <param name="maxRetries">Maximum number of retries</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    private static async Task InitializeDatabaseAsync(WebApplication app, int attempt, int maxRetries)
+    {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        logger.LogInformation("Database initialization attempt {Attempt}/{MaxRetries}", attempt, maxRetries);
+
+        // Test database connectivity first
+        await context.Database.CanConnectAsync();
+        logger.LogInformation("Database connection established successfully");
+
+        // Apply migrations and seed data based on environment
+        await InitializeDatabaseByEnvironment(app, context, logger);
+        
+        logger.LogInformation("Database initialization completed successfully");
+    }
+
+    /// <summary>
+    /// Initializes the database based on the current environment.
+    /// </summary>
+    /// <param name="app">The web application instance</param>
+    /// <param name="context">The database context</param>
+    /// <param name="logger">The logger instance</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    private static async Task InitializeDatabaseByEnvironment(WebApplication app, RqmtMgmtDbContext context, ILogger<Program> logger)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+            logger.LogInformation("Database seeded with development data successfully");
+        }
+        else if (app.Environment.IsEnvironment("Testing"))
+        {
+            await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+            logger.LogInformation("Database seeded with test data successfully");
+        }
+        else
+        {
+            // Production - only apply migrations, no test data
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Database migrations applied successfully");
+        }
+    }
+
+    /// <summary>
+    /// Handles errors during database initialization with appropriate logging and retry logic.
+    /// </summary>
+    /// <param name="app">The web application instance</param>
+    /// <param name="ex">The exception that occurred</param>
+    /// <param name="attempt">Current attempt number</param>
+    /// <param name="maxRetries">Maximum number of retries</param>
+    /// <param name="delayMs">Delay in milliseconds between retries</param>
+    /// <returns>A task representing the asynchronous operation</returns>
+    private static async Task HandleDatabaseInitializationError(WebApplication app, Exception ex, int attempt, int maxRetries, int delayMs)
+    {
+        using var scope = app.Services.CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        
+        if (attempt == maxRetries)
+        {
+            logger.LogCritical(ex, "Database initialization failed after {MaxRetries} attempts. Application will exit.", maxRetries);
+            throw ex; // Re-throw on final attempt
+        }
+
+        logger.LogWarning(ex, "Database initialization attempt {Attempt}/{MaxRetries} failed. Retrying in {DelayMs}ms...", 
+            attempt, maxRetries, delayMs);
+        
+        await Task.Delay(delayMs);
     }
 }

@@ -87,34 +87,81 @@ namespace backend.Services
             var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == dto.Id);
             if (tracked == null) return false;
 
-            // Validate required fields
+            // Validate the DTO before proceeding
+            if (!IsValidTestCaseDto(dto))
+                return false;
+
+            // Update the entity properties
+            UpdateTestCaseProperties(tracked, dto);
+
+            // Replace the test steps
+            ReplaceTestSteps(tracked, dto.Steps);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Validates a test case DTO for required fields and business rules.
+        /// </summary>
+        /// <param name="dto">The test case DTO to validate.</param>
+        /// <returns>True if the DTO is valid; otherwise, false.</returns>
+        private static bool IsValidTestCaseDto(TestCaseDto dto)
+        {
             if (string.IsNullOrWhiteSpace(dto.Title))
                 return false;
 
             if (dto.CreatedBy <= 0)
                 return false;
 
-            // Validate steps - ensure all steps have required fields
-            if (dto.Steps != null)
-            {
-                foreach (var step in dto.Steps)
-                {
-                    if (string.IsNullOrWhiteSpace(step.Description) || string.IsNullOrWhiteSpace(step.ExpectedResult))
-                        return false;
-                }
-            }
+            return AreTestStepsValid(dto.Steps);
+        }
 
-            tracked.Title = dto.Title;
-            tracked.Description = dto.Description;
-            tracked.SuiteId = dto.SuiteId;
-            // Replace steps (remove existing and add new ones)
-            tracked.Steps.Clear();
-            foreach (var s in dto.Steps ?? Enumerable.Empty<TestStepDto>())
+        /// <summary>
+        /// Validates test steps to ensure all required fields are present.
+        /// </summary>
+        /// <param name="steps">The test steps to validate.</param>
+        /// <returns>True if all steps are valid; otherwise, false.</returns>
+        private static bool AreTestStepsValid(IEnumerable<TestStepDto>? steps)
+        {
+            if (steps == null) return true;
+
+            return steps.All(step => 
+                !string.IsNullOrWhiteSpace(step.Description) && 
+                !string.IsNullOrWhiteSpace(step.ExpectedResult));
+        }
+
+        /// <summary>
+        /// Updates the properties of a test case entity from a DTO.
+        /// </summary>
+        /// <param name="entity">The test case entity to update.</param>
+        /// <param name="dto">The DTO containing the new values.</param>
+        private static void UpdateTestCaseProperties(TestCase entity, TestCaseDto dto)
+        {
+            entity.Title = dto.Title;
+            entity.Description = dto.Description;
+            entity.SuiteId = dto.SuiteId;
+        }
+
+        /// <summary>
+        /// Replaces all test steps in a test case with new ones from the DTO.
+        /// </summary>
+        /// <param name="entity">The test case entity to update.</param>
+        /// <param name="steps">The new test steps from the DTO.</param>
+        private static void ReplaceTestSteps(TestCase entity, IEnumerable<TestStepDto>? steps)
+        {
+            entity.Steps.Clear();
+            
+            if (steps == null) return;
+
+            foreach (var stepDto in steps)
             {
-                tracked.Steps.Add(new TestStep { Description = s.Description, ExpectedResult = s.ExpectedResult });
+                entity.Steps.Add(new TestStep 
+                { 
+                    Description = stepDto.Description, 
+                    ExpectedResult = stepDto.ExpectedResult 
+                });
             }
-            await _context.SaveChangesAsync();
-            return true;
         }
 
         /// <summary>

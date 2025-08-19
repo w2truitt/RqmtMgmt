@@ -161,6 +161,20 @@ namespace backend.Services
 
         public async Task<ProjectTeamMemberDto?> AddTeamMemberAsync(int projectId, AddProjectTeamMemberDto addTeamMemberDto)
         {
+            // First, verify that the project exists
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null)
+            {
+                return null; // Project not found
+            }
+
+            // Verify that the user exists
+            var user = await _context.Users.FindAsync(addTeamMemberDto.UserId);
+            if (user == null)
+            {
+                return null; // User not found
+            }
+
             // Check if the team member already exists
             var existingMember = await _context.ProjectTeamMembers
                 .FirstOrDefaultAsync(tm => tm.ProjectId == projectId && tm.UserId == addTeamMemberDto.UserId);

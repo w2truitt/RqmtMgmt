@@ -157,6 +157,13 @@ namespace backend.Controllers
         {
             try
             {
+                // Verify project exists first
+                var project = await _projectService.GetProjectByIdAsync(id);
+                if (project == null)
+                {
+                    return NotFound($"Project with ID {id} not found.");
+                }
+
                 var teamMembers = await _projectService.GetProjectTeamMembersAsync(id);
                 return Ok(teamMembers);
             }
@@ -181,7 +188,7 @@ namespace backend.Controllers
                 var teamMember = await _projectService.AddTeamMemberAsync(id, addTeamMemberDto);
                 if (teamMember == null)
                 {
-                    return BadRequest("Failed to add team member.");
+                    return NotFound($"Project with ID {id} not found or user with ID {addTeamMemberDto.UserId} not found.");
                 }
                 return Ok(teamMember);
             }

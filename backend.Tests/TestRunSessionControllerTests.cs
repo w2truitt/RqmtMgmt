@@ -202,5 +202,178 @@ namespace backend.Tests
             var result = await controller.Delete(1);
             Assert.IsType<NoContentResult>(result);
         }
+
+        #region StartTestRunSession Tests
+
+        [Fact]
+        public async Task StartTestRunSession_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestRunSessionService>();
+            mock.Setup(s => s.StartTestRunSessionAsync(It.IsAny<TestRunSessionDto>())).ThrowsAsync(new Exception("fail"));
+            var controller = new TestRunSessionController(mock.Object);
+            var dto = new TestRunSessionDto { Id = 1 };
+            var result = await controller.StartTestRunSession(dto);
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task StartTestRunSession_InvalidModelState_ReturnsBadRequest()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            var controller = new TestRunSessionController(mockService.Object);
+            controller.ModelState.AddModelError("Name", "Required");
+            var dto = new TestRunSessionDto();
+            var result = await controller.StartTestRunSession(dto);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task StartTestRunSession_ServiceReturnsNull_ReturnsInternalServerError()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            mockService.Setup(s => s.StartTestRunSessionAsync(It.IsAny<TestRunSessionDto>())).ReturnsAsync((TestRunSessionDto)null);
+            var controller = new TestRunSessionController(mockService.Object);
+            var dto = new TestRunSessionDto { Id = 1 };
+            var result = await controller.StartTestRunSession(dto);
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task StartTestRunSession_ReturnsCreatedAtAction_WhenSuccessful()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            var started = new TestRunSessionDto { Id = 10, Name = "Started Session" };
+            mockService.Setup(s => s.StartTestRunSessionAsync(It.IsAny<TestRunSessionDto>())).ReturnsAsync(started);
+            var controller = new TestRunSessionController(mockService.Object);
+            var dto = new TestRunSessionDto { Id = 10 };
+            var result = await controller.StartTestRunSession(dto);
+            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var returned = Assert.IsType<TestRunSessionDto>(createdResult.Value);
+            Assert.Equal(10, returned.Id);
+            Assert.Equal("GetById", createdResult.ActionName);
+        }
+
+        #endregion
+
+        #region CompleteTestRunSession Tests
+
+        [Fact]
+        public async Task CompleteTestRunSession_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestRunSessionService>();
+            mock.Setup(s => s.CompleteTestRunSessionAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
+            var controller = new TestRunSessionController(mock.Object);
+            var result = await controller.CompleteTestRunSession(1);
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task CompleteTestRunSession_ServiceReturnsFalse_ReturnsNotFound()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            mockService.Setup(s => s.CompleteTestRunSessionAsync(1)).ReturnsAsync(false);
+            var controller = new TestRunSessionController(mockService.Object);
+            var result = await controller.CompleteTestRunSession(1);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var message = notFoundResult.Value;
+            Assert.NotNull(message);
+        }
+
+        [Fact]
+        public async Task CompleteTestRunSession_ServiceReturnsTrue_ReturnsNoContent()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            mockService.Setup(s => s.CompleteTestRunSessionAsync(1)).ReturnsAsync(true);
+            var controller = new TestRunSessionController(mockService.Object);
+            var result = await controller.CompleteTestRunSession(1);
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        #endregion
+
+        #region AbortTestRunSession Tests
+
+        [Fact]
+        public async Task AbortTestRunSession_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestRunSessionService>();
+            mock.Setup(s => s.AbortTestRunSessionAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
+            var controller = new TestRunSessionController(mock.Object);
+            var result = await controller.AbortTestRunSession(1);
+            var obj = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task AbortTestRunSession_ServiceReturnsFalse_ReturnsNotFound()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            mockService.Setup(s => s.AbortTestRunSessionAsync(1)).ReturnsAsync(false);
+            var controller = new TestRunSessionController(mockService.Object);
+            var result = await controller.AbortTestRunSession(1);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var message = notFoundResult.Value;
+            Assert.NotNull(message);
+        }
+
+        [Fact]
+        public async Task AbortTestRunSession_ServiceReturnsTrue_ReturnsNoContent()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            mockService.Setup(s => s.AbortTestRunSessionAsync(1)).ReturnsAsync(true);
+            var controller = new TestRunSessionController(mockService.Object);
+            var result = await controller.AbortTestRunSession(1);
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        #endregion
+
+        #region GetActiveSessions Tests
+
+        [Fact]
+        public async Task GetActiveSessions_ServiceThrows_Returns500()
+        {
+            var mock = new Mock<ITestRunSessionService>();
+            mock.Setup(s => s.GetActiveSessionsAsync()).ThrowsAsync(new Exception("fail"));
+            var controller = new TestRunSessionController(mock.Object);
+            var result = await controller.GetActiveSessions();
+            var obj = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, obj.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetActiveSessions_WithActiveSessions_ReturnsOkWithSessions()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            var controller = new TestRunSessionController(mockService.Object);
+            var sessions = new List<TestRunSessionDto> 
+            { 
+                new TestRunSessionDto { Id = 1, Name = "Active Session 1" }, 
+                new TestRunSessionDto { Id = 2, Name = "Active Session 2" } 
+            };
+            mockService.Setup(s => s.GetActiveSessionsAsync()).ReturnsAsync(sessions);
+            var result = await controller.GetActiveSessions();
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedSessions = Assert.IsType<List<TestRunSessionDto>>(okResult.Value);
+            Assert.Equal(2, returnedSessions.Count);
+        }
+
+        [Fact]
+        public async Task GetActiveSessions_EmptyList_ReturnsOkWithEmptyList()
+        {
+            var mockService = new Mock<ITestRunSessionService>();
+            var controller = new TestRunSessionController(mockService.Object);
+            var sessions = new List<TestRunSessionDto>();
+            mockService.Setup(s => s.GetActiveSessionsAsync()).ReturnsAsync(sessions);
+            var result = await controller.GetActiveSessions();
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedSessions = Assert.IsType<List<TestRunSessionDto>>(okResult.Value);
+            Assert.Empty(returnedSessions);
+        }
+
+        #endregion
     }
 }
