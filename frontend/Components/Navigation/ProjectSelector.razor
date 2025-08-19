@@ -59,10 +59,53 @@
     }
     else
     {
-        <button class="btn btn-outline-light btn-sm" @onclick="ViewAllProjects">
-            <i class="bi bi-folder-plus me-1"></i>
-            Select Project
-        </button>
+        <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle project-selector-btn" 
+                    type="button" 
+                    id="projectDropdownNoSelection" 
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false">
+                <i class="bi bi-folder-plus me-1"></i>
+                Select Project
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end project-dropdown" aria-labelledby="projectDropdownNoSelection">
+                <li><h6 class="dropdown-header">Select Project</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                
+                @if (availableProjects?.Any() == true)
+                {
+                    @foreach (var project in availableProjects)
+                    {
+                        <li>
+                            <button class="dropdown-item" 
+                                    type="button"
+                                    @onclick="() => SelectProject(project)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-medium">@project.Name</div>
+                                        <small class="text-muted">@project.Code</small>
+                                    </div>
+                                </div>
+                            </button>
+                        </li>
+                    }
+                    <li><hr class="dropdown-divider"></li>
+                }
+                else
+                {
+                    <li>
+                        <span class="dropdown-item-text text-muted">No projects available</span>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                }
+                
+                <li>
+                    <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
+                        <i class="bi bi-grid me-2"></i>View All Projects
+                    </button>
+                </li>
+            </ul>
+        </div>
     }
 </div>
 

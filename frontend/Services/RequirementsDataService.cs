@@ -52,6 +52,10 @@ namespace frontend.Services
             if (parameters.SortDescending)
                 queryString += "&sortDescending=true";
 
+            // Include ProjectId in the query string if provided
+            if (parameters.ProjectId.HasValue)
+                queryString += $"&projectId={parameters.ProjectId.Value}";
+
             var result = await _http.GetFromJsonAsync<PagedResult<RequirementDto>>($"/api/Requirement/paged{queryString}", _jsonOptions);
             return result ?? new PagedResult<RequirementDto>();
         }
