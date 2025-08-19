@@ -1,4 +1,5 @@
 using RqmtMgmtShared;
+using frontend.Models;
 
 namespace frontend.Services
 {
@@ -22,7 +23,7 @@ namespace frontend.Services
                 var result = await _projectService.GetProjectByIdAsync(projectId);
                 if (result != null)
                 {
-                    return ServiceResult<ProjectDto>.Success(result);
+                    return ServiceResult<ProjectDto>.SuccessResult(result);
                 }
                 return ServiceResult<ProjectDto>.Failure("Project not found");
             }
@@ -38,7 +39,7 @@ namespace frontend.Services
             {
                 var filter = new ProjectFilterDto { Page = 1, PageSize = 100 }; // Default filter
                 var result = await _projectService.GetProjectsAsync(filter);
-                return ServiceResult<PagedResult<ProjectDto>>.Success(result);
+                return ServiceResult<PagedResult<ProjectDto>>.SuccessResult(result);
             }
             catch (Exception ex)
             {

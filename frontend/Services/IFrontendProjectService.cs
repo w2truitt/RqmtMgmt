@@ -1,4 +1,5 @@
 using RqmtMgmtShared;
+using frontend.Models;
 
 namespace frontend.Services
 {
