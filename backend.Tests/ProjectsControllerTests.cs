@@ -12,7 +12,7 @@ namespace backend.Tests
 {
     public class ProjectsControllerTests
     {
-        private ProjectsController CreateController(Mock<IProjectService>? projectService = null, Mock<IRequirementService>? requirementService = null)
+        private ProjectsController CreateController(Mock<IProjectService> projectService = null, Mock<IRequirementService> requirementService = null)
         {
             var mockProjectService = projectService ?? new Mock<IProjectService>();
             var mockRequirementService = requirementService ?? new Mock<IRequirementService>();
@@ -80,6 +80,8 @@ namespace backend.Tests
         public async Task GetProjectTeamMembers_ServiceThrows_Returns500()
         {
             var mock = new Mock<IProjectService>();
+            // Mock project exists to bypass the NotFound check
+            mock.Setup(s => s.GetProjectByIdAsync(It.IsAny<int>())).ReturnsAsync(new ProjectDto { Id = 1 });
             mock.Setup(s => s.GetProjectTeamMembersAsync(It.IsAny<int>())).ThrowsAsync(new Exception("fail"));
             var controller = CreateController(mock);
             var result = await controller.GetProjectTeamMembers(1);
@@ -182,7 +184,7 @@ namespace backend.Tests
         public async Task GetProject_ReturnsNotFound_WhenMissing()
         {
             var serviceMock = new Mock<IProjectService>();
-            serviceMock.Setup(s => s.GetProjectByIdAsync(123)).ReturnsAsync((ProjectDto?)null);
+            serviceMock.Setup(s => s.GetProjectByIdAsync(123)).ReturnsAsync((ProjectDto)null);
             var controller = CreateController();
             var result = await controller.GetProject(123);
             Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -204,7 +206,7 @@ namespace backend.Tests
         public async Task GetProjectByCode_ReturnsNotFound_WhenMissing()
         {
             var mock = new Mock<IProjectService>();
-            mock.Setup(s => s.GetProjectByCodeAsync("none")).ReturnsAsync((ProjectDto?)null);
+            mock.Setup(s => s.GetProjectByCodeAsync("none")).ReturnsAsync((ProjectDto)null);
             var controller = CreateController(mock);
             var result = await controller.GetProjectByCode("none");
             Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -240,7 +242,7 @@ namespace backend.Tests
         public async Task UpdateProject_ReturnsNotFound_WhenMissing()
         {
             var mock = new Mock<IProjectService>();
-            mock.Setup(s => s.UpdateProjectAsync(999, It.IsAny<UpdateProjectDto>())).ReturnsAsync((ProjectDto?)null);
+            mock.Setup(s => s.UpdateProjectAsync(999, It.IsAny<UpdateProjectDto>())).ReturnsAsync((ProjectDto)null);
             var controller = CreateController(mock);
             var dto = new UpdateProjectDto { Name = "U", Code = "C", Status = ProjectStatus.Active, OwnerId = 1 };
             var result = await controller.UpdateProject(999, dto);
@@ -271,6 +273,8 @@ namespace backend.Tests
         public async Task GetProjectTeamMembers_ReturnsOk()
         {
             var mock = new Mock<IProjectService>();
+            // Mock project exists to bypass the NotFound check
+            mock.Setup(s => s.GetProjectByIdAsync(It.IsAny<int>())).ReturnsAsync(new ProjectDto { Id = 1 });
             mock.Setup(s => s.GetProjectTeamMembersAsync(1)).ReturnsAsync(new List<ProjectTeamMemberDto> { new ProjectTeamMemberDto { UserId = 1 } });
             var controller = CreateController(mock);
             var result = await controller.GetProjectTeamMembers(1);
@@ -292,13 +296,13 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task AddTeamMember_ReturnsBadRequest_WhenNull()
+        public async Task AddTeamMember_ReturnsNotFound_WhenNull()
         {
             var mock = new Mock<IProjectService>();
-            mock.Setup(s => s.AddTeamMemberAsync(1, It.IsAny<AddProjectTeamMemberDto>())).ReturnsAsync((ProjectTeamMemberDto?)null);
+            mock.Setup(s => s.AddTeamMemberAsync(1, It.IsAny<AddProjectTeamMemberDto>())).ReturnsAsync((ProjectTeamMemberDto)null);
             var controller = CreateController(mock);
             var result = await controller.AddTeamMember(1, new AddProjectTeamMemberDto { UserId = 99, Role = ProjectRole.QAEngineer });
-            Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.IsType<NotFoundObjectResult>(result.Result);
         }
 
         [Fact]
@@ -317,7 +321,7 @@ namespace backend.Tests
         public async Task UpdateTeamMember_ReturnsNotFound_WhenMissing()
         {
             var mock = new Mock<IProjectService>();
-            mock.Setup(s => s.UpdateTeamMemberAsync(1, 2, It.IsAny<UpdateProjectTeamMemberDto>())).ReturnsAsync((ProjectTeamMemberDto?)null);
+            mock.Setup(s => s.UpdateTeamMemberAsync(1, 2, It.IsAny<UpdateProjectTeamMemberDto>())).ReturnsAsync((ProjectTeamMemberDto)null);
             var controller = CreateController(mock);
             var result = await controller.UpdateTeamMember(1, 2, new UpdateProjectTeamMemberDto { Role = ProjectRole.QAEngineer, IsActive = true });
             Assert.IsType<NotFoundObjectResult>(result.Result);

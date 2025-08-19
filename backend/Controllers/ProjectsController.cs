@@ -307,23 +307,23 @@ namespace backend.Controllers
         /// Gets test suites for a specific project.
         /// </summary>
         [HttpGet("{id}/test-suites")]
-        public async Task<ActionResult<PagedResult<TestSuiteDto>>> GetProjectTestSuites(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public Task<ActionResult<PagedResult<TestSuiteDto>>> GetProjectTestSuites(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
                 // This would need to be implemented in a TestSuiteService with project filtering
                 // For now, return a placeholder
-                return Ok(new PagedResult<TestSuiteDto>
+                return Task.FromResult<ActionResult<PagedResult<TestSuiteDto>>>(Ok(new PagedResult<TestSuiteDto>
                 {
                     Items = new List<TestSuiteDto>(),
                     TotalItems = 0,
                     PageNumber = page,
                     PageSize = pageSize
-                });
+                }));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return Task.FromResult<ActionResult<PagedResult<TestSuiteDto>>>(StatusCode(500, $"Internal server error: {ex.Message}"));
             }
         }
 
@@ -331,23 +331,23 @@ namespace backend.Controllers
         /// Gets test plans for a specific project.
         /// </summary>
         [HttpGet("{id}/test-plans")]
-        public async Task<ActionResult<PagedResult<TestPlanDto>>> GetProjectTestPlans(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public Task<ActionResult<PagedResult<TestPlanDto>>> GetProjectTestPlans(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
                 // This would need to be implemented in a TestPlanService with project filtering
                 // For now, return a placeholder
-                return Ok(new PagedResult<TestPlanDto>
+                return Task.FromResult<ActionResult<PagedResult<TestPlanDto>>>(Ok(new PagedResult<TestPlanDto>
                 {
                     Items = new List<TestPlanDto>(),
                     TotalItems = 0,
                     PageNumber = page,
                     PageSize = pageSize
-                });
+                }));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return Task.FromResult<ActionResult<PagedResult<TestPlanDto>>>(StatusCode(500, $"Internal server error: {ex.Message}"));
             }
         }
 

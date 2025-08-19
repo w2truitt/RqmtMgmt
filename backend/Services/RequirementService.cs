@@ -201,6 +201,55 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves all requirements for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of requirements for the specified project.</returns>
+        public async Task<List<RequirementDto>> GetByProjectIdAsync(int projectId)
+        {
+            var entities = await _context.Requirements
+                .Where(r => r.ProjectId == projectId)
+                .ToListAsync();
+            return entities.Select(EntityToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves requirements for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing requirements for the specified project and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var query = _context.Requirements
+                .Where(r => r.ProjectId == projectId)
+                .AsQueryable();
+
+            // Apply search filter (project filter is already applied above)
+            query = ApplySearchFilter(query, parameters.SearchTerm);
+
+            // Apply sorting
+            query = ApplySorting(query, parameters);
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var entities = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<RequirementDto>
+            {
+                Items = entities.Select(EntityToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
         /// Retrieves a specific requirement by its ID.
         /// </summary>
         /// <param name="id">The unique identifier of the requirement.</param>

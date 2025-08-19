@@ -35,6 +35,37 @@ namespace frontend.Services
             => await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement", _jsonOptions) ?? new();
 
         /// <summary>
+        /// Retrieves all requirements for a specific project from the backend API.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of requirements for the specified project, or an empty list if the request fails.</returns>
+        public async Task<List<RequirementDto>> GetByProjectIdAsync(int projectId)
+            => await _http.GetFromJsonAsync<List<RequirementDto>>($"/api/Projects/{projectId}/requirements/all", _jsonOptions) ?? new();
+
+        /// <summary>
+        /// Retrieves requirements for a specific project with pagination from the backend API.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing requirements for the specified project.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<RequirementDto>>($"/api/Projects/{projectId}/requirements{queryString}", _jsonOptions);
+            return result ?? new PagedResult<RequirementDto>();
+        }
+
+        /// <summary>
         /// Retrieves a paginated list of requirements from the backend API.
         /// </summary>
         /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
