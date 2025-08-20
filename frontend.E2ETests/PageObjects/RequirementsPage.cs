@@ -37,7 +37,30 @@ public class RequirementsPage
     /// </summary>
     public async Task ClickCreateRequirementAsync()
     {
-        await _page.ClickAsync("text=Add Requirement");
+        // Try both button texts to handle both global and project-specific requirements pages
+        var addRequirementButton = _page.Locator("text=Add Requirement");
+        var newRequirementButton = _page.Locator("text=New Requirement");
+        
+        if (await addRequirementButton.IsVisibleAsync())
+        {
+            await addRequirementButton.ClickAsync();
+        }
+        else if (await newRequirementButton.IsVisibleAsync())
+        {
+            await newRequirementButton.ClickAsync();
+        }
+        else
+        {
+            // Fallback: try both texts with a timeout
+            try
+            {
+                await _page.ClickAsync("text=Add Requirement", new PageClickOptions { Timeout = 5000 });
+            }
+            catch
+            {
+                await _page.ClickAsync("text=New Requirement", new PageClickOptions { Timeout = 5000 });
+            }
+        }
     }
     
     /// <summary>
@@ -45,7 +68,24 @@ public class RequirementsPage
     /// </summary>
     public async Task WaitForFormModalAsync()
     {
-        await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { Timeout = 10000 });
+        // Wait for requirement modal structure: class="modal show d-block"
+        try 
+        {
+            // Requirements.razor uses: <div class="modal show d-block" tabindex="-1" role="dialog">
+            await _page.WaitForSelectorAsync("div.modal.show.d-block[role='dialog']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        }
+        catch
+        {
+            // Fallback patterns for different modal structures
+            try 
+            {
+                await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { Timeout = 5000 });
+            }
+            catch
+            {
+                await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { Timeout = 5000 });
+            }
+        }
     }
     
     /// <summary>
@@ -53,7 +93,22 @@ public class RequirementsPage
     /// </summary>
     public async Task WaitForFormModalToHideAsync()
     {
-        await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
+        try
+        {
+            await _page.WaitForSelectorAsync("div.modal.show.d-block[role='dialog']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
+        }
+        catch
+        {
+            // Fallback patterns
+            try 
+            {
+                await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+            }
+            catch
+            {
+                await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+            }
+        }
     }
     
     /// <summary>

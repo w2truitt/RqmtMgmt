@@ -15,7 +15,7 @@
             <li class="breadcrumb-item active">Team</li>
         </ol>
     </nav>
-    <button class="btn btn-success" @onclick="ShowAddMemberForm">
+    <button class="btn btn-success" @onclick="ShowAddMemberForm" data-testid="add-team-member-button">
         <i class="fas fa-plus"></i> Add Team Member
     </button>
 </div>
@@ -51,7 +51,7 @@ else if (teamMembers?.Any() == true)
                     <tbody>
                         @foreach (var member in teamMembers.OrderBy(m => m.UserName))
                         {
-                            <tr class="@(member.IsActive ? "" : "table-secondary")">
+                            <tr class="@(member.IsActive ? "" : "table-secondary")" data-testid="team-member-row">>
                                 <td>
                                     <strong>@member.UserName</strong>
                                     @if (member.Role == ProjectRole.ProjectOwner)
@@ -61,7 +61,7 @@ else if (teamMembers?.Any() == true)
                                 </td>
                                 <td>@member.UserEmail</td>
                                 <td>
-                                    <span class="badge bg-@GetRoleBadgeColor(member.Role)">
+                                    <span class="badge bg-@GetRoleBadgeColor(member.Role)" data-testid="member-role">
                                         @GetRoleDisplayName(member.Role)
                                     </span>
                                 </td>
@@ -78,12 +78,12 @@ else if (teamMembers?.Any() == true)
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" @onclick="() => ShowEditMemberForm(member)" title="Edit Role">
+                                        <button class="btn btn-outline-primary" @onclick="() => ShowEditMemberForm(member)" title="Edit Role" data-testid="edit-@member.UserName">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         @if (member.Role != ProjectRole.ProjectOwner)
                                         {
-                                            <button class="btn btn-outline-danger" @onclick="() => ConfirmRemoveMember(member)" title="Remove Member">
+                                            <button class="btn btn-outline-danger" @onclick="() => ConfirmRemoveMember(member)" title="Remove Member" data-testid="remove-@member.UserName">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         }
@@ -108,7 +108,7 @@ else
 @* Add/Edit Team Member Modal *@
 @if (showMemberForm)
 {
-    <div class="modal show d-block" tabindex="-1" role="dialog">
+    <div class="modal show d-block" tabindex="-1" role="dialog" data-testid="team-member-modal">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -122,7 +122,7 @@ else
                     {
                         <div class="mb-3">
                             <label class="form-label">Select User</label>
-                            <select class="form-select" @bind="selectedUserId">
+                            <select class="form-select" @bind="selectedUserId" data-testid="user-select">
                                 <option value="">-- Select a user --</option>
                                 @if (availableUsers != null)
                                 {
@@ -144,7 +144,7 @@ else
 
                     <div class="mb-3">
                         <label class="form-label">Project Role</label>
-                        <select class="form-select" @bind="selectedRole">
+                        <select class="form-select" @bind="selectedRole" data-testid="role-select">
                             @foreach (ProjectRole role in Enum.GetValues<ProjectRole>())
                             {
                                 @if (role != ProjectRole.ProjectOwner || (editingMember?.Role == ProjectRole.ProjectOwner))
@@ -175,8 +175,8 @@ else
                     }
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideMemberForm">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="SaveMember" disabled="@isSaving">
+                    <button type="button" class="btn btn-secondary" @onclick="HideMemberForm" data-testid="cancel-team-member-button">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveMember" disabled="@isSaving" data-testid="save-team-member-button">
                         @if (isSaving)
                         {
                             <span class="spinner-border spinner-border-sm me-1"></span>
@@ -205,7 +205,7 @@ else
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="HideConfirmModal">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="RemoveMember" disabled="@isRemoving">
+                    <button type="button" class="btn btn-danger" @onclick="RemoveMember" disabled="@isRemoving" data-testid="confirm-remove">
                         @if (isRemoving)
                         {
                             <span class="spinner-border spinner-border-sm me-1"></span>

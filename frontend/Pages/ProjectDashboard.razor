@@ -11,7 +11,7 @@
 <PageTitle>Project Dashboard - @(project?.Name ?? "Loading...")</PageTitle>
 
 <!-- Breadcrumb Navigation -->
-<ProjectBreadcrumb ProjectId="ProjectId" ProjectName="@project?.Name" />
+<ProjectBreadcrumb ProjectId="@ProjectId" ProjectName="@project?.Name" />
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -237,6 +237,9 @@ else
             {
                 this.project = project;
                 await ProjectContextService.SetCurrentProjectAsync(project);
+                
+                // Force re-render to update breadcrumb with project name
+                StateHasChanged();
                 
                 // Load project statistics
                 await LoadProjectStats();

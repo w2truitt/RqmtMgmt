@@ -8,8 +8,9 @@
 
 <PageTitle>Requirements - @(project?.Name ?? "Loading...")</PageTitle>
 
+<div data-testid="requirements-page">
 <!-- Breadcrumb Navigation -->
-<ProjectBreadcrumb ProjectId="ProjectId" 
+<ProjectBreadcrumb ProjectId="@ProjectId" 
                    ProjectName="@project?.Name" 
                    Section="Requirements" />
 
@@ -442,3 +443,4 @@ else
     border-color: var(--bs-primary);
 }
 </style>
+</div>

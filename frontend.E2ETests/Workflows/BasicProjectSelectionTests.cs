@@ -128,6 +128,7 @@ public class BasicProjectSelectionTests : E2ETestBase
         // Act & Assert - Test various navigation links
         
         // Test Projects link
+        await EnsureNavigationMenuVisible();
         var projectsLink = Page.Locator("a.nav-link:has-text('Projects')");
         if (await projectsLink.CountAsync() > 0)
         {
@@ -139,7 +140,8 @@ public class BasicProjectSelectionTests : E2ETestBase
         // Test Requirements link
         await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        
+
+        await EnsureNavigationMenuVisible();
         var requirementsLink = Page.Locator("a.nav-link:has-text('Requirements')");
         if (await requirementsLink.CountAsync() > 0)
         {
@@ -147,8 +149,12 @@ public class BasicProjectSelectionTests : E2ETestBase
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             Assert.Contains("/requirements", Page.Url);
         }
-        
+
         // Test Home link
+        await Page.GotoAsync($"{BaseUrl}/");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        
+        await EnsureNavigationMenuVisible();
         var homeLink = Page.Locator("a.nav-link[href='/'], a[href='/']:has-text('Home')");
         if (await homeLink.CountAsync() > 0)
         {

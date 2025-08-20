@@ -1,6 +1,6 @@
 @inject NavigationManager Navigation
 
-<nav aria-label="breadcrumb" class="breadcrumb-nav">
+<nav aria-label="breadcrumb" class="breadcrumb-nav" data-testid="project-breadcrumb">
     <ol class="breadcrumb mb-0">
         @if (breadcrumbItems?.Any() == true)
         {
@@ -54,11 +54,16 @@
     protected override void OnParametersSet()
     {
         BuildBreadcrumb();
+        // Force re-render when parameters change, especially project name
+        StateHasChanged();
     }
 
     private void BuildBreadcrumb()
     {
         breadcrumbItems.Clear();
+        
+        // Debug logging
+        Console.WriteLine($"BuildBreadcrumb called: ProjectId={ProjectId}, ProjectName={ProjectName}");
 
         // Use custom items if provided
         if (CustomItems?.Any() == true)

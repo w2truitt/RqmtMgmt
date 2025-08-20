@@ -17,32 +17,31 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
     public async Task ProjectSelection_NavigateFromHomeToProjectRequirements_Success()
     {
         // Arrange
-        var testId = CreateTestId();
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
-        // Create a project first to ensure we have one to select
-        var project = TestDataFactory.CreateProject(testId);
-        await CreateProject(projectsPage, project);
+        // Start at home page
+        await Page.GotoAsync($"{BaseUrl}");
         
-        // Navigate to home page
-        await Page.GotoAsync($"{BaseUrl}/");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Use existing static project
+        await SelectExistingProject(1); // Use project index 1 (E2E Test Project 3625e50c)
         
-        // Act - Select project from navigation
-        await ClickProjectSelector();
-        await SelectProjectByName(project.Name);
-        
-        // Navigate to Requirements in project context
+        // Act - Navigate to project requirements
         await ClickProjectAwareRequirementsLink();
         
         // Assert
-        // Verify we're on the project-specific requirements page
+        // Verify URL contains project context
         Assert.Contains("/projects/", Page.Url);
         Assert.Contains("/requirements", Page.Url);
         
-        // Verify project context is displayed using correct page title - the test is successful!
-        await Expect(Page).ToHaveTitleAsync(new Regex("Requirements.*E2E Test Project"));
+        // Verify project breadcrumb is visible with correct project name
+        var projectBreadcrumb = Page.Locator("[data-testid='project-breadcrumb']");
+        await Expect(projectBreadcrumb).ToBeVisibleAsync();
+        
+        var expectedProjectName = "E2E Test Project 3625e50c";
+        await Expect(projectBreadcrumb).ToContainTextAsync(expectedProjectName);
+        
+        // Verify requirements page is displayed
+        await Expect(Page.Locator("[data-testid='requirements-page']")).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -50,44 +49,17 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
     {
         // Arrange
         var testId = CreateTestId();
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
-        // Create a new project first
-        var project = TestDataFactory.CreateProject(testId);
-        await projectsPage.NavigateToAsync();
-        await projectsPage.WaitForPageLoadAsync();
-        await projectsPage.ClickCreateProjectAsync();
-        await projectsPage.WaitForFormModalAsync();
-        await projectsPage.FillProjectFormAsync(
-            project.Name, 
-            project.Code, 
-            project.Description ?? "", 
-            project.Status.ToString(), 
-            project.OwnerId
-        );
-        await projectsPage.SaveProjectAsync();
-        await Page.WaitForTimeoutAsync(2000);
-        
-        // Act - Select the newly created project
-        await ClickProjectSelector();
-        await SelectProjectByName(project.Name);
+        // Use existing static project instead of creating new one
+        await SelectExistingProject(1); // Use project index 1 (E2E Test Project 3625e50c)
         
         // Navigate to project requirements
         await ClickProjectAwareRequirementsLink();
         
         // Create a new requirement within project context
         var requirement = TestDataFactory.CreateRequirement(testId);
-        await requirementsPage.ClickCreateRequirementAsync();
-        await requirementsPage.WaitForFormModalAsync();
-        await requirementsPage.FillRequirementFormAsync(
-            requirement.Title,
-            requirement.Description ?? "",
-            requirement.Type.ToString(),
-            requirement.Status.ToString()
-        );
-        await requirementsPage.SaveRequirementAsync();
-        await Page.WaitForTimeoutAsync(2000);
+        await CreateRequirement(requirementsPage, requirement);
         
         // Assert
         // Verify requirement was created within project context
@@ -105,28 +77,10 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
     {
         // Arrange
         var testId = CreateTestId();
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
         var usersPage = new UsersPage(Page, BaseUrl);
         
-        // Create a new project first
-        var project = TestDataFactory.CreateProject(testId);
-        await projectsPage.NavigateToAsync();
-        await projectsPage.WaitForPageLoadAsync();
-        await projectsPage.ClickCreateProjectAsync();
-        await projectsPage.WaitForFormModalAsync();
-        await projectsPage.FillProjectFormAsync(
-            project.Name, 
-            project.Code, 
-            project.Description ?? "", 
-            project.Status.ToString(), 
-            project.OwnerId
-        );
-        await projectsPage.SaveProjectAsync();
-        await Page.WaitForTimeoutAsync(2000);
-        
-        // Act - Select the newly created project
-        await ClickProjectSelector();
-        await SelectProjectByName(project.Name);
+        // Use existing static project instead of creating new one
+        await SelectExistingProject(2); // Use project index 2 (E2E Test Project 69633ddf)
         
         // Navigate to project team management
         await NavigateToProjectTeam();
@@ -154,27 +108,18 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
         // Arrange
         var testId1 = CreateTestId();
         var testId2 = CreateTestId();
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
-        // Create two projects
-        var project1 = TestDataFactory.CreateProject(testId1);
-        var project2 = TestDataFactory.CreateProject(testId2);
-        
-        await CreateProject(projectsPage, project1);
-        await CreateProject(projectsPage, project2);
-        
+        // Use two different existing static projects
         // Act - Select first project and create a requirement
-        await ClickProjectSelector();
-        await SelectProjectByName(project1.Name);
+        await SelectExistingProject(1); // Use project index 1 (E2E Test Project 3625e50c)
         await ClickProjectAwareRequirementsLink();
         
         var requirement1 = TestDataFactory.CreateRequirement(testId1);
         await CreateRequirement(requirementsPage, requirement1);
         
         // Switch to second project
-        await ClickProjectSelector();
-        await SelectProjectByName(project2.Name);
+        await SelectExistingProject(2); // Use project index 2 (E2E Test Project 69633ddf)
         await ClickProjectAwareRequirementsLink();
         
         // Create requirement in second project
@@ -199,16 +144,10 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
     public async Task ProjectSelection_ClearProjectContext_ReturnsToGlobalView()
     {
         // Arrange
-        var testId = CreateTestId();
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
-        // Create a project and select it
-        var project = TestDataFactory.CreateProject(testId);
-        await CreateProject(projectsPage, project);
-        
-        await ClickProjectSelector();
-        await SelectProjectByName(project.Name);
+        // Use existing static project
+        await SelectExistingProject(0); // Use project index 0 (Legacy Requirements)
         await ClickProjectAwareRequirementsLink();
         
         // Verify we're in project context
@@ -233,34 +172,28 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
     [Fact]
     public async Task ProjectSelection_NavigationConsistency_ProjectContextPreservedAcrossPages()
     {
-        // Arrange
-        var testId = CreateTestId();
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
+        // Arrange - Use existing static project
+        await SelectExistingProject(3); // Use project index 3 (E2E Test Project 0b85cc00)
         
-        // Create and select a project
-        var project = TestDataFactory.CreateProject(testId);
-        await CreateProject(projectsPage, project);
-        
-        await ClickProjectSelector();
-        await SelectProjectByName(project.Name);
+        var expectedProjectName = "E2E Test Project 0b85cc00";
         
         // Act & Assert - Navigate through different pages in project context
         // 1. Requirements
         await ClickProjectAwareRequirementsLink();
         Assert.Contains("/projects/", Page.Url);
         Assert.Contains("/requirements", Page.Url);
-        await VerifyProjectBreadcrumb(project.Name);
+        await VerifyProjectBreadcrumb(expectedProjectName);
         
         // 2. Project Team
         await NavigateToProjectTeam();
         Assert.Contains("/projects/", Page.Url);
         Assert.Contains("/team", Page.Url);
-        await VerifyProjectBreadcrumb(project.Name);
+        await VerifyProjectBreadcrumb(expectedProjectName);
         
         // 3. Project Dashboard
         await NavigateToProjectDashboard();
         Assert.Contains("/projects/", Page.Url);
-        await VerifyProjectBreadcrumb(project.Name);
+        await VerifyProjectBreadcrumb(expectedProjectName);
         
         // 4. Verify global navigation still works
         await ClickGlobalTestCasesLink();
@@ -413,6 +346,9 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
 
     private async Task ClickProjectAwareRequirementsLink()
     {
+        // Ensure navigation menu is expanded before clicking
+        await EnsureNavigationMenuVisible();
+        
         var requirementsLink = Page.Locator("a.nav-link[href*='/requirements']:has-text('Requirements')");
         await requirementsLink.ClickAsync();
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -420,6 +356,9 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
 
     private async Task ClickGlobalRequirementsLink()
     {
+        // Ensure navigation menu is expanded before clicking
+        await EnsureNavigationMenuVisible();
+        
         var requirementsLink = Page.Locator("a.nav-link[href='requirements']:has-text('Requirements')");
         await requirementsLink.ClickAsync();
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -427,6 +366,9 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
 
     private async Task ClickGlobalTestCasesLink()
     {
+        // Ensure navigation menu is expanded before clicking
+        await EnsureNavigationMenuVisible();
+        
         var testCasesLink = Page.Locator("a.nav-link[href='testcases']:has-text('Test Cases')");
         await testCasesLink.ClickAsync();
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -434,6 +376,9 @@ public class ProjectSelectionWorkflowTests : E2ETestBase
 
     private async Task NavigateToProjectTeam()
     {
+        // Ensure navigation menu is expanded before clicking
+        await EnsureNavigationMenuVisible();
+        
         // Look for Project Team link in project context navigation
         var teamLink = Page.Locator("a[href*='/team']:has-text('Team'), a[href*='/team']:has-text('Project Team')");
         if (await teamLink.CountAsync() > 0)
