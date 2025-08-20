@@ -50,19 +50,31 @@ Enhanced E2E test base class with:
 
 ### Running E2E Tests
 
-Use the provided script for isolated testing:
+**Option 1: Use the comprehensive script (recommended, runs from anywhere):**
 
 ```bash
+# From project root
 ./scripts/run-e2e-tests.sh
+
+# Or from any directory
+/path/to/RqmtMgmt/scripts/run-e2e-tests.sh
 ```
 
-This script:
-1. Cleans up existing containers
-2. Checks available system resources
-3. Starts test-specific containers
-4. Runs database migrations
-5. Executes E2E tests
-6. Cleans up resources
+**Option 2: Use the local script (from docker-compose directory):**
+
+```bash
+# From docker-compose directory
+cd docker-compose/
+./run-e2e-tests-local.sh
+```
+
+Both scripts:
+1. Clean up existing containers
+2. Check available system resources
+3. Start test-specific containers with appropriate resource limits
+4. Run database migrations
+5. Execute E2E tests
+6. Clean up resources
 
 ### Resource Monitoring
 
@@ -77,11 +89,18 @@ Monitor resource usage during tests:
 For manual testing setup:
 
 ```bash
-# Start test environment
+# From docker-compose directory
 cd docker-compose/
-docker-compose -f docker-compose.e2e.yml up -d
 
-# Run tests
+# Start test environment (choose based on available memory)
+docker-compose -f docker-compose.e2e.yml up -d                                    # Normal memory
+# OR
+docker-compose -f docker-compose.e2e.yml -f docker-compose.e2e.low-memory.yml up -d  # Low memory
+
+# Run database migrations
+docker-compose -f docker-compose.e2e.yml exec backend dotnet ef database update
+
+# Run tests from frontend.E2ETests directory
 cd ../frontend.E2ETests/
 dotnet test --parallel -- MSTest.Parallel.Workers=2
 

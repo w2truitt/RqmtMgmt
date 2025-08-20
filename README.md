@@ -132,6 +132,10 @@ dotnet test backend.ApiTests/
 
 # Run E2E tests with resource management (recommended)
 ./scripts/run-e2e-tests.sh
+
+# Alternative: Run E2E tests from docker-compose directory
+cd docker-compose/
+./run-e2e-tests-local.sh
 ```
 
 **E2E Testing Resource Management:**
