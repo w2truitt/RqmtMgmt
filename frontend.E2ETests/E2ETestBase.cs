@@ -22,11 +22,21 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Initialize Playwright
+        // Initialize Playwright with resource-optimized settings
         PlaywrightInstance = await Playwright.CreateAsync();
         Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = true // Set to false for debugging
+            Headless = true, // Always headless for resource efficiency
+            Args = new[]
+            {
+                "--no-sandbox",
+                "--disable-setuid-sandbox", 
+                "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
+                "--disable-gpu",
+                "--disable-web-security",
+                "--memory-pressure-off", // Disable memory pressure simulation
+                "--max_old_space_size=512" // Limit V8 memory usage
+            }
         });
         
         // Create a new page for each test with explicit viewport for desktop navigation
@@ -38,6 +48,10 @@ public abstract class E2ETestBase : IAsyncLifetime
                 Height = 720
             }
         });
+
+        // Set shorter timeouts to avoid hanging tests
+        Page.SetDefaultTimeout(30000); // 30 seconds instead of default 60
+        Page.SetDefaultNavigationTimeout(30000);
         
         // Use the actual running frontend URL (Docker containers with nginx proxy)
         BaseUrl = "http://localhost:8080";
@@ -51,10 +65,56 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     public async Task DisposeAsync()
     {
-        await Page?.CloseAsync()!;
-        await Browser?.CloseAsync()!;
-        PlaywrightInstance?.Dispose();
-        Factory?.Dispose();
+        try
+        {
+            // Close page first to free browser resources quickly
+            if (Page != null)
+            {
+                await Page.CloseAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        try
+        {
+            // Close browser and free memory
+            if (Browser != null)
+            {
+                await Browser.CloseAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        try
+        {
+            // Dispose Playwright instance
+            PlaywrightInstance?.Dispose();
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        try
+        {
+            // Dispose factory last
+            Factory?.Dispose();
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        // Force garbage collection to free memory immediately
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
     
     /// <summary>

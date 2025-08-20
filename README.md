@@ -129,7 +129,13 @@ dotnet test frontend.ComponentTests/
 dotnet test frontend.E2ETests/
 dotnet test backend.Tests/
 dotnet test backend.ApiTests/
+
+# Run E2E tests with resource management (recommended)
+./scripts/run-e2e-tests.sh
 ```
+
+**E2E Testing Resource Management:**
+E2E tests require careful resource management to prevent out-of-memory issues. See [E2E_RESOURCE_MANAGEMENT.md](E2E_RESOURCE_MANAGEMENT.md) for detailed configuration and troubleshooting.
 
 ---
 
