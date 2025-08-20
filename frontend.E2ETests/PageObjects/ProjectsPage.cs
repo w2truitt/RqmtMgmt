@@ -220,7 +220,8 @@ public class ProjectsPage
     /// <returns>First project name or empty string if no projects</returns>
     public async Task<string> GetFirstProjectNameAsync()
     {
-        var firstProjectElement = await _page.QuerySelectorAsync(".project-name-link, .mud-table-row .mud-table-cell:first-child");
+        // Try multiple selectors to find project names
+        var firstProjectElement = await _page.QuerySelectorAsync("tbody tr:first-child td:nth-child(2) a, .project-name-link, .mud-table-row .mud-table-cell:first-child");
         if (firstProjectElement != null)
         {
             var text = await firstProjectElement.TextContentAsync();
@@ -235,8 +236,17 @@ public class ProjectsPage
     /// <param name="projectName">Project name</param>
     public async Task NavigateToProjectDashboardUsingViewButtonAsync(string projectName)
     {
-        // Look for View button in the actions column
-        await _page.ClickAsync($"button:has-text('View')");
+        // Look for View button in the actions column - try multiple approaches
+        var viewButton = await _page.QuerySelectorAsync($"[data-testid='view-{projectName}']");
+        if (viewButton != null)
+        {
+            await viewButton.ClickAsync();
+        }
+        else
+        {
+            // Fallback: look for any View button
+            await _page.ClickAsync("button:has-text('View')");
+        }
     }
     
     /// <summary>
@@ -245,7 +255,16 @@ public class ProjectsPage
     /// <param name="projectName">Project name</param>
     public async Task NavigateToProjectDashboardUsingProjectNameAsync(string projectName)
     {
-        // Click on the clickable project name link
-        await _page.ClickAsync(".project-name-link");
+        // Try specific project name link first
+        var projectLink = await _page.QuerySelectorAsync($"[data-testid='project-name-link-{projectName}']");
+        if (projectLink != null)
+        {
+            await projectLink.ClickAsync();
+        }
+        else
+        {
+            // Fallback: click the first project name link
+            await _page.ClickAsync("tbody tr:first-child td:nth-child(2) a");
+        }
     }
 }

@@ -31,7 +31,7 @@ public class RequirementViewPage
     /// </summary>
     public async Task WaitForPageLoadAsync()
     {
-        await _page.WaitForSelectorAsync("h3", new PageWaitForSelectorOptions { Timeout = 30000 });
+        await _page.WaitForSelectorAsync("h2", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
     
     /// <summary>
@@ -40,8 +40,13 @@ public class RequirementViewPage
     /// <returns>The requirement title</returns>
     public async Task<string> GetRequirementTitleAsync()
     {
-        var titleElement = await _page.QuerySelectorAsync("h3");
-        return await titleElement?.TextContentAsync() ?? string.Empty;
+        var titleElement = await _page.QuerySelectorAsync("h2");
+        if (titleElement != null)
+        {
+            var text = await titleElement.TextContentAsync();
+            return text ?? string.Empty;
+        }
+        return string.Empty;
     }
     
     /// <summary>
@@ -51,7 +56,12 @@ public class RequirementViewPage
     public async Task<string> GetRequirementDescriptionAsync()
     {
         var descElement = await _page.QuerySelectorAsync(".requirement-description");
-        return await descElement?.TextContentAsync() ?? string.Empty;
+        if (descElement != null)
+        {
+            var text = await descElement.TextContentAsync();
+            return text ?? string.Empty;
+        }
+        return string.Empty;
     }
     
     /// <summary>
@@ -61,7 +71,12 @@ public class RequirementViewPage
     public async Task<string> GetRequirementTypeAsync()
     {
         var typeElement = await _page.QuerySelectorAsync(".badge:has-text('Type')");
-        return await typeElement?.TextContentAsync() ?? string.Empty;
+        if (typeElement != null)
+        {
+            var text = await typeElement.TextContentAsync();
+            return text ?? string.Empty;
+        }
+        return string.Empty;
     }
     
     /// <summary>
@@ -71,7 +86,12 @@ public class RequirementViewPage
     public async Task<string> GetRequirementStatusAsync()
     {
         var statusElement = await _page.QuerySelectorAsync(".badge:has-text('Status')");
-        return await statusElement?.TextContentAsync() ?? string.Empty;
+        if (statusElement != null)
+        {
+            var text = await statusElement.TextContentAsync();
+            return text ?? string.Empty;
+        }
+        return string.Empty;
     }
     
     /// <summary>
@@ -121,7 +141,7 @@ public class RequirementViewPage
     /// Gets the requirement ID from the URL
     /// </summary>
     /// <returns>The requirement ID</returns>
-    public async Task<string> GetRequirementIdFromUrlAsync()
+    public string GetRequirementIdFromUrl()
     {
         var url = _page.Url;
         var parts = url.Split('/');

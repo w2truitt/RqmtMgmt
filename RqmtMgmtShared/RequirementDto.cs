@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace RqmtMgmtShared
 {
@@ -20,6 +21,7 @@ namespace RqmtMgmtShared
         /// <summary>
         /// Gets or sets the title of the requirement. This field is required and cannot be null.
         /// </summary>
+        [Required(ErrorMessage = "Title is required")]
         public required string Title { get; set; }
 
         /// <summary>

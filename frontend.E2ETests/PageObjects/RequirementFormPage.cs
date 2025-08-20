@@ -40,7 +40,7 @@ public class RequirementFormPage
     /// </summary>
     public async Task WaitForPageLoadAsync()
     {
-        await _page.WaitForSelectorAsync("h3", new PageWaitForSelectorOptions { Timeout = 30000 });
+        await _page.WaitForSelectorAsync("h2:has-text('New Requirement')", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
     
     /// <summary>
@@ -53,31 +53,31 @@ public class RequirementFormPage
     /// <param name="parentRequirementId">Parent requirement ID (optional)</param>
     public async Task FillRequirementFormAsync(string title, string description, string type, string status, int? parentRequirementId = null)
     {
-        await _page.FillAsync("input[placeholder='Enter requirement title']", title);
-        await _page.FillAsync("textarea[placeholder='Enter detailed description']", description);
+        await _page.FillAsync("input[placeholder='Enter requirement title...']", title);
+        await _page.FillAsync("textarea[placeholder='Enter detailed description of the requirement...']", description);
         
+        // Set Type using SelectOptionAsync with value
         if (!string.IsNullOrEmpty(type))
         {
-            await _page.SelectOptionAsync("select:has-text('Type')", type);
+            await _page.SelectOptionAsync("select#type", new SelectOptionValue { Value = type });
         }
         
+        // Set Status using SelectOptionAsync with value
         if (!string.IsNullOrEmpty(status))
         {
-            await _page.SelectOptionAsync("select:has-text('Status')", status);
+            await _page.SelectOptionAsync("select#status", new SelectOptionValue { Value = status });
         }
-        
+
         if (parentRequirementId.HasValue && parentRequirementId.Value > 0)
         {
-            await _page.SelectOptionAsync("select:has-text('Parent Requirement')", parentRequirementId.Value.ToString());
+            await _page.SelectOptionAsync("select#parentId", new SelectOptionValue { Value = parentRequirementId.Value.ToString() });
         }
-    }
-    
-    /// <summary>
+    }    /// <summary>
     /// Clicks the save requirement button
     /// </summary>
     public async Task SaveRequirementAsync()
     {
-        await _page.ClickAsync("button:has-text('Save Requirement')");
+        await _page.ClickAsync("button:has-text('Create Requirement')");
     }
     
     /// <summary>
@@ -102,7 +102,7 @@ public class RequirementFormPage
     /// Gets the current requirement ID from the form (for edit scenarios)
     /// </summary>
     /// <returns>The requirement ID</returns>
-    public async Task<string> GetRequirementIdAsync()
+    public string GetRequirementId()
     {
         var url = _page.Url;
         var parts = url.Split('/');
@@ -122,7 +122,7 @@ public class RequirementFormPage
     /// <returns>True if in edit mode</returns>
     public async Task<bool> IsEditModeAsync()
     {
-        return await _page.IsVisibleAsync("h3:has-text('Edit Requirement')");
+        return await _page.IsVisibleAsync("h2:has-text('Edit Requirement')");
     }
     
     /// <summary>
@@ -131,6 +131,6 @@ public class RequirementFormPage
     /// <returns>True if in create mode</returns>
     public async Task<bool> IsCreateModeAsync()
     {
-        return await _page.IsVisibleAsync("h3:has-text('New Requirement')");
+        return await _page.IsVisibleAsync("h2:has-text('New Requirement')");
     }
 }

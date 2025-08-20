@@ -30,7 +30,7 @@ public class ProjectDashboardPage
     /// </summary>
     public async Task WaitForPageLoadAsync()
     {
-        await _page.WaitForSelectorAsync("h2", new PageWaitForSelectorOptions { Timeout = 30000 });
+        await _page.WaitForSelectorAsync("h1.project-title", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
     
     /// <summary>
@@ -39,8 +39,13 @@ public class ProjectDashboardPage
     /// <returns>The project name</returns>
     public async Task<string> GetProjectNameAsync()
     {
-        var nameElement = await _page.QuerySelectorAsync("h2");
-        return await nameElement?.TextContentAsync() ?? string.Empty;
+        var nameElement = await _page.QuerySelectorAsync("h1.project-title");
+        if (nameElement != null)
+        {
+            var text = await nameElement.TextContentAsync();
+            return text ?? string.Empty;
+        }
+        return string.Empty;
     }
     
     /// <summary>
@@ -50,8 +55,12 @@ public class ProjectDashboardPage
     public async Task<int> GetRequirementsCountAsync()
     {
         var countElement = await _page.QuerySelectorAsync(".requirements-card .stats-number");
-        var countText = await countElement?.TextContentAsync() ?? "0";
-        return int.TryParse(countText, out var count) ? count : 0;
+        if (countElement != null)
+        {
+            var countText = await countElement.TextContentAsync();
+            return int.TryParse(countText ?? "0", out var count) ? count : 0;
+        }
+        return 0;
     }
     
     /// <summary>
@@ -61,8 +70,12 @@ public class ProjectDashboardPage
     public async Task<int> GetTeamMembersCountAsync()
     {
         var countElement = await _page.QuerySelectorAsync(".team-card .stats-number");
-        var countText = await countElement?.TextContentAsync() ?? "0";
-        return int.TryParse(countText, out var count) ? count : 0;
+        if (countElement != null)
+        {
+            var countText = await countElement.TextContentAsync();
+            return int.TryParse(countText ?? "0", out var count) ? count : 0;
+        }
+        return 0;
     }
     
     /// <summary>
@@ -78,7 +91,7 @@ public class ProjectDashboardPage
     /// </summary>
     public async Task ClickNewRequirementButtonAsync()
     {
-        await _page.ClickAsync("a:has-text('New Requirement')");
+        await _page.ClickAsync("button:has-text('New Requirement')");
     }
     
     /// <summary>
@@ -86,7 +99,7 @@ public class ProjectDashboardPage
     /// </summary>
     public async Task ClickViewAllRequirementsButtonAsync()
     {
-        await _page.ClickAsync("a:has-text('View All Requirements')");
+        await _page.ClickAsync("button:has-text('View All Requirements')");
     }
     
     /// <summary>
@@ -124,8 +137,8 @@ public class ProjectDashboardPage
     /// <returns>True if on project dashboard</returns>
     public async Task<bool> IsOnProjectDashboardAsync()
     {
-        return _page.Url.Contains("/dashboard") && 
-               await _page.IsVisibleAsync("h1:has-text('Project Dashboard'), h2");
+        return _page.Url.Contains("/projects/") && !_page.Url.Contains("/dashboard") &&
+               await _page.IsVisibleAsync("h1.project-title");
     }
     
     /// <summary>
@@ -133,7 +146,7 @@ public class ProjectDashboardPage
     /// </summary>
     public async Task NavigateToRequirementsAsync()
     {
-        await _page.ClickAsync("a:has-text('Requirements'), a[href*='requirements']");
+        await _page.ClickAsync("a[href*='requirements']");
     }
     
     /// <summary>
@@ -141,7 +154,7 @@ public class ProjectDashboardPage
     /// </summary>
     public async Task NavigateToTestCasesAsync()
     {
-        await _page.ClickAsync("a:has-text('Test Cases'), a[href*='testcases']");
+        await _page.ClickAsync("a[href*='testcases']");
     }
     
     /// <summary>
@@ -149,6 +162,6 @@ public class ProjectDashboardPage
     /// </summary>
     public async Task NavigateToTestPlansAsync()
     {
-        await _page.ClickAsync("a:has-text('Test Plans'), a[href*='testplans']");
+        await _page.ClickAsync("a[href*='testplans']");
     }
 }
