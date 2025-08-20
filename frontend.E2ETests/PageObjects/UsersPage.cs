@@ -43,11 +43,57 @@ public class UsersPage
         await _page.FillAsync("[data-testid='username-input']", userName);
         await _page.FillAsync("[data-testid='email-input']", email);
         
-        // Select roles
+        // Select roles using checkboxes (updated implementation)
         foreach (var role in roles)
         {
-            await _page.CheckAsync($"[data-testid='role-{role}']");
+            await _page.CheckAsync($"#role_{role}");
         }
+    }
+    
+    /// <summary>
+    /// Updates user roles by selecting/deselecting checkboxes
+    /// </summary>
+    /// <param name="rolesToAdd">Roles to add (check)</param>
+    /// <param name="rolesToRemove">Roles to remove (uncheck)</param>
+    public async Task UpdateUserRolesAsync(string[] rolesToAdd, string[] rolesToRemove)
+    {
+        // Add new roles
+        foreach (var role in rolesToAdd)
+        {
+            await _page.CheckAsync($"#role_{role}");
+        }
+        
+        // Remove roles
+        foreach (var role in rolesToRemove)
+        {
+            await _page.UncheckAsync($"#role_{role}");
+        }
+    }
+    
+    /// <summary>
+    /// Checks if a role checkbox is selected for a user
+    /// </summary>
+    /// <param name="roleName">Role name</param>
+    /// <returns>True if the role checkbox is checked</returns>
+    public async Task<bool> IsRoleSelectedAsync(string roleName)
+    {
+        return await _page.IsCheckedAsync($"#role_{roleName}");
+    }
+    
+    /// <summary>
+    /// Waits for the user form modal to appear
+    /// </summary>
+    public async Task WaitForFormModalAsync()
+    {
+        await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { Timeout = 10000 });
+    }
+    
+    /// <summary>
+    /// Waits for the user form modal to disappear
+    /// </summary>
+    public async Task WaitForFormModalToHideAsync()
+    {
+        await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
     }
     
     /// <summary>

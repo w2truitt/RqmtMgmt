@@ -2,6 +2,7 @@
 @using RqmtMgmtShared
 @inject IProjectService ProjectService
 @inject IUserService UserService
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Projects</PageTitle>
@@ -103,7 +104,7 @@
                                 <th scope="col" style="width: 120px;">Status</th>
                                 <th scope="col" style="width: 150px;">Owner</th>
                                 <th scope="col" style="width: 100px;">Items</th>
-                                <th scope="col" style="width: 200px;">Actions</th>
+                                <th scope="col" style="width: 250px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -112,7 +113,11 @@
                                 <tr data-testid="project-row">
                                     <td class="align-middle">@project.Id</td>
                                     <td class="align-middle">
-                                        <div class="fw-medium">@project.Name</div>
+                                        <div class="fw-medium">
+                                            <a href="/projects/@project.Id" class="text-decoration-none" data-testid="project-name-link-@project.Name">
+                                                @project.Name
+                                            </a>
+                                        </div>
                                         @if (!string.IsNullOrEmpty(project.Description))
                                         {
                                             <br><small class="text-muted">@project.Description</small>
@@ -143,6 +148,11 @@
                                     </td>
                                     <td class="align-middle">
                                         <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-success" 
+                                                    @onclick="() => NavigateToProject(project.Id)" 
+                                                    title="View Project Dashboard" data-testid="view-@project.Name">
+                                                View
+                                            </button>
                                             <button class="btn btn-sm btn-outline-primary" 
                                                     @onclick="() => ShowEditForm(project)" 
                                                     title="Edit" data-testid="edit-@project.Name">
@@ -490,6 +500,11 @@
         {
             errorMessage = $"Error deleting project: {ex.Message}";
         }
+    }
+
+    private void NavigateToProject(int projectId)
+    {
+        Navigation.NavigateTo($"/projects/{projectId}");
     }
 
     private static string GetStatusBadgeClass(ProjectStatus status) => status switch

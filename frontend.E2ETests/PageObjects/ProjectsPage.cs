@@ -175,4 +175,77 @@ public class ProjectsPage
         await _page.WaitForSelectorAsync("h3:has-text('Projects')");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
+    
+    /// <summary>
+    /// Clicks the View button for a project
+    /// </summary>
+    /// <param name="projectName">Project name</param>
+    public async Task ClickViewProjectButtonAsync(string projectName)
+    {
+        await _page.ClickAsync($"[data-testid='view-{projectName}']");
+    }
+    
+    /// <summary>
+    /// Clicks on a project name link to navigate to the project dashboard
+    /// </summary>
+    /// <param name="projectName">Project name</param>
+    public async Task ClickProjectNameLinkAsync(string projectName)
+    {
+        await _page.ClickAsync($"[data-testid='project-name-link-{projectName}']");
+    }
+    
+    /// <summary>
+    /// Checks if the View button is visible for a project
+    /// </summary>
+    /// <param name="projectName">Project name</param>
+    /// <returns>True if View button is visible</returns>
+    public async Task<bool> IsViewButtonVisibleAsync(string projectName)
+    {
+        return await _page.IsVisibleAsync($"[data-testid='view-{projectName}']");
+    }
+    
+    /// <summary>
+    /// Checks if the project name is clickable (appears as a link)
+    /// </summary>
+    /// <param name="projectName">Project name</param>
+    /// <returns>True if project name is clickable</returns>
+    public async Task<bool> IsProjectNameClickableAsync(string projectName)
+    {
+        return await _page.IsVisibleAsync($"[data-testid='project-name-link-{projectName}']");
+    }
+    
+    /// <summary>
+    /// Gets the name of the first project in the list
+    /// </summary>
+    /// <returns>First project name or empty string if no projects</returns>
+    public async Task<string> GetFirstProjectNameAsync()
+    {
+        var firstProjectElement = await _page.QuerySelectorAsync(".project-name-link, .mud-table-row .mud-table-cell:first-child");
+        if (firstProjectElement != null)
+        {
+            var text = await firstProjectElement.TextContentAsync();
+            return text?.Trim() ?? "";
+        }
+        return "";
+    }
+    
+    /// <summary>
+    /// Navigates to project dashboard using the View button
+    /// </summary>
+    /// <param name="projectName">Project name</param>
+    public async Task NavigateToProjectDashboardUsingViewButtonAsync(string projectName)
+    {
+        // Look for View button in the actions column
+        await _page.ClickAsync($"button:has-text('View')");
+    }
+    
+    /// <summary>
+    /// Navigates to project dashboard using the clickable project name
+    /// </summary>
+    /// <param name="projectName">Project name</param>
+    public async Task NavigateToProjectDashboardUsingProjectNameAsync(string projectName)
+    {
+        // Click on the clickable project name link
+        await _page.ClickAsync(".project-name-link");
+    }
 }
