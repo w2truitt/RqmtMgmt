@@ -4,6 +4,10 @@ using Microsoft.Extensions.Hosting;
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity;
+using backend.Models;
+using backend.Configuration;
+using Microsoft.AspNetCore.HttpOverrides;
 
 /// <summary>
 /// Main program class for the Requirements Management System backend API.
@@ -21,27 +25,106 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add JWT Bearer authentication for OAuth2/OIDC integration
-        builder.Services.AddAuthentication("Bearer")
+        // Configure database contexts based on environment
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            // Use InMemory database for testing to avoid conflicts and ensure isolation
+            var testDbName = $"TestDb_{Guid.NewGuid()}";
+            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+                options.UseInMemoryDatabase(testDbName));
+            builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
+                options.UseInMemoryDatabase($"IdentityTestDb_{Guid.NewGuid()}"));
+        }
+        else
+        {
+            // Use SQL Server for development and production environments
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
+                options.UseSqlServer(connectionString));
+        }
+
+        // Configure ASP.NET Core Identity
+        builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+        {
+            // Password settings
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequiredLength = 8;
+
+            // Lockout settings
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = true;
+
+            // User settings
+            options.User.AllowedUserNameCharacters =
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
+        .AddDefaultTokenProviders();
+
+        // Configure Duende IdentityServer
+        var frontendUrl = builder.Configuration["Frontend:Url"] ?? "http://localhost:8080";
+        var backendUrl = builder.Configuration["Backend:Url"] ?? "http://localhost:8080";
+        
+        var identityServerBuilder = builder.Services.AddIdentityServer()
+            .AddDeveloperSigningCredential() // For development only - use real certificate in production
+            .AddInMemoryIdentityResources(IdentityServerConfig.IdentityResources)
+            .AddInMemoryApiScopes(IdentityServerConfig.ApiScopes)
+            .AddInMemoryApiResources(IdentityServerConfig.ApiResources)
+            .AddInMemoryClients(IdentityServerConfig.GetClients(frontendUrl, backendUrl))
+            .AddAspNetIdentity<ApplicationUser>();
+
+        // Configure for development environment with HTTP
+        if (builder.Environment.IsDevelopment())
+        {
+            identityServerBuilder.AddDeveloperSigningCredential();
+        }
+
+        // Add JWT Bearer authentication for API protection
+        builder.Services.AddAuthentication()
             .AddJwtBearer("Bearer", options =>
             {
-                options.Authority = builder.Configuration["Authentication:Authority"];
-                options.Audience = builder.Configuration["Authentication:Audience"];
+                options.Authority = builder.Configuration["Authentication:Authority"] ?? backendUrl;
+                options.Audience = builder.Configuration["Authentication:Audience"] ?? "rqmtapi";
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.FromMinutes(5)
                 };
             });
+
+        // Configure forwarded headers for proxy scenarios
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
 
         // Configure CORS policy to allow frontend connections from various development ports
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("https://localhost:7160", "http://localhost:5239", "https://localhost:5001", "http://localhost:5000")
+                policy.WithOrigins(
+                    "http://localhost:8080",  // Docker nginx proxy
+                    "https://localhost:7160", 
+                    "http://localhost:5239", 
+                    "https://localhost:5001", 
+                    "http://localhost:5000",
+                    "http://localhost:5001",  // Frontend container
+                    "http://frontend:5001"    // Internal container communication
+                )
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
@@ -71,20 +154,6 @@ public class Program
         builder.Services.AddScoped<RqmtMgmtShared.ITestExecutionService, backend.Services.TestExecutionService>();
         builder.Services.AddScoped<RqmtMgmtShared.IProjectService, backend.Services.ProjectService>();
         
-        // Configure database context based on environment
-        if (builder.Environment.IsEnvironment("Testing"))
-        {
-            // Use InMemory database for testing to avoid conflicts and ensure isolation
-            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
-                options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}"));
-        }
-        else
-        {
-            // Use SQL Server for development and production environments
-            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-        }
-
         var app = builder.Build();
 
         // Initialize database with retry logic for Docker environments
@@ -101,10 +170,23 @@ public class Program
             app.UseExceptionHandler("/error");
         }
 
-        app.UseHttpsRedirection();
+        // Use forwarded headers for proxy scenarios
+        app.UseForwardedHeaders();
+
+        // Only use HTTPS redirection in production
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
 
         // Enable CORS for frontend communication
         app.UseCors("AllowFrontend");
+
+        // Enable routing (required before IdentityServer)
+        app.UseRouting();
+
+        // Enable IdentityServer middleware
+        app.UseIdentityServer();
 
         // Enable authentication middleware
         app.UseAuthentication();
@@ -183,16 +265,18 @@ public class Program
     {
         using var scope = app.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
+        var identityContext = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         logger.LogInformation("Database initialization attempt {Attempt}/{MaxRetries}", attempt, maxRetries);
 
         // Test database connectivity first
         await context.Database.CanConnectAsync();
-        logger.LogInformation("Database connection established successfully");
+        await identityContext.Database.CanConnectAsync();
+        logger.LogInformation("Database connections established successfully");
 
         // Apply migrations and seed data based on environment
-        await InitializeDatabaseByEnvironment(app, context, logger);
+        await InitializeDatabaseByEnvironment(app, context, identityContext, logger);
         
         logger.LogInformation("Database initialization completed successfully");
     }
@@ -201,25 +285,41 @@ public class Program
     /// Initializes the database based on the current environment.
     /// </summary>
     /// <param name="app">The web application instance</param>
-    /// <param name="context">The database context</param>
+    /// <param name="context">The main database context</param>
+    /// <param name="identityContext">The identity database context</param>
     /// <param name="logger">The logger instance</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    private static async Task InitializeDatabaseByEnvironment(WebApplication app, RqmtMgmtDbContext context, ILogger<Program> logger)
+    private static async Task InitializeDatabaseByEnvironment(WebApplication app, RqmtMgmtDbContext context, ApplicationIdentityDbContext identityContext, ILogger<Program> logger)
     {
         if (app.Environment.IsDevelopment())
         {
+            // Apply Identity migrations and seed Identity data
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                await identityContext.Database.MigrateAsync();
+                await IdentitySeedData.SeedAsync(app.Services.CreateScope().ServiceProvider, identityContext);
+            }
+            
             await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
             logger.LogInformation("Database seeded with development data successfully");
         }
         else if (app.Environment.IsEnvironment("Testing"))
         {
+            // For testing, ensure databases are created (in-memory)
+            await identityContext.Database.EnsureCreatedAsync();
+            await IdentitySeedData.SeedAsync(app.Services.CreateScope().ServiceProvider, identityContext);
+            
             await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
             logger.LogInformation("Database seeded with test data successfully");
         }
         else
         {
             // Production - only apply migrations, no test data
+            await identityContext.Database.MigrateAsync();
             await context.Database.MigrateAsync();
+            
+            // Seed essential Identity data (admin user) in production
+            await IdentitySeedData.SeedAsync(app.Services.CreateScope().ServiceProvider, identityContext);
             logger.LogInformation("Database migrations applied successfully");
         }
     }

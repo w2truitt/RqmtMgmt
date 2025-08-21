@@ -5,6 +5,8 @@ using frontend;
 using MudBlazor.Services;
 using RqmtMgmtShared;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -16,8 +18,28 @@ builder.Services.Configure<JsonSerializerOptions>(options =>
     options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
-// Configure HttpClient to point to backend API
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// Configure OIDC authentication for IdentityServer
+builder.Services.AddOidcAuthentication(options =>
+{
+    builder.Configuration.Bind("Local", options.ProviderOptions);
+    options.ProviderOptions.Authority = "http://localhost:8080";
+    options.ProviderOptions.ClientId = "rqmtmgmt-wasm";
+    options.ProviderOptions.ResponseType = "code";
+    options.ProviderOptions.DefaultScopes.Add("openid");
+    options.ProviderOptions.DefaultScopes.Add("profile");
+    options.ProviderOptions.DefaultScopes.Add("email");
+    options.ProviderOptions.DefaultScopes.Add("rqmtapi");
+});
+
+// Configure HttpClient with authentication
+builder.Services.AddHttpClient("RqmtMgmt.ServerAPI", client => 
+    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
+    .AddHttpMessageHandler<BaseAddressAuthorizationMessageHandler>();
+
+// Register HttpClient for authenticated API calls
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
+    .CreateClient("RqmtMgmt.ServerAPI"));
+
 builder.Services.AddMudServices();
 
 // Register services as interfaces

@@ -1,0 +1,44 @@
+@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+<RemoteAuthenticatorView Action="@Action">
+    <LoggingIn>
+        <div class="d-flex justify-center align-center" style="height: 100vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+            <MudText Class="ml-4">Logging in...</MudText>
+        </div>
+    </LoggingIn>
+    <LogInFailed>
+        <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
+            <MudIcon Icon="Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Color="Color.Error" Class="mt-4">Login Failed</MudText>
+            <MudText Class="mt-2">There was an error logging you in. Please try again.</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" Class="mt-4">
+                Return to Home
+            </MudButton>
+        </div>
+    </LogInFailed>
+    <LogOutSucceeded>
+        <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
+            <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Color="Color.Success" Class="mt-4">Logged Out Successfully</MudText>
+            <MudText Class="mt-2">You have been successfully logged out.</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" Class="mt-4">
+                Return to Home
+            </MudButton>
+        </div>
+    </LogOutSucceeded>
+    <LogOutFailed>
+        <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
+            <MudIcon Icon="Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Color="Color.Error" Class="mt-4">Logout Failed</MudText>
+            <MudText Class="mt-2">There was an error logging you out. Please try again.</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/" Class="mt-4">
+                Return to Home
+            </MudButton>
+        </div>
+    </LogOutFailed>
+</RemoteAuthenticatorView>
+
+@code {
+    [Parameter] public string? Action { get; set; }
+}
