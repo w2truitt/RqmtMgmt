@@ -31,6 +31,14 @@ frontend/dist/
 coveragereport/
 coverage-report/
 TestResults/
+certs/
+
+# Local testing SSL configuration (contains corp domain)
+docker-compose/nginx-ssl.conf
+docker-compose/docker-compose-ssl.yml
+docker-compose/create-certificates.sh
+docker-compose/install-ca-certificate.sh
+docker-compose/HTTPS-README.md
 
 # Misc
 *.swp
@@ -44,3 +52,4 @@ coverage.cobertura.xml
 swagger.json
 backend/NuGet.Config
 frontend/NuGet.Config
+docker-compose/test-https.sh

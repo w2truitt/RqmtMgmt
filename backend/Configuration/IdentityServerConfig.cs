@@ -68,7 +68,8 @@ namespace backend.Configuration
                         $"{frontendUrl}/authentication/login-callback",
                         "http://localhost:8080/authentication/login-callback",
                         "https://localhost:7160/authentication/login-callback",
-                        "https://localhost:5001/authentication/login-callback"
+                        "https://localhost:5001/authentication/login-callback",
+                        "https://rqmtmgmt.local/authentication/login-callback"
                     },
 
                     PostLogoutRedirectUris = 
@@ -76,7 +77,8 @@ namespace backend.Configuration
                         $"{frontendUrl}/authentication/logout-callback",
                         "http://localhost:8080/authentication/logout-callback", 
                         "https://localhost:7160/authentication/logout-callback", 
-                        "https://localhost:5001/authentication/logout-callback"
+                        "https://localhost:5001/authentication/logout-callback",
+                        "https://rqmtmgmt.local/authentication/logout-callback"
                     },
 
                     AllowedScopes = 
@@ -94,7 +96,8 @@ namespace backend.Configuration
                         "https://localhost:7160",
                         "https://localhost:5001",
                         "http://localhost:5000",
-                        "http://localhost:5239"
+                        "http://localhost:5239",
+                        "https://rqmtmgmt.local"
                     },
 
                     // Token lifetimes

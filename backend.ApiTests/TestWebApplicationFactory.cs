@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using backend.Data;
 using backend.Models;
 using RqmtMgmtShared;
@@ -10,6 +13,24 @@ using System.Text.Json;
 
 namespace backend.ApiTests
 {
+    public class TestAuthorizationPolicyProvider : IAuthorizationPolicyProvider
+    {
+        public Task<AuthorizationPolicy> GetDefaultPolicyAsync()
+        {
+            return Task.FromResult(new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build());
+        }
+
+        public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
+        {
+            return Task.FromResult<AuthorizationPolicy?>(new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build());
+        }
+
+        public Task<AuthorizationPolicy?> GetFallbackPolicyAsync()
+        {
+            return Task.FromResult<AuthorizationPolicy?>(new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build());
+        }
+    }
+
     public class TestWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
     {
         private static int _databaseCounter = 0;
@@ -36,6 +57,14 @@ namespace backend.ApiTests
                     options.UseInMemoryDatabase(_databaseName);
                     options.EnableSensitiveDataLogging();
                 });
+
+                // Replace authorization policy provider to bypass authentication in tests
+                var authPolicyDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(IAuthorizationPolicyProvider));
+                if (authPolicyDescriptor != null)
+                    services.Remove(authPolicyDescriptor);
+                
+                services.AddSingleton<IAuthorizationPolicyProvider, TestAuthorizationPolicyProvider>();
 
                 // Create the database and seed test data
                 var sp = services.BuildServiceProvider();

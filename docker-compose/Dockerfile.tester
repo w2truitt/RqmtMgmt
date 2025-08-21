@@ -1,0 +1,28 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+# Install curl, openssl, and other testing tools
+RUN apt-get install -y \
+    curl \
+    openssl \
+    bash \
+    ca-certificates
+
+# Install Node.js for any frontend testing needs
+
+# Create a working directory for tests
+WORKDIR /tests
+
+# Copy test scripts
+COPY test-scripts/ /tests/
+
+# Copy CA certificate for internal testing
+COPY certs/ca-cert.pem /usr/local/share/ca-certificates/rqmtmgmt-ca.crt
+
+# Update CA certificates
+RUN update-ca-certificates
+
+# Make all scripts executable
+RUN chmod +x /tests/*.sh
+
+# Set default command
+CMD ["/bin/bash"]

@@ -22,7 +22,13 @@ builder.Services.Configure<JsonSerializerOptions>(options =>
 builder.Services.AddOidcAuthentication(options =>
 {
     builder.Configuration.Bind("Local", options.ProviderOptions);
-    options.ProviderOptions.Authority = "http://localhost:8080";
+    
+    // Use HTTPS for production/container environments, fallback to HTTP for local dev
+    var authority = builder.HostEnvironment.BaseAddress.StartsWith("https://rqmtmgmt.local")
+        ? "https://rqmtmgmt.local"
+        : "http://localhost:8080";
+    
+    options.ProviderOptions.Authority = authority;
     options.ProviderOptions.ClientId = "rqmtmgmt-wasm";
     options.ProviderOptions.ResponseType = "code";
     options.ProviderOptions.DefaultScopes.Add("openid");

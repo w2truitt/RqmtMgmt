@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using RqmtMgmtShared;
 
 namespace backend.Controllers
@@ -8,6 +9,7 @@ namespace backend.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TestRunSessionController : ControllerBase
     {
         private readonly ITestRunSessionService _testRunSessionService;

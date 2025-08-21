@@ -2,6 +2,7 @@ using RqmtMgmtShared;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
@@ -11,6 +12,7 @@ namespace backend.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TestSuiteController : ControllerBase
     {
         private readonly RqmtMgmtShared.ITestSuiteService _testSuiteService;
