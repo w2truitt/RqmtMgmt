@@ -83,10 +83,68 @@ public class RequirementsWorkflowTests : E2ETestBase
             requirement.Type.ToString(), 
             requirement.Status.ToString()
         );
+        
+        // Additional wait to ensure form binding is complete before saving
+        await Page.WaitForTimeoutAsync(1000);
+        
+        // Debug: Check form values right before save
+        var titleValueBeforeSave = await Page.InputValueAsync("[data-testid='title-input']");
+        var descValueBeforeSave = await Page.InputValueAsync("[data-testid='description-input']");
+        Console.WriteLine($"Form values before save - Title: '{titleValueBeforeSave}', Description: '{descValueBeforeSave}'");
+        
         await requirementsPage.SaveRequirementAsync();
         
         // Wait for operation to complete
         await Page.WaitForTimeoutAsync(3000);
+        
+        // Debug: Check for any error messages on the page
+        var errorElement = await Page.QuerySelectorAsync(".alert-danger");
+        var errorMessage = errorElement != null ? await errorElement.TextContentAsync() : "No error message";
+        Console.WriteLine($"Error message after save: '{errorMessage}'");
+        
+        // Debug: Check the page URL after save
+        Console.WriteLine($"Page URL after save: {Page.Url}");
+        
+        // Debug: Check if modal is still visible (which would indicate validation errors)
+        var modalVisible = await Page.IsVisibleAsync(".modal.show.d-block");
+        Console.WriteLine($"Modal still visible after save: {modalVisible}");
+        
+        // Debug: Check form input values if modal is still visible
+        if (modalVisible)
+        {
+            var titleValue = await Page.InputValueAsync("[data-testid='title-input']");
+            var descValue = await Page.InputValueAsync("[data-testid='description-input']");
+            var typeValue = await Page.InputValueAsync("[data-testid='type-select']");
+            var statusValue = await Page.InputValueAsync("[data-testid='status-select']");
+            Console.WriteLine($"Form values - Title: '{titleValue}', Description: '{descValue}', Type: '{typeValue}', Status: '{statusValue}'");
+            
+            // Check for any validation messages
+            var validationMessages = await Page.QuerySelectorAllAsync(".text-danger, .field-validation-error, .validation-message");
+            if (validationMessages.Count > 0)
+            {
+                Console.WriteLine($"Found {validationMessages.Count} validation messages:");
+                foreach (var msg in validationMessages)
+                {
+                    var text = await msg.TextContentAsync();
+                    Console.WriteLine($"  - {text}");
+                }
+            }
+        }
+        else 
+        {
+            // Modal closed, so save was successful. Check search term
+            var searchInput = await Page.InputValueAsync("input[placeholder*='Search requirements']");
+            Console.WriteLine($"Search input value after save: '{searchInput}'");
+        }
+        
+        // Debug: Get table row count before checking visibility
+        var rowCount = await Page.QuerySelectorAllAsync("[data-testid='requirement-row']");
+        Console.WriteLine($"Number of requirement rows visible: {rowCount.Count}");
+        
+        // Debug: Get all visible text content that contains our test title
+        var pageText = await Page.TextContentAsync("body");
+        var containsTitle = pageText?.Contains(requirement.Title) ?? false;
+        Console.WriteLine($"Page contains requirement title '{requirement.Title}': {containsTitle}");
         
         // Verify requirement was created
         var isVisible = await requirementsPage.IsRequirementVisibleAsync(requirement.Title);

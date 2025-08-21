@@ -120,10 +120,27 @@ public class RequirementsPage
     /// <param name="status">Requirement status</param>
     public async Task FillRequirementFormAsync(string title, string description, string type = "CRS", string status = "Draft")
     {
+        // Clear and fill title with proper input events for Blazor binding
+        await _page.ClickAsync("[data-testid='title-input']");
         await _page.FillAsync("[data-testid='title-input']", title);
+        await _page.DispatchEventAsync("[data-testid='title-input']", "input");
+        await _page.DispatchEventAsync("[data-testid='title-input']", "change");
+        
+        // Clear and fill description with proper input events for Blazor binding  
+        await _page.ClickAsync("[data-testid='description-input']");
         await _page.FillAsync("[data-testid='description-input']", description);
+        await _page.DispatchEventAsync("[data-testid='description-input']", "input");
+        await _page.DispatchEventAsync("[data-testid='description-input']", "change");
+        
+        // Select options and trigger change events for Blazor binding
         await _page.SelectOptionAsync("[data-testid='type-select']", type);
+        await _page.DispatchEventAsync("[data-testid='type-select']", "change");
+        
         await _page.SelectOptionAsync("[data-testid='status-select']", status);
+        await _page.DispatchEventAsync("[data-testid='status-select']", "change");
+        
+        // Wait a moment for Blazor to process the binding updates
+        await _page.WaitForTimeoutAsync(500);
     }
     
     /// <summary>

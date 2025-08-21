@@ -23,6 +23,9 @@ namespace backend.Services
                 .Include(p => p.Owner)
                 .Include(p => p.TeamMembers)
                 .ThenInclude(tm => tm.User)
+                .Include(p => p.Requirements)
+                .Include(p => p.TestSuites)
+                .Include(p => p.TestPlans)
                 .AsQueryable();
 
             // Apply filters
@@ -74,6 +77,9 @@ namespace backend.Services
                 .Include(p => p.Owner)
                 .Include(p => p.TeamMembers)
                 .ThenInclude(tm => tm.User)
+                .Include(p => p.Requirements)
+                .Include(p => p.TestSuites)
+                .Include(p => p.TestPlans)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
             return project != null ? MapToDto(project) : null;
@@ -85,6 +91,9 @@ namespace backend.Services
                 .Include(p => p.Owner)
                 .Include(p => p.TeamMembers)
                 .ThenInclude(tm => tm.User)
+                .Include(p => p.Requirements)
+                .Include(p => p.TestSuites)
+                .Include(p => p.TestPlans)
                 .FirstOrDefaultAsync(p => p.Code == code);
 
             return project != null ? MapToDto(project) : null;

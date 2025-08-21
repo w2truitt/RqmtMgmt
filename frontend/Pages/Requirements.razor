@@ -1,8 +1,8 @@
 @page "/requirements"
-@using RqmtMgmtShared
 @inject RqmtMgmtShared.IRequirementService ReqService
 @inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
 @inject RqmtMgmtShared.ITestCaseService TestCaseService
+@inject frontend.Services.IProjectContextService ProjectContextService
 
 <PageTitle>Requirements</PageTitle>
 
@@ -321,14 +321,15 @@ else
 
     void ShowAddForm()
     {
+        var currentProject = ProjectContextService.CurrentProject;
         formModel = new RequirementDto 
         { 
             Type = RequirementType.CRS, 
             Title = string.Empty, 
             Status = RequirementStatus.Draft,
             CreatedBy = 1, // Default user ID
-            ProjectId = 1, // Default project ID  
-            ProjectCode = "DEFAULT", // Default project code
+            ProjectId = currentProject?.Id ?? 1, // Use project context, fallback to default project ID 1 if not set
+            ProjectCode = currentProject?.Code ?? "LEG", // Use project context, fallback to default project code if not set
             CreatedAt = DateTime.UtcNow
         };
         editRequirement = null;
@@ -364,12 +365,33 @@ else
         if (editRequirement != null)
         {
             await ReqService.UpdateAsync(formModel);
+            await LoadData();
         }
         else
         {
-            await ReqService.CreateAsync(formModel);
+            var createdRequirement = await ReqService.CreateAsync(formModel);
+            if (createdRequirement != null)
+            {
+                // After creating a new requirement, search for it to ensure it's visible
+                searchTerm = createdRequirement.Title;
+                paginationParams.SearchTerm = searchTerm;
+                paginationParams.PageNumber = 1; // Start from first page of search results
+                await LoadData();
+                
+                // Optional: Clear search after a delay to show the user where their requirement is
+                // Comment out the lines below if you want to keep the search active
+                await Task.Delay(3000);
+                searchTerm = string.Empty;
+                paginationParams.SearchTerm = string.Empty;
+                paginationParams.PageNumber = 1;
+                await LoadData();
+            }
+            else
+            {
+                // Handle creation failure
+                errorMessage = "Failed to create requirement. Please try again.";
+            }
         }
-        await LoadData();
         showForm = false;
     }
 
