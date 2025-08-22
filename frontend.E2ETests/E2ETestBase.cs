@@ -23,19 +23,14 @@ public abstract class E2ETestBase : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Initialize Playwright with resource-optimized settings
+        // Use Firefox instead of Chromium as it handles self-signed SSL certificates better
         PlaywrightInstance = await Playwright.CreateAsync();
-        Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        Browser = await PlaywrightInstance.Firefox.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = true, // Always headless for resource efficiency
             Args = new[]
             {
-                "--no-sandbox",
-                "--disable-setuid-sandbox", 
-                "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
-                "--disable-gpu",
-                "--disable-web-security",
-                "--memory-pressure-off", // Disable memory pressure simulation
-                "--max_old_space_size=512" // Limit V8 memory usage
+                "--no-sandbox"
             }
         });
         
@@ -46,15 +41,16 @@ public abstract class E2ETestBase : IAsyncLifetime
             {
                 Width = 1280,
                 Height = 720
-            }
+            },
+            IgnoreHTTPSErrors = true // Ignore SSL certificate errors for self-signed certificates
         });
 
         // Set shorter timeouts to avoid hanging tests
         Page.SetDefaultTimeout(30000); // 30 seconds instead of default 60
         Page.SetDefaultNavigationTimeout(30000);
         
-        // Use the actual running frontend URL (Docker containers with nginx proxy)
-        BaseUrl = "http://localhost:8080";
+        // Use HTTP for development troubleshooting (avoiding SSL/Blazor WebAssembly issues)
+        BaseUrl = "http://rqmtmgmt.local:8080";
         
         // Create a minimal factory just for cleanup purposes (some tests might reference it)
         Factory = new WebApplicationFactory<Program>();

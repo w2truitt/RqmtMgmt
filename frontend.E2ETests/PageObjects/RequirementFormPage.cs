@@ -40,7 +40,11 @@ public class RequirementFormPage
     /// </summary>
     public async Task WaitForPageLoadAsync()
     {
-        await _page.WaitForSelectorAsync("h2:has-text('New Requirement')", new PageWaitForSelectorOptions { Timeout = 30000 });
+        // First wait for the page container to load
+        await _page.WaitForSelectorAsync("[data-testid='requirement-form-page']", new PageWaitForSelectorOptions { Timeout = 30000 });
+        
+        // Then wait for either the form content to load (success) or an error message
+        await _page.WaitForSelectorAsync("h2:has-text('New Requirement'), .alert-danger", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
     
     /// <summary>
@@ -53,6 +57,9 @@ public class RequirementFormPage
     /// <param name="parentRequirementId">Parent requirement ID (optional)</param>
     public async Task FillRequirementFormAsync(string title, string description, string type, string status, int? parentRequirementId = null)
     {
+        // Wait for form fields to be available
+        await _page.WaitForSelectorAsync("input[placeholder='Enter requirement title...']", new PageWaitForSelectorOptions { Timeout = 30000 });
+        
         await _page.FillAsync("input[placeholder='Enter requirement title...']", title);
         await _page.FillAsync("textarea[placeholder='Enter detailed description of the requirement...']", description);
         

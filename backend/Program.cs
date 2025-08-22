@@ -123,7 +123,9 @@ public class Program
                     "https://localhost:5001", 
                     "http://localhost:5000",
                     "http://localhost:5001",  // Frontend container
-                    "http://frontend:5001"    // Internal container communication
+                    "http://frontend:5001",   // Internal container communication
+                    "http://rqmtmgmt.local:8080",  // E2E test HTTP access
+                    "https://rqmtmgmt.local:8443"  // E2E test HTTPS access
                 )
                       .AllowAnyHeader()
                       .AllowAnyMethod()

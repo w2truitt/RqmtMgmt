@@ -32,6 +32,7 @@ coveragereport/
 coverage-report/
 TestResults/
 certs/
+keys/
 
 # Local testing SSL configuration (contains corp domain)
 docker-compose/nginx-ssl.conf

@@ -2,7 +2,7 @@
 console.log('=== Project Selector Debug ===');
 
 // Wait for page to load
-await page.goto('http://localhost:8080');
+await page.goto('http://rqmtmgmt.local:8080');
 await page.waitForLoadState('networkidle');
 
 console.log('Page loaded, checking for project selector...');

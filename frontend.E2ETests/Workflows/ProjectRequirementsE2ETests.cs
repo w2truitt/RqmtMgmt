@@ -1,4 +1,5 @@
 using frontend.E2ETests.PageObjects;
+using frontend.E2ETests.TestData;
 using Microsoft.Playwright;
 using Xunit;
 
@@ -31,22 +32,63 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     public async Task CreateRequirement_WithValidData_Success()
     {
         // Arrange
+        var testId = CreateTestId();
+        var projectsPage = new ProjectsPage(Page, BaseUrl);
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
-        var projectDashboard = new ProjectDashboardPage(Page, BaseUrl);
+        var testProject = TestDataFactory.CreateProject(testId);
         
-        // Act
-        await requirementForm.NavigateToNewRequirementAsync(1);
+        // First create a project that we can add requirements to
+        await projectsPage.NavigateToAsync();
+        await projectsPage.WaitForPageLoadAsync();
+        await projectsPage.ClickCreateProjectAsync();
+        await projectsPage.WaitForFormModalAsync();
+        await projectsPage.FillProjectFormAsync(
+            testProject.Name, 
+            testProject.Code, 
+            testProject.Description ?? "", 
+            testProject.Status.ToString(), 
+            testProject.OwnerId
+        );
+        await projectsPage.SaveProjectAsync();
+        
+        // Wait for project creation to complete
+        await Page.WaitForTimeoutAsync(3000);
+        
+        // Verify project was created and get its URL/ID
+        var isProjectVisible = await projectsPage.IsProjectVisibleAsync(testProject.Name);
+        Assert.True(isProjectVisible, "Project should be visible after creation");
+        
+        // Click on the project to go to its dashboard, then navigate to requirements
+        await projectsPage.ClickProjectNameLinkAsync(testProject.Name);
+        await Page.WaitForTimeoutAsync(2000);
+        
+        // Extract the project ID from the current URL (should be something like /projects/X)
+        var currentUrl = Page.Url;
+        Console.WriteLine($"Current URL after clicking project: {currentUrl}");
+        
+        // Parse project ID from URL
+        var match = System.Text.RegularExpressions.Regex.Match(currentUrl, @"/projects/(\d+)");
+        if (!match.Success)
+        {
+            throw new InvalidOperationException($"Could not extract project ID from URL: {currentUrl}");
+        }
+        
+        var projectId = int.Parse(match.Groups[1].Value);
+        Console.WriteLine($"Extracted project ID: {projectId}");
+        
+        // Now navigate to the requirement form for this project
+        await requirementForm.NavigateToNewRequirementAsync(projectId);
         await requirementForm.WaitForPageLoadAsync();
-        
+
         await requirementForm.FillRequirementFormAsync(
             title: "Test Requirement E2E",
             description: "This is a test requirement created via E2E test",
             type: "CRS",
             status: "Draft"
         );
-        
+
         await requirementForm.SaveRequirementAsync();
-        
+
         // Check for any validation errors
         await Task.Delay(1000);
         var errorElements = await Page.QuerySelectorAllAsync(".alert-danger, .validation-message, .field-validation-error");
@@ -63,13 +105,14 @@ public class ProjectRequirementsE2ETests : E2ETestBase
             }
             Console.WriteLine($"Validation errors found: {string.Join(", ", errorTexts)}");
         }
-        
+
         // Assert - Should redirect to project dashboard or requirements list
         await Task.Delay(2000); // Allow for navigation
-        var currentUrl = Page.Url;
-        Console.WriteLine($"Current URL after save: {currentUrl}");
-        Assert.True(currentUrl.Contains("/projects/1") && !currentUrl.Contains("/new"), 
-            $"Expected URL to contain '/projects/1' and not contain '/new', but got: {currentUrl}");
+        var finalUrl = Page.Url;
+        Console.WriteLine($"Final URL after save: {finalUrl}");
+
+        Assert.True(finalUrl.Contains($"/projects/{projectId}") && !finalUrl.Contains("/new"), 
+            $"Expected URL to contain '/projects/{projectId}' and not contain '/new', but got: {finalUrl}");
     }
     
     [Fact]
