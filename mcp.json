@@ -2,9 +2,9 @@
 	"servers": {
 		"zen": {
 			"type": "stdio",
-			"command": "C:\\Users\\wtruitt\\tools\\zen-mcp-server\\.zen_venv\\Scripts\\python.exe",
+			"command": "/home/wtruitt/src/repos/zen-mcp-server/.zen_venv/bin/python",
 			"args": [
-				"C:\\Users\\wtruitt\\tools\\zen-mcp-server\\server.py"
+				"/home/wtruitt/src/repos/zen-mcp-server/server.py"
 			]
 		},
 		"playwright": {
@@ -13,7 +13,26 @@
 				"@playwright/mcp@latest"
 			],
 			"type": "stdio"
-		}
+		},
+		"HCHB": {
+                        "type": "stdio",
+                        "command": "pwsh",
+                        "args": [
+                                "/home/wtruitt/src/repos/hchb.tech.mcp/scripts/run-hchb-mcp.ps1"
+                        ]
+                },
+		"playwright": {
+                        "command": "npx",
+                        "args": [
+                                "@playwright/mcp@latest"
+                        ],
+                        "type": "stdio"
+                },
+		"context7": {
+                        "type": "stdio",
+                        "command": "npx",
+                "args": ["-y", "@upstash/context7-mcp", "--api-key", "YOUR_API_KEY"]
+                }
 	},
 	"inputs": []
 }

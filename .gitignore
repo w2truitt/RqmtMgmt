@@ -31,6 +31,10 @@ frontend/dist/
 coveragereport/
 coverage-report/
 TestResults/
+certs/
+keys/
+Migrations/
+publish/
 
 # Misc
 *.swp
@@ -44,3 +48,4 @@ coverage.cobertura.xml
 swagger.json
 backend/NuGet.Config
 frontend/NuGet.Config
+*.jwk

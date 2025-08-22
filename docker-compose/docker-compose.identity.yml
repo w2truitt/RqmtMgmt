@@ -1,16 +1,19 @@
 services:
-  frontend:
+  # Identity Provider using Duende IdentityServer
+  identityserver:
     image: mcr.microsoft.com/dotnet/sdk:9.0
     working_dir: /src
     volumes:
-      - ../frontend:/src
-    expose:
-      - "5001"
+      - ../identityserver:/src
+    ports:
+      - "5002:5002"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-    command: ["dotnet", "run", "--urls", "http://0.0.0.0:5001"]
+      - ASPNETCORE_URLS=http://0.0.0.0:5002
+      - ConnectionStrings__DefaultConnection=Server=db;Database=RqmtMgmtIdentity;User=sa;Password=Your_password123;TrustServerCertificate=True;
+    command: ["dotnet", "run", "--urls", "http://0.0.0.0:5002", "--project", "/src/identityserver.csproj"]
     depends_on:
-      backend:
+      db:
         condition: service_healthy
     deploy:
       resources:
@@ -20,10 +23,34 @@ services:
         reservations:
           memory: 1G
 
+  frontend:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    working_dir: /src
+    volumes:
+      - ../frontend:/src
+    expose:
+      - "5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - OIDC__Authority=http://identityserver:5002
+      - OIDC__ClientId=rqmtmgmt-frontend
+      - OIDC__ClientSecret=frontend-secret
+    command: ["dotnet", "run", "--urls", "http://0.0.0.0:5001"]
+    depends_on:
+      backend:
+        condition: service_healthy
+      identityserver:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          memory: 1G
+
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: mcr.microsoft.com/dotnet/sdk:8.0
     working_dir: /src
     volumes:
       - ../backend:/src
@@ -32,10 +59,15 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;
+      - Authentication__Authority=http://identityserver:5002
+      - Authentication__Audience=rqmtmgmt-api
+      - Authentication__RequireHttpsMetadata=false
     command: ["dotnet", "run", "--urls", "http://0.0.0.0:5000", "--project", "/src/backend.csproj"]
     depends_on:
       db:
         condition: service_healthy
+      identityserver:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 30s
@@ -53,14 +85,16 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-identity.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       frontend:
         condition: service_started
       backend:
         condition: service_healthy
+      identityserver:
+        condition: service_started
 
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest

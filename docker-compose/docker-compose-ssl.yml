@@ -53,9 +53,12 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8080:80"
+      - "80:80"    # HTTP - redirects to HTTPS
+      - "443:443"  # HTTPS
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./certs/server-cert.pem:/etc/ssl/certs/server-cert.pem:ro
+      - ./certs/server-key.pem:/etc/ssl/private/server-key.pem:ro
     depends_on:
       frontend:
         condition: service_started
@@ -82,10 +85,31 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
           memory: 3G
         reservations:
           memory: 2G
+
+  # Internal test container to bypass corporate proxy issues
+  tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.tester
+    volumes:
+      - ./test-scripts:/app/test-scripts:ro
+      - ./certs:/app/certs:ro
+      - ..:/app/rqmtmgmt:ro
+    environment:
+      - TARGET_HOST=nginx
+      - TARGET_PORT=443
+      - TEST_DOMAIN=rqmtmgmt.local
+    depends_on:
+      nginx:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    profiles:
+      - testing
+    command: ["tail", "-f", "/dev/null"]  # Keep container running for manual testing
 
 volumes:
   sqlvolume:
