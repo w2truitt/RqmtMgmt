@@ -66,21 +66,23 @@ namespace backend.Configuration
                     RedirectUris = 
                     {
                         $"{frontendUrl}/authentication/login-callback",
-                        "http://localhost:8080/authentication/login-callback",
+                        "http://localhost:80/authentication/login-callback",
+                        "https://localhost:443/authentication/login-callback",
                         "https://localhost:7160/authentication/login-callback",
                         "https://localhost:5001/authentication/login-callback",
-                        "http://rqmtmgmt.local:8080/authentication/login-callback",
-                        "https://rqmtmgmt.local:8443/authentication/login-callback"
+                        "http://rqmtmgmt.local:80/authentication/login-callback",
+                        "https://rqmtmgmt.local:443/authentication/login-callback"
                     },
 
                     PostLogoutRedirectUris = 
                     {
                         $"{frontendUrl}/authentication/logout-callback",
-                        "http://localhost:8080/authentication/logout-callback", 
+                        "http://localhost:80/authentication/logout-callback", 
+                        "https://localhost:443/authentication/logout-callback", 
                         "https://localhost:7160/authentication/logout-callback", 
                         "https://localhost:5001/authentication/logout-callback",
-                        "http://rqmtmgmt.local:8080/authentication/logout-callback",
-                        "https://rqmtmgmt.local:8443/authentication/logout-callback"
+                        "http://rqmtmgmt.local:80/authentication/logout-callback",
+                        "https://rqmtmgmt.local:443/authentication/logout-callback"
                     },
 
                     AllowedScopes = 
@@ -94,13 +96,14 @@ namespace backend.Configuration
                     AllowedCorsOrigins = 
                     {
                         frontendUrl,
-                        "http://localhost:8080",
+                        "http://localhost:80",
+                        "https://localhost:443",
                         "https://localhost:7160",
                         "https://localhost:5001",
                         "http://localhost:5000",
                         "http://localhost:5239",
-                        "http://rqmtmgmt.local:8080",
-                        "https://rqmtmgmt.local:8443"
+                        "http://rqmtmgmt.local:80",
+                        "https://rqmtmgmt.local:443"
                     },
 
                     // Token lifetimes

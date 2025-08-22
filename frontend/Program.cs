@@ -31,13 +31,13 @@ builder.Services.AddOidcAuthentication(options =>
     {
         // Use the same protocol and port as the frontend
         authority = baseAddress.StartsWith("https:") 
-            ? "https://rqmtmgmt.local:8443" 
-            : "http://rqmtmgmt.local:8080";
+            ? "https://rqmtmgmt.local:443" 
+            : "http://rqmtmgmt.local:80";
     }
     else
     {
         // Local development fallback
-        authority = "http://localhost:8080";
+        authority = "http://localhost:80";
     }
     
     options.ProviderOptions.Authority = authority;
