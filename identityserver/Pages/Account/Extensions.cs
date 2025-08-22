@@ -13,6 +13,6 @@ public static class Extensions
         page.HttpContext.Response.StatusCode = 200;
         page.HttpContext.Response.Headers["Location"] = "";
         
-        return page.Redirect(redirectUri);
+        return new RedirectResult(redirectUri);
     }
 }

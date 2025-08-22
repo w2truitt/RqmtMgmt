@@ -75,7 +75,7 @@ public class LoginModel : PageModel
                 await _interaction.DenyAuthorizationAsync(context, AuthorizationError.AccessDenied);
 
                 // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
-                if (context.IsNativeClient())
+                if (IsNativeClient(context?.Client))
                 {
                     // The client is native, so this change in how to
                     // return the response is for better UX for the end user.
@@ -97,11 +97,14 @@ public class LoginModel : PageModel
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByNameAsync(Input.Username);
-                await _events.RaiseAsync(new UserLoginSuccessEvent(user.UserName, user.Id, user.Name, clientId: context?.Client.ClientId));
+                if (user != null)
+                {
+                    await _events.RaiseAsync(new UserLoginSuccessEvent(user.UserName, user.Id, user.Name, clientId: context?.Client?.ClientId));
+                }
 
                 if (context != null)
                 {
-                    if (context.IsNativeClient())
+                    if (IsNativeClient(context?.Client))
                     {
                         // The client is native, so this change in how to
                         // return the response is for better UX for the end user.
@@ -137,6 +140,24 @@ public class LoginModel : PageModel
         return Page();
     }
 
+    /// <summary>
+    /// Determines if a client is a native client (public client with custom URI schemes)
+    /// </summary>
+    private static bool IsNativeClient(Duende.IdentityServer.Models.Client? client)
+    {
+        if (client == null) return false;
+        
+        // A native client is typically:
+        // 1. A public client (doesn't require client secret)
+        // 2. Uses authorization code flow
+        // 3. Has redirect URIs with custom schemes (not http/https)
+        
+        return !client.RequireClientSecret && 
+               client.AllowedGrantTypes.Contains(GrantTypes.Code.First()) &&
+               client.RedirectUris.Any(uri => !uri.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
+                                             !uri.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+    }
+
     private async Task BuildModelAsync(string returnUrl)
     {
         Input.ReturnUrl = returnUrl;
@@ -153,7 +174,7 @@ public class LoginModel : PageModel
 
             if (!local)
             {
-                View.ExternalProviders = new[] { new ExternalProvider { AuthenticationScheme = context.IdP } };
+                View.ExternalProviders = new[] { new ExternalProvider { AuthenticationScheme = context?.IdP ?? "" } };
             }
         }
 
@@ -163,16 +184,16 @@ public class LoginModel : PageModel
             .Where(x => x.DisplayName != null)
             .Select(x => new ExternalProvider
             {
-                DisplayName = x.DisplayName ?? x.Name,
-                AuthenticationScheme = x.Name
+                DisplayName = x.DisplayName ?? x.Name ?? "",
+                AuthenticationScheme = x.Name ?? ""
             }).ToList();
 
         var dyanmicSchemes = (await _identityProviderStore.GetAllSchemeNamesAsync())
-            .Where(x => providers.All(y => y.AuthenticationScheme != x))
+            .Where(x => providers.All(y => y.AuthenticationScheme != x.ToString()))
             .Select(x => new ExternalProvider
             {
-                AuthenticationScheme = x,
-                DisplayName = x
+                AuthenticationScheme = x.ToString() ?? "",
+                DisplayName = x.ToString() ?? ""
             });
         providers.AddRange(dyanmicSchemes);
 
