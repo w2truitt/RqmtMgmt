@@ -34,8 +34,6 @@ public class Program
             var testDbName = $"TestDb_{Guid.NewGuid()}";
             builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
                 options.UseInMemoryDatabase(testDbName));
-            builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
-                options.UseInMemoryDatabase($"IdentityTestDb_{Guid.NewGuid()}"));
         }
         else
         {
@@ -43,76 +41,16 @@ public class Program
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
                 options.UseSqlServer(connectionString));
-            builder.Services.AddDbContext<ApplicationIdentityDbContext>(options =>
-                options.UseSqlServer(connectionString));
-        }
-
-        // Configure ASP.NET Core Identity
-        builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-        {
-            // Password settings
-            options.Password.RequireDigit = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequiredLength = 8;
-
-            // Lockout settings
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.AllowedForNewUsers = true;
-
-            // User settings
-            options.User.AllowedUserNameCharacters =
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-            options.User.RequireUniqueEmail = true;
-        })
-        .AddEntityFrameworkStores<ApplicationIdentityDbContext>()
-        .AddDefaultTokenProviders();
-
-        // Configure ApplicationCookie to return 401 for API endpoints instead of redirecting
-        builder.Services.ConfigureApplicationCookie(options =>
-        {
-            options.Events.OnRedirectToLogin = context =>
-            {
-                // Check if the request path is for an API endpoint
-                if (context.Request.Path.StartsWithSegments("/api"))
-                {
-                    // Return 401 Unauthorized instead of redirecting
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return Task.CompletedTask;
-                }
-
-                // For non-API requests, perform the default redirect behavior
-                context.Response.Redirect(context.RedirectUri);
-                return Task.CompletedTask;
-            };
-        });
-
-        // Configure Duende IdentityServer
-        var frontendUrl = builder.Configuration["Frontend:Url"] ?? "http://localhost:80";
-        var backendUrl = builder.Configuration["Backend:Url"] ?? "http://localhost:80";
-        
-        var identityServerBuilder = builder.Services.AddIdentityServer()
-            .AddDeveloperSigningCredential() // For development only - use real certificate in production
-            .AddInMemoryIdentityResources(IdentityServerConfig.IdentityResources)
-            .AddInMemoryApiScopes(IdentityServerConfig.ApiScopes)
-            .AddInMemoryApiResources(IdentityServerConfig.ApiResources)
-            .AddInMemoryClients(IdentityServerConfig.GetClients(frontendUrl, backendUrl))
-            .AddAspNetIdentity<ApplicationUser>();
-
-        // Configure for development environment with HTTP
-        if (builder.Environment.IsDevelopment())
-        {
-            identityServerBuilder.AddDeveloperSigningCredential();
         }
 
         // Add JWT Bearer authentication for API protection
-        builder.Services.AddAuthentication()
+        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "http://localhost:5002";
+        builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
-                options.Authority = builder.Configuration["Authentication:Authority"] ?? backendUrl;
+                options.Authority = identityServerUrl;
                 options.Audience = builder.Configuration["Authentication:Audience"] ?? "rqmtapi";
+                options.RequireHttpsMetadata = false; // Allow HTTP for development
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -167,28 +105,16 @@ public class Program
             { 
                 Title = "Requirements Management API", 
                 Version = "v1",
-                Description = "API for Requirements Management System with OAuth2 authentication"
+                Description = "API for Requirements Management System with JWT Bearer authentication"
             });
 
-            // Add OAuth2 security definition
-            c.AddSecurityDefinition("oauth2", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            // Add JWT Bearer authentication to Swagger
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.OAuth2,
-                Flows = new Microsoft.OpenApi.Models.OpenApiOAuthFlows
-                {
-                    AuthorizationCode = new Microsoft.OpenApi.Models.OpenApiOAuthFlow
-                    {
-                        AuthorizationUrl = new Uri($"{backendUrl}/connect/authorize"),
-                        TokenUrl = new Uri($"{backendUrl}/connect/token"),
-                        Scopes = new Dictionary<string, string>
-                        {
-                            {"openid", "OpenID Connect scope"},
-                            {"profile", "User profile information"},
-                            {"email", "User email address"},
-                            {"rqmtapi", "Requirements Management API access"}
-                        }
-                    }
-                }
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme."
             });
 
             // Add security requirement
@@ -200,14 +126,14 @@ public class Program
                         Reference = new Microsoft.OpenApi.Models.OpenApiReference
                         {
                             Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                            Id = "oauth2"
+                            Id = "Bearer"
                         }
                     },
-                    new[] { "openid", "profile", "email", "rqmtapi" }
+                    new string[] {}
                 }
             });
         });
-        
+
         // Register all business services for dependency injection
         builder.Services.AddScoped<RqmtMgmtShared.IRequirementService, backend.Services.RequirementService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestCaseService, backend.Services.TestCaseService>();
@@ -258,13 +184,10 @@ public class Program
         // Enable CORS for frontend communication
         app.UseCors("AllowFrontend");
 
-        // Enable routing (required before IdentityServer)
+        // Enable routing (required before authentication)
         app.UseRouting();
 
-        // Enable IdentityServer middleware
-        app.UseIdentityServer();
-
-        // Enable authentication middleware
+        // Enable authentication middleware (JWT Bearer tokens from Identity Server)
         app.UseAuthentication();
 
         // Custom impersonation middleware for development and testing
@@ -341,18 +264,16 @@ public class Program
     {
         using var scope = app.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<RqmtMgmtDbContext>();
-        var identityContext = scope.ServiceProvider.GetRequiredService<ApplicationIdentityDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         logger.LogInformation("Database initialization attempt {Attempt}/{MaxRetries}", attempt, maxRetries);
 
         // Test database connectivity first
         await context.Database.CanConnectAsync();
-        await identityContext.Database.CanConnectAsync();
-        logger.LogInformation("Database connections established successfully");
+        logger.LogInformation("Database connection established successfully");
 
         // Apply migrations and seed data based on environment
-        await InitializeDatabaseByEnvironment(app, context, identityContext, logger);
+        await InitializeDatabaseByEnvironment(app, context, logger);
         
         logger.LogInformation("Database initialization completed successfully");
     }
@@ -362,18 +283,16 @@ public class Program
     /// </summary>
     /// <param name="app">The web application instance</param>
     /// <param name="context">The main database context</param>
-    /// <param name="identityContext">The identity database context</param>
     /// <param name="logger">The logger instance</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    private static async Task InitializeDatabaseByEnvironment(WebApplication app, RqmtMgmtDbContext context, ApplicationIdentityDbContext identityContext, ILogger<Program> logger)
+    private static async Task InitializeDatabaseByEnvironment(WebApplication app, RqmtMgmtDbContext context, ILogger<Program> logger)
     {
         if (app.Environment.IsDevelopment())
         {
-            // Apply Identity migrations and seed Identity data
+            // Apply main database migrations and seed development data
             if (!app.Environment.IsEnvironment("Testing"))
             {
-                await identityContext.Database.MigrateAsync();
-                await IdentitySeedData.SeedAsync(app.Services.CreateScope().ServiceProvider, identityContext);
+                await context.Database.MigrateAsync();
             }
             
             await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
@@ -382,8 +301,7 @@ public class Program
         else if (app.Environment.IsEnvironment("Testing"))
         {
             // For testing, ensure databases are created (in-memory)
-            await identityContext.Database.EnsureCreatedAsync();
-            await IdentitySeedData.SeedAsync(app.Services.CreateScope().ServiceProvider, identityContext);
+            await context.Database.EnsureCreatedAsync();
             
             await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
             logger.LogInformation("Database seeded with test data successfully");
@@ -391,11 +309,7 @@ public class Program
         else
         {
             // Production - only apply migrations, no test data
-            await identityContext.Database.MigrateAsync();
             await context.Database.MigrateAsync();
-            
-            // Seed essential Identity data (admin user) in production
-            await IdentitySeedData.SeedAsync(app.Services.CreateScope().ServiceProvider, identityContext);
             logger.LogInformation("Database migrations applied successfully");
         }
     }
