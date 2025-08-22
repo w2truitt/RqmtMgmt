@@ -23,18 +23,34 @@ builder.Services.AddOidcAuthentication(options =>
 {
     builder.Configuration.Bind("Local", options.ProviderOptions);
     
-    // Use HTTPS for production/container environments, fallback to HTTP for local dev
-    var authority = builder.HostEnvironment.BaseAddress.StartsWith("https://rqmtmgmt.local")
-        ? "https://rqmtmgmt.local"
-        : "http://localhost:8080";
+    // Set authority based on environment
+    var baseAddress = builder.HostEnvironment.BaseAddress;
+    string authority;
+    
+    if (baseAddress.Contains("rqmtmgmt.local"))
+    {
+        // Use the same protocol and port as the frontend
+        authority = baseAddress.StartsWith("https:") 
+            ? "https://rqmtmgmt.local:8443" 
+            : "http://rqmtmgmt.local:8080";
+    }
+    else
+    {
+        // Local development fallback
+        authority = "http://localhost:8080";
+    }
     
     options.ProviderOptions.Authority = authority;
     options.ProviderOptions.ClientId = "rqmtmgmt-wasm";
     options.ProviderOptions.ResponseType = "code";
+    options.ProviderOptions.DefaultScopes.Clear();
     options.ProviderOptions.DefaultScopes.Add("openid");
     options.ProviderOptions.DefaultScopes.Add("profile");
     options.ProviderOptions.DefaultScopes.Add("email");
     options.ProviderOptions.DefaultScopes.Add("rqmtapi");
+    
+    // Configure the application URLs for callbacks
+    options.UserOptions.RoleClaim = "role";
 });
 
 // Configure HttpClient with authentication
