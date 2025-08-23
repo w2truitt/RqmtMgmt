@@ -23,7 +23,7 @@ namespace backend.ApiTests
             await SkipIfSystemNotAvailableAsync();
 
             // Act
-            var response = await _client.GetAsync("/api/users");
+            var response = await _client.GetAsync("/api/User");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -44,7 +44,7 @@ namespace backend.ApiTests
             };
 
             // Act
-            var response = await _client.PostAsJsonAsync("/api/users", createDto, _jsonOptions);
+            var response = await _client.PostAsJsonAsync("/api/User", createDto, _jsonOptions);
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -67,12 +67,12 @@ namespace backend.ApiTests
                 Email = $"get{Guid.NewGuid():N}@example.com"
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/users", createDto, _jsonOptions);
+            var createResponse = await _client.PostAsJsonAsync("/api/User", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<UserDto>(_jsonOptions);
 
             // Act
-            var response = await _client.GetAsync($"/api/users/{created!.Id}");
+            var response = await _client.GetAsync($"/api/User/{created!.Id}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -95,7 +95,7 @@ namespace backend.ApiTests
                 Email = $"update{Guid.NewGuid():N}@example.com"
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/users", createDto, _jsonOptions);
+            var createResponse = await _client.PostAsJsonAsync("/api/User", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<UserDto>(_jsonOptions);
 
@@ -104,7 +104,7 @@ namespace backend.ApiTests
             created.Email = $"updated{Guid.NewGuid():N}@example.com";
 
             // Act
-            var response = await _client.PutAsJsonAsync($"/api/users/{created.Id}", created, _jsonOptions);
+            var response = await _client.PutAsJsonAsync($"/api/User/{created.Id}", created, _jsonOptions);
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -127,18 +127,18 @@ namespace backend.ApiTests
                 Email = $"delete{Guid.NewGuid():N}@example.com"
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/users", createDto, _jsonOptions);
+            var createResponse = await _client.PostAsJsonAsync("/api/User", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<UserDto>(_jsonOptions);
 
             // Act
-            var response = await _client.DeleteAsync($"/api/users/{created!.Id}");
+            var response = await _client.DeleteAsync($"/api/User/{created!.Id}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
             // Verify deletion
-            var getResponse = await _client.GetAsync($"/api/users/{created.Id}");
+            var getResponse = await _client.GetAsync($"/api/User/{created.Id}");
             getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
 
@@ -150,7 +150,7 @@ namespace backend.ApiTests
             var invalidId = 999999;
 
             // Act
-            var response = await _client.GetAsync($"/api/users/{invalidId}");
+            var response = await _client.GetAsync($"/api/User/{invalidId}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);

@@ -111,8 +111,10 @@ namespace backend.ApiTests
             var updateDto = new UpdateProjectDto
             {
                 Name = created!.Name + " - Updated",
+                Code = created.Code, // Keep the existing code
                 Description = "Updated by integration test",
-                Status = ProjectStatus.Active
+                Status = ProjectStatus.Active,
+                OwnerId = created.OwnerId // Keep the existing owner
             };
 
             // Act

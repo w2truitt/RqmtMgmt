@@ -23,7 +23,7 @@ namespace backend.ApiTests
             await SkipIfSystemNotAvailableAsync();
 
             // Act
-            var response = await _client.GetAsync("/api/testrun/sessions");
+            var response = await _client.GetAsync("/api/TestRunSession");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -48,7 +48,7 @@ namespace backend.ApiTests
             };
 
             // Act
-            var response = await _client.PostAsJsonAsync("/api/testrun/sessions", createDto, _jsonOptions);
+            var response = await _client.PostAsJsonAsync("/api/TestRunSession", createDto, _jsonOptions);
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -76,12 +76,12 @@ namespace backend.ApiTests
                 StartedAt = DateTime.UtcNow
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/testrun/sessions", createDto, _jsonOptions);
+            var createResponse = await _client.PostAsJsonAsync("/api/TestRunSession", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<TestRunSessionDto>(_jsonOptions);
 
             // Act
-            var response = await _client.GetAsync($"/api/testrun/sessions/{created!.Id}");
+            var response = await _client.GetAsync($"/api/TestRunSession/{created!.Id}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -108,7 +108,7 @@ namespace backend.ApiTests
                 StartedAt = DateTime.UtcNow
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/testrun/sessions", createDto, _jsonOptions);
+            var createResponse = await _client.PostAsJsonAsync("/api/TestRunSession", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<TestRunSessionDto>(_jsonOptions);
 
@@ -116,11 +116,15 @@ namespace backend.ApiTests
             created!.Status = TestRunStatus.Completed;
 
             // Act
-            var response = await _client.PutAsJsonAsync($"/api/testrun/sessions/{created.Id}", created, _jsonOptions);
+            var response = await _client.PutAsJsonAsync($"/api/TestRunSession/{created.Id}", created, _jsonOptions);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-            var updated = await response.Content.ReadFromJsonAsync<TestRunSessionDto>(_jsonOptions);
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            
+            // Verify the update by getting the session again
+            var getResponse = await _client.GetAsync($"/api/TestRunSession/{created.Id}");
+            getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            var updated = await getResponse.Content.ReadFromJsonAsync<TestRunSessionDto>(_jsonOptions);
             updated.Should().NotBeNull();
             updated!.Status.Should().Be(TestRunStatus.Completed);
         }
@@ -131,8 +135,11 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
+            // Get a valid session ID first
+            var sessionId = await GetValidTestRunSessionIdAsync();
+
             // Act
-            var response = await _client.GetAsync("/api/testexecution/cases");
+            var response = await _client.GetAsync($"/api/TestExecution/session/{sessionId}/executions");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -148,7 +155,7 @@ namespace backend.ApiTests
             var invalidId = 999999;
 
             // Act
-            var response = await _client.GetAsync($"/api/testrun/sessions/{invalidId}");
+            var response = await _client.GetAsync($"/api/TestRunSession/{invalidId}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -212,6 +219,39 @@ namespace backend.ApiTests
             var createResponse = await _client.PostAsJsonAsync("/api/projects", createProjectDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
             var created = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            
+            return created!.Id;
+        }
+
+        /// <summary>
+        /// Helper method to get a valid test run session ID for testing.
+        /// </summary>
+        private async Task<int> GetValidTestRunSessionIdAsync()
+        {
+            var response = await _client.GetAsync("/api/TestRunSession");
+            response.EnsureSuccessStatusCode();
+            
+            var sessions = await response.Content.ReadFromJsonAsync<List<TestRunSessionDto>>(_jsonOptions);
+            
+            if (sessions?.Count > 0)
+            {
+                return sessions[0].Id;
+            }
+
+            // Create a session if none exist
+            var testPlanId = await GetValidTestPlanIdAsync();
+            var createSessionDto = new TestRunSessionDto
+            {
+                Name = $"Integration Test Session {Guid.NewGuid():N}",
+                TestPlanId = testPlanId,
+                Status = TestRunStatus.InProgress,
+                ExecutedBy = 1,
+                StartedAt = DateTime.UtcNow
+            };
+
+            var createResponse = await _client.PostAsJsonAsync("/api/TestRunSession", createSessionDto, _jsonOptions);
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<TestRunSessionDto>(_jsonOptions);
             
             return created!.Id;
         }
