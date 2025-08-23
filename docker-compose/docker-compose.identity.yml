@@ -32,7 +32,7 @@ services:
       - "5001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - OIDC__Authority=http://identityserver:5002
+      - OIDC__Authority=https://rqmtmgmt.local
       - OIDC__ClientId=rqmtmgmt-frontend
       - OIDC__ClientSecret=frontend-secret
     command: ["dotnet", "run", "--urls", "http://0.0.0.0:5001"]
@@ -59,7 +59,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;
-      - Authentication__Authority=http://identityserver:5002
+      - Authentication__Authority=https://rqmtmgmt.local
       - Authentication__Audience=rqmtmgmt-api
       - Authentication__RequireHttpsMetadata=false
     command: ["dotnet", "run", "--urls", "http://0.0.0.0:5000", "--project", "/src/backend.csproj"]
@@ -86,8 +86,11 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx-identity.conf:/etc/nginx/nginx.conf:ro
+      - ./certs/server-cert.pem:/etc/ssl/certs/server-cert.pem:ro
+      - ./certs/server-key.pem:/etc/ssl/private/server-key.pem:ro
     depends_on:
       frontend:
         condition: service_started

@@ -3,6 +3,7 @@ using identityserver.Data;
 using identityserver.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using Serilog;
 
 namespace identityserver;
@@ -19,6 +20,16 @@ internal static class HostingExtensions
     /// <returns>The configured web application builder</returns>
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
+        // Configure forwarded headers for proxy environment
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | 
+                                     ForwardedHeaders.XForwardedProto | 
+                                     ForwardedHeaders.XForwardedHost;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
+
         // Configure database contexts
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         
@@ -54,6 +65,25 @@ internal static class HostingExtensions
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
+        // Configure cookie settings for HTTPS environment
+        builder.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.Name = "IdentityServer.Identity.Application";
+            options.Cookie.Domain = null; // Let browser determine domain
+            options.Cookie.Path = "/";
+            options.Cookie.SameSite = SameSiteMode.Lax; // Changed to Lax for better browser compatibility
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Auto-detect HTTP/HTTPS
+            options.Cookie.HttpOnly = true;
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = true;
+            
+            // Configure login and logout paths for proxy environment
+            options.LoginPath = "/Account/Login";
+            options.LogoutPath = "/Account/Logout";
+            options.AccessDeniedPath = "/Account/AccessDenied";
+            options.ReturnUrlParameter = "ReturnUrl";
+        });
+
         // Configure IdentityServer
         var identityServerBuilder = builder.Services
             .AddIdentityServer(options =>
@@ -63,14 +93,18 @@ internal static class HostingExtensions
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
 
-                // Configure issuer URI for Docker environment (port 80)
+                // Configure issuer URI for HTTPS environment
                 if (builder.Environment.IsDevelopment())
                 {
-                    options.IssuerUri = "http://localhost";
+                    options.IssuerUri = "https://rqmtmgmt.local"; // Changed to HTTPS
                 }
                 
                 // Disable automatic key management for development
                 options.KeyManagement.Enabled = false;
+                
+                // Configure authentication options for HTTPS environment
+                options.Authentication.CookieSameSiteMode = SameSiteMode.Lax; // Changed to Lax
+                options.Authentication.CheckSessionCookieSameSiteMode = SameSiteMode.Lax; // Changed to Lax
             })
             .AddInMemoryIdentityResources(Config.IdentityResources)
             .AddInMemoryApiScopes(Config.ApiScopes)
@@ -90,15 +124,22 @@ internal static class HostingExtensions
             identityServerBuilder.AddDeveloperSigningCredential(); // Remove this in production
         }
 
-        // Configure CORS for the frontend
+        // Configure CORS for HTTPS frontend
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("http://localhost", "http://localhost:5001", "https://localhost:5001")
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials();
+                policy.WithOrigins(
+                    // HTTPS URLs (primary)
+                    "https://rqmtmgmt.local",
+                    // HTTP URLs (fallback for development)
+                    "http://localhost", 
+                    "http://localhost:5001", 
+                    "https://localhost:5001"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
             });
         });
 
@@ -115,6 +156,9 @@ internal static class HostingExtensions
     /// <returns>The configured web application</returns>
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        // Use forwarded headers BEFORE other middleware
+        app.UseForwardedHeaders();
+
         app.UseSerilogRequestLogging();
 
         if (app.Environment.IsDevelopment())

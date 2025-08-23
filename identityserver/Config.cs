@@ -67,6 +67,9 @@ public static class Config
 
                 RedirectUris =
                 {
+                    // HTTPS URLs (primary)
+                    "https://rqmtmgmt.local/authentication/login-callback",
+                    // HTTP URLs (fallback for development)
                     "http://localhost/authentication/login-callback",
                     "http://localhost:5001/authentication/login-callback",
                     "https://localhost:5001/authentication/login-callback"
@@ -74,6 +77,9 @@ public static class Config
 
                 PostLogoutRedirectUris =
                 {
+                    // HTTPS URLs (primary)
+                    "https://rqmtmgmt.local/",
+                    // HTTP URLs (fallback for development)
                     "http://localhost/",
                     "http://localhost:5001/",
                     "https://localhost:5001/"
@@ -81,6 +87,9 @@ public static class Config
 
                 AllowedCorsOrigins =
                 {
+                    // HTTPS URLs (primary)
+                    "https://rqmtmgmt.local",
+                    // HTTP URLs (fallback for development)
                     "http://localhost",
                     "http://localhost:5001",
                     "https://localhost:5001"
@@ -134,12 +143,18 @@ public static class Config
 
                 RedirectUris =
                 {
+                    // HTTPS URLs (primary)
+                    "https://rqmtmgmt.local/swagger/oauth2-redirect.html",
+                    // HTTP URLs (fallback for development)
                     "http://localhost/swagger/oauth2-redirect.html",
                     "http://localhost:5000/swagger/oauth2-redirect.html"
                 },
 
                 AllowedCorsOrigins =
                 {
+                    // HTTPS URLs (primary)
+                    "https://rqmtmgmt.local",
+                    // HTTP URLs (fallback for development)
                     "http://localhost",
                     "http://localhost:5000"
                 },

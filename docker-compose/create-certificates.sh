@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to create a self-signed CA and server certificates for local development
-# This creates certificates for rqmtmgmt.local domain
+# This creates certificates for rqmtmgmt.local domain with proper key usage
 
 set -e
 
@@ -30,7 +30,7 @@ openssl req -new -x509 -days 365 -key "$CA_KEY" -out "$CA_CERT" \
 echo "📝 Generating server private key..."
 openssl genrsa -out "$SERVER_KEY" 4096
 
-# Create server certificate configuration
+# Create server certificate configuration with CORRECT key usage
 echo "📝 Creating server certificate configuration..."
 cat > "$CERTS_DIR/server.conf" << EOF
 [req]
@@ -47,9 +47,10 @@ OU=IT Department
 CN=rqmtmgmt.local
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
+keyUsage = critical, digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
+basicConstraints = CA:FALSE
 
 [alt_names]
 DNS.1 = rqmtmgmt.local
@@ -81,16 +82,19 @@ echo "  Server Certificate: $SERVER_CERT"
 echo "  Server Private Key: $SERVER_KEY"
 echo ""
 echo "🔍 Server Certificate Details:"
-openssl x509 -in "$SERVER_CERT" -text -noout | grep -E "(Subject:|DNS:|IP Address:)"
+openssl x509 -in "$SERVER_CERT" -text -noout | grep -E "(Subject:|DNS:|IP Address:|Key Usage)"
 echo ""
 echo "📝 Next Steps:"
 echo "  1. Add 'rqmtmgmt.local' to your /etc/hosts file pointing to 127.0.0.1"
 echo "  2. Import the CA certificate ($CA_CERT) into your browser's trusted root certificates"
-echo "  3. Update docker-compose.yml to use HTTPS"
-echo "  4. Update nginx configuration for SSL"
+echo "  3. Restart docker-compose services"
 echo ""
 echo "🏠 To add to /etc/hosts, run:"
 echo "  echo '127.0.0.1 rqmtmgmt.local' | sudo tee -a /etc/hosts"
+echo ""
+echo "🔒 To install CA certificate (Ubuntu/Debian):"
+echo "  sudo cp $CA_CERT /usr/local/share/ca-certificates/rqmtmgmt-ca.crt"
+echo "  sudo update-ca-certificates"
 
 # Clean up temporary files
 rm -f "$SERVER_CSR" "$CERTS_DIR/server.conf" "$CERTS_DIR/ca-cert.srl"

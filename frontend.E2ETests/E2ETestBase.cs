@@ -34,6 +34,10 @@ public abstract class E2ETestBase : IAsyncLifetime
                 "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
                 "--disable-gpu",
                 "--disable-web-security",
+                "--ignore-certificate-errors", // Trust self-signed certificates
+                "--ignore-ssl-errors", // Ignore SSL errors
+                "--ignore-certificate-errors-spki-list", // Ignore certificate pinning
+                "--ignore-certificate-errors-skip-list", // Skip certificate error list
                 "--memory-pressure-off", // Disable memory pressure simulation
                 "--max_old_space_size=512" // Limit V8 memory usage
             }
@@ -46,15 +50,16 @@ public abstract class E2ETestBase : IAsyncLifetime
             {
                 Width = 1280,
                 Height = 720
-            }
+            },
+            IgnoreHTTPSErrors = true // Ignore HTTPS certificate errors
         });
 
         // Set shorter timeouts to avoid hanging tests
         Page.SetDefaultTimeout(30000); // 30 seconds instead of default 60
         Page.SetDefaultNavigationTimeout(30000);
         
-        // Use the actual running frontend URL (Docker containers with nginx proxy)
-        BaseUrl = "http://localhost:8080";
+        // Use HTTPS URL for testing with proper domain
+        BaseUrl = "https://rqmtmgmt.local";
         
         // Create a minimal factory just for cleanup purposes (some tests might reference it)
         Factory = new WebApplicationFactory<Program>();
