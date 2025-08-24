@@ -59,6 +59,8 @@ public interface IUserService
 {
     Task<List<UserDto>> GetAllAsync();
     Task<UserDto?> GetByIdAsync(int id);
+    Task<UserDto?> GetByEmailAsync(string email);
+    Task<UserDto?> GetCurrentUserAsync();
     Task<UserDto?> CreateAsync(UserDto user);
     Task<bool> UpdateAsync(UserDto user);
     Task<bool> DeleteAsync(int id);
