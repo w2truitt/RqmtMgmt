@@ -47,6 +47,31 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves a specific user by their email address including assigned roles.
+        /// </summary>
+        /// <param name="email">The email address of the user.</param>
+        /// <returns>The user DTO if found; otherwise, null.</returns>
+        public async Task<UserDto?> GetByEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return null;
+
+            var user = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Email == email);
+            return user == null ? null : ToDto(user);
+        }
+
+        /// <summary>
+        /// Gets the current user. This method is not implemented for the backend service.
+        /// Use the UserController's /me endpoint instead.
+        /// </summary>
+        /// <returns>Throws NotImplementedException as this should not be called on the backend.</returns>
+        /// <exception cref="NotImplementedException">Always thrown as this method is only for frontend use.</exception>
+        public Task<UserDto?> GetCurrentUserAsync()
+        {
+            throw new NotImplementedException("GetCurrentUserAsync is not implemented for backend UserService. Use UserController /me endpoint instead.");
+        }
+
+        /// <summary>
         /// Creates a new user with validation for email format and uniqueness.
         /// </summary>
         /// <param name="dto">The user data to create.</param>

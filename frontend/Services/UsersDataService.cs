@@ -79,6 +79,37 @@ namespace frontend.Services
         }
 
         /// <summary>
+        /// Retrieves a specific user by their email address from the backend API including role information.
+        /// </summary>
+        /// <param name="email">The email address of the user.</param>
+        /// <returns>The user if found; otherwise, null.</returns>
+        public async Task<UserDto?> GetByEmailAsync(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return null;
+
+            var users = await GetAllAsync();
+            return users.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Retrieves the current authenticated user's information from the backend API.
+        /// </summary>
+        /// <returns>The current user if authenticated and found; otherwise, null.</returns>
+        public async Task<UserDto?> GetCurrentUserAsync()
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<UserDto>("/api/User/me");
+            }
+            catch (HttpRequestException)
+            {
+                // User not authenticated or not found
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Assigns a role to a user by sending a POST request to the backend API.
         /// </summary>
         /// <param name="userId">The unique identifier of the user.</param>

@@ -2,7 +2,9 @@
 @inject RqmtMgmtShared.IRequirementService ReqService
 @inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
 @inject RqmtMgmtShared.ITestCaseService TestCaseService
+@inject RqmtMgmtShared.IUserService UserService
 @inject frontend.Services.IProjectContextService ProjectContextService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Requirements</PageTitle>
 
@@ -221,7 +223,7 @@ else
         Type = RequirementType.CRS, 
         Title = string.Empty, 
         Status = RequirementStatus.Draft,
-        CreatedBy = 1, // Default user ID
+        CreatedBy = 1, // Will be updated when current user is loaded
         ProjectId = 1, // Default project ID
         ProjectCode = "DEFAULT", // Default project code
         CreatedAt = DateTime.UtcNow
@@ -244,9 +246,27 @@ else
     string sortBy = string.Empty;
     bool sortDescending = false;
 
+    // Current user information
+    private UserDto? currentUser = null;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentUser();
         await LoadData();
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            currentUser = await UserService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user: {ex.Message}");
+            // If we can't get the current user, we'll fall back to a default
+            currentUser = null;
+        }
     }
 
     private async Task LoadData()
@@ -327,7 +347,7 @@ else
             Type = RequirementType.CRS, 
             Title = string.Empty, 
             Status = RequirementStatus.Draft,
-            CreatedBy = 1, // Default user ID
+            CreatedBy = currentUser?.Id ?? 1, // Use current user ID, fallback to 1 if not available
             ProjectId = currentProject?.Id ?? 1, // Use project context, fallback to default project ID 1 if not set
             ProjectCode = currentProject?.Code ?? "LEG", // Use project context, fallback to default project code if not set
             CreatedAt = DateTime.UtcNow

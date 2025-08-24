@@ -2,9 +2,11 @@ using RqmtMgmtShared;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
@@ -25,6 +27,35 @@ namespace backend.Controllers
         public UserController(RqmtMgmtShared.IUserService userService)
         {
             _userService = userService;
+        }
+
+        /// <summary>
+        /// Retrieves the current authenticated user's information including their assigned roles.
+        /// </summary>
+        /// <returns>The current user's information if authenticated and found in the system.</returns>
+        /// <response code="200">Returns the current user's information.</response>
+        /// <response code="401">If the user is not authenticated.</response>
+        /// <response code="404">If the authenticated user is not found in the system.</response>
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        {
+            // Get the email claim from the JWT token
+            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
+            
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized("Email claim not found in token");
+            }
+
+            // Get the user by email
+            var user = await _userService.GetByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound($"User with email '{email}' not found in the system");
+            }
+
+            return Ok(user);
         }
 
         /// <summary>

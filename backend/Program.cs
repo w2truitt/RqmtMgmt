@@ -4,6 +4,12 @@ using Microsoft.Extensions.Hosting;
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Identity;
+using backend.Models;
+using backend.Configuration;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http;
+using Microsoft.OpenApi.Models;
 
 /// <summary>
 /// Main program class for the Requirements Management System backend API.
@@ -21,27 +27,66 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add JWT Bearer authentication for OAuth2/OIDC integration
+        // Configure database contexts based on environment
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            // Use InMemory database for testing to avoid conflicts and ensure isolation
+            var testDbName = $"TestDb_{Guid.NewGuid()}";
+            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+                options.UseInMemoryDatabase(testDbName));
+        }
+        else
+        {
+            // Use SQL Server for development and production environments
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
+                options.UseSqlServer(connectionString));
+        }
+
+        // Add JWT Bearer authentication for API protection
+        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "http://localhost:5002";
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
-                options.Authority = builder.Configuration["Authentication:Authority"];
-                options.Audience = builder.Configuration["Authentication:Audience"];
+                options.Authority = identityServerUrl;
+                options.Audience = builder.Configuration["Authentication:Audience"] ?? "rqmtapi";
+                options.RequireHttpsMetadata = false; // Allow HTTP for development
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.FromMinutes(5)
                 };
             });
+
+        // Configure forwarded headers for proxy scenarios
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
 
         // Configure CORS policy to allow frontend connections from various development ports
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins("https://localhost:7160", "http://localhost:5239", "https://localhost:5001", "http://localhost:5000")
+                policy.WithOrigins(
+                    "http://localhost:80",  // Docker nginx proxy
+                    "https://localhost:443",  // Docker nginx proxy HTTPS
+                    "https://localhost:7160", 
+                    "http://localhost:5239", 
+                    "https://localhost:5001", 
+                    "http://localhost:5000",
+                    "http://localhost:5001",  // Frontend container
+                    "http://frontend:5001",   // Internal container communication
+                    "http://rqmtmgmt.local:80",  // E2E test HTTP access
+                    "https://rqmtmgmt.local:443"  // E2E test HTTPS access
+                )
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
@@ -54,8 +99,41 @@ public class Program
             options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         });
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+            { 
+                Title = "Requirements Management API", 
+                Version = "v1",
+                Description = "API for Requirements Management System with JWT Bearer authentication"
+            });
+
+            // Add JWT Bearer authentication to Swagger
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme."
+            });
+
+            // Add security requirement
+            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
+                {
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] {}
+                }
+            });
+        });
+
         // Register all business services for dependency injection
         builder.Services.AddScoped<RqmtMgmtShared.IRequirementService, backend.Services.RequirementService>();
         builder.Services.AddScoped<RqmtMgmtShared.ITestCaseService, backend.Services.TestCaseService>();
@@ -71,20 +149,6 @@ public class Program
         builder.Services.AddScoped<RqmtMgmtShared.ITestExecutionService, backend.Services.TestExecutionService>();
         builder.Services.AddScoped<RqmtMgmtShared.IProjectService, backend.Services.ProjectService>();
         
-        // Configure database context based on environment
-        if (builder.Environment.IsEnvironment("Testing"))
-        {
-            // Use InMemory database for testing to avoid conflicts and ensure isolation
-            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
-                options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}"));
-        }
-        else
-        {
-            // Use SQL Server for development and production environments
-            builder.Services.AddDbContext<RqmtMgmtDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-        }
-
         var app = builder.Build();
 
         // Initialize database with retry logic for Docker environments
@@ -94,19 +158,36 @@ public class Program
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Requirements Management API v1");
+                c.OAuthClientId("rqmtmgmt-wasm");
+                c.OAuthAppName("Requirements Management API");
+                c.OAuthScopes("openid", "profile", "email", "rqmtapi");
+                c.OAuthUsePkce();
+            });
         }
         else
         {
             app.UseExceptionHandler("/error");
         }
 
-        app.UseHttpsRedirection();
+        // Use forwarded headers for proxy scenarios
+        app.UseForwardedHeaders();
+
+        // Only use HTTPS redirection in production
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
 
         // Enable CORS for frontend communication
         app.UseCors("AllowFrontend");
 
-        // Enable authentication middleware
+        // Enable routing (required before authentication)
+        app.UseRouting();
+
+        // Enable authentication middleware (JWT Bearer tokens from Identity Server)
         app.UseAuthentication();
 
         // Custom impersonation middleware for development and testing
@@ -201,18 +282,27 @@ public class Program
     /// Initializes the database based on the current environment.
     /// </summary>
     /// <param name="app">The web application instance</param>
-    /// <param name="context">The database context</param>
+    /// <param name="context">The main database context</param>
     /// <param name="logger">The logger instance</param>
     /// <returns>A task representing the asynchronous operation</returns>
     private static async Task InitializeDatabaseByEnvironment(WebApplication app, RqmtMgmtDbContext context, ILogger<Program> logger)
     {
         if (app.Environment.IsDevelopment())
         {
+            // Apply main database migrations and seed development data
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                await context.Database.MigrateAsync();
+            }
+            
             await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
             logger.LogInformation("Database seeded with development data successfully");
         }
         else if (app.Environment.IsEnvironment("Testing"))
         {
+            // For testing, ensure databases are created (in-memory)
+            await context.Database.EnsureCreatedAsync();
+            
             await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
             logger.LogInformation("Database seeded with test data successfully");
         }
