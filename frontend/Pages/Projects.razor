@@ -279,8 +279,12 @@
     private ProjectDto? editProject;
     private ProjectFormModel formModel = new();
 
+    // Current user information
+    private UserDto? currentUser = null;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentUser();
         await LoadProjects();
         await LoadUsers();
     }
@@ -310,6 +314,20 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading users: {ex.Message}";
+        }
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            currentUser = await UserService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user: {ex.Message}");
+            // If we can't get the current user, we'll fall back to a default
+            currentUser = null;
         }
     }
 
@@ -388,7 +406,7 @@
             Name = string.Empty,
             Code = string.Empty,
             Status = ProjectStatus.Planning,
-            OwnerId = 1  // Default to first user
+            OwnerId = currentUser?.Id ?? 1  // Use current user ID, fallback to 1 if not available
         };
         formErrorMessage = string.Empty;
         showForm = true;

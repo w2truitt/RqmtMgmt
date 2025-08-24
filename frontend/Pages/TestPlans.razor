@@ -1,6 +1,7 @@
 @page "/testplans"
 @using RqmtMgmtShared
 @inject ITestPlanService TestPlanService
+@inject RqmtMgmtShared.IUserService UserService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Test Plans</PageTitle>
@@ -297,8 +298,12 @@
     string errorMessage = string.Empty;
     string formErrorMessage = string.Empty;
 
+    // Current user information
+    private UserDto? currentUser = null;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentUser();
         await LoadTestPlans();
     }
 
@@ -312,6 +317,20 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading test plans: {ex.Message}";
+        }
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            currentUser = await UserService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user: {ex.Message}");
+            // If we can't get the current user, we'll fall back to a default
+            currentUser = null;
         }
     }
 
@@ -456,7 +475,7 @@
             Name = string.Empty, 
             Type = "UserValidation", 
             ProjectId = 1,  // Default to project 1 since test plans require a valid project
-            CreatedBy = 1,  // Default to user 1 since test plans require a valid user
+            CreatedBy = currentUser?.Id ?? 1,  // Use current user ID, fallback to 1 if not available
             CreatedAt = DateTime.UtcNow  // Set current timestamp
         };
         editTestPlan = null;

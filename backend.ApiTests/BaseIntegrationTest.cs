@@ -16,7 +16,7 @@ namespace backend.ApiTests
         protected readonly JsonSerializerOptions _jsonOptions;
         protected string? _accessToken;
 
-        private const string BaseUrl = "http://localhost";
+        private const string BaseUrl = "https://localhost";
         private const string ClientId = "rqmtmgmt-backend";
         private const string ClientSecret = "backend-secret";
         private const string Scope = "rqmtmgmt.api";
@@ -107,7 +107,7 @@ namespace backend.ApiTests
         {
             if (!await IsSystemAvailableAsync())
             {
-                Skip.If(true, "Integration test skipped: docker-compose.identity.yml instance is not running on localhost:80. Start it with: cd docker-compose && docker-compose -f docker-compose.identity.yml up -d");
+                Skip.If(true, "Integration test skipped: docker-compose.identity.yml instance is not running on localhost:443. Start it with: cd docker-compose && docker-compose -f docker-compose.identity.yml up -d");
             }
         }
     }
