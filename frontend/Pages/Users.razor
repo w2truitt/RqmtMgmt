@@ -62,12 +62,20 @@ else
                     </div>
                     <div class="form-group">
                         <label>Roles</label>
-                        <select multiple class="form-control" @bind="selectedRoles">
+                        <div class="form-control" style="height: auto; padding: 10px;">
                             @foreach (var role in allRoles)
                             {
-                                <option value="@role.Name">@role.Name</option>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           checked="@selectedRoles.Contains(role.Name)"
+                                           @onchange="@(e => OnRoleCheckChanged(role.Name, e))"
+                                           id="role_@role.Name" />
+                                    <label class="form-check-label" for="role_@role.Name">
+                                        @role.Name
+                                    </label>
+                                </div>
                             }
-                        </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -125,6 +133,20 @@ else
     void HideForm()
     {
         showForm = false;
+    }
+
+    void OnRoleCheckChanged(string roleName, ChangeEventArgs e)
+    {
+        bool isChecked = (bool)(e.Value ?? false);
+        
+        if (isChecked && !selectedRoles.Contains(roleName))
+        {
+            selectedRoles.Add(roleName);
+        }
+        else if (!isChecked && selectedRoles.Contains(roleName))
+        {
+            selectedRoles.Remove(roleName);
+        }
     }
 
     async Task SaveUser()

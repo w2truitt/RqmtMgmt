@@ -35,7 +35,7 @@ namespace backend.Services
         }
 
         /// <summary>
-        /// Retrieves a paginated list of requirements from the database with optional filtering and sorting.
+        /// Retrieves requirements with pagination, filtering, and sorting capabilities.
         /// </summary>
         /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
         /// <returns>A paginated result containing requirements and pagination metadata.</returns>
@@ -43,24 +43,193 @@ namespace backend.Services
         {
             var query = _context.Requirements.AsQueryable();
 
-            // Apply search filter if provided
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-            {
-                var searchTerm = parameters.SearchTerm.ToLower();
-                query = query.Where(r => r.Title.ToLower().Contains(searchTerm) || 
-                                        (r.Description != null && r.Description.ToLower().Contains(searchTerm)));
-            }
+            // Apply filters
+            query = ApplyFilters(query, parameters);
 
             // Apply sorting
-            query = parameters.SortBy?.ToLower() switch
+            query = ApplySorting(query, parameters);
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var entities = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<RequirementDto>
             {
-                "title" => parameters.SortDescending ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title),
-                "status" => parameters.SortDescending ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status),
-                "type" => parameters.SortDescending ? query.OrderByDescending(r => r.Type) : query.OrderBy(r => r.Type),
-                "createdat" => parameters.SortDescending ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt),
-                "updatedat" => parameters.SortDescending ? query.OrderByDescending(r => r.UpdatedAt) : query.OrderBy(r => r.UpdatedAt),
-                _ => parameters.SortDescending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id) // Default sort by ID
+                Items = entities.Select(EntityToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
             };
+        }
+
+        /// <summary>
+        /// Applies filtering conditions to the requirements query.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="parameters">The pagination parameters containing filter criteria.</param>
+        /// <returns>The filtered query.</returns>
+        private static IQueryable<Requirement> ApplyFilters(IQueryable<Requirement> query, PaginationParameters parameters)
+        {
+            query = ApplyProjectFilter(query, parameters.ProjectId);
+            query = ApplySearchFilter(query, parameters.SearchTerm);
+            return query;
+        }
+
+        /// <summary>
+        /// Applies project filtering to the requirements query.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="projectId">The project ID to filter by, if provided.</param>
+        /// <returns>The filtered query.</returns>
+        private static IQueryable<Requirement> ApplyProjectFilter(IQueryable<Requirement> query, int? projectId)
+        {
+            if (projectId.HasValue)
+            {
+                query = query.Where(r => r.ProjectId == projectId.Value);
+            }
+            return query;
+        }
+
+        /// <summary>
+        /// Applies search filtering to the requirements query.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="searchTerm">The search term to filter by, if provided.</param>
+        /// <returns>The filtered query.</returns>
+        private static IQueryable<Requirement> ApplySearchFilter(IQueryable<Requirement> query, string? searchTerm)
+        {
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var searchTermLower = searchTerm.ToLower();
+                query = query.Where(r => r.Title.ToLower().Contains(searchTermLower) || 
+                                        (r.Description != null && r.Description.ToLower().Contains(searchTermLower)));
+            }
+            return query;
+        }
+
+        /// <summary>
+        /// Applies sorting to the requirements query based on the specified parameters.
+        /// </summary>
+        /// <param name="query">The base query to sort.</param>
+        /// <param name="parameters">The pagination parameters containing sorting criteria.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplySorting(IQueryable<Requirement> query, PaginationParameters parameters)
+        {
+            var sortBy = parameters.SortBy?.ToLower();
+            var isDescending = parameters.SortDescending;
+
+            return sortBy switch
+            {
+                "title" => ApplyTitleSorting(query, isDescending),
+                "status" => ApplyStatusSorting(query, isDescending),
+                "type" => ApplyTypeSorting(query, isDescending),
+                "createdat" => ApplyCreatedAtSorting(query, isDescending),
+                "updatedat" => ApplyUpdatedAtSorting(query, isDescending),
+                _ => ApplyDefaultSorting(query, isDescending) // Default sort by ID
+            };
+        }
+
+        /// <summary>
+        /// Applies title-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyTitleSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title);
+        }
+
+        /// <summary>
+        /// Applies status-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyStatusSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status);
+        }
+
+        /// <summary>
+        /// Applies type-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyTypeSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Type) : query.OrderBy(r => r.Type);
+        }
+
+        /// <summary>
+        /// Applies creation date-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyCreatedAtSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt);
+        }
+
+        /// <summary>
+        /// Applies update date-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyUpdatedAtSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.UpdatedAt) : query.OrderBy(r => r.UpdatedAt);
+        }
+
+        /// <summary>
+        /// Applies default ID-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyDefaultSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id);
+        }
+
+        /// <summary>
+        /// Retrieves all requirements for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of requirements for the specified project.</returns>
+        public async Task<List<RequirementDto>> GetByProjectIdAsync(int projectId)
+        {
+            var entities = await _context.Requirements
+                .Where(r => r.ProjectId == projectId)
+                .ToListAsync();
+            return entities.Select(EntityToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves requirements for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing requirements for the specified project and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var query = _context.Requirements
+                .Where(r => r.ProjectId == projectId)
+                .AsQueryable();
+
+            // Apply search filter (project filter is already applied above)
+            query = ApplySearchFilter(query, parameters.SearchTerm);
+
+            // Apply sorting
+            query = ApplySorting(query, parameters);
 
             // Get total count for pagination metadata
             var totalItems = await query.CountAsync();
@@ -253,7 +422,8 @@ namespace backend.Services
             Version = r.Version,
             CreatedBy = r.CreatedBy,
             CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
+            UpdatedAt = r.UpdatedAt,
+            ProjectId = r.ProjectId
         };
 
         /// <summary>
@@ -290,7 +460,8 @@ namespace backend.Services
             Version = d.Version,
             CreatedBy = d.CreatedBy,
             CreatedAt = d.CreatedAt,
-            UpdatedAt = d.UpdatedAt
+            UpdatedAt = d.UpdatedAt,
+            ProjectId = d.ProjectId
         };
     }
 }

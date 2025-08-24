@@ -24,4 +24,14 @@ namespace RqmtMgmtShared
     /// Specifies the status of a test run session.
     /// </summary>
     public enum TestRunStatus { InProgress, Completed, Aborted, Paused }
+
+    /// <summary>
+    /// Specifies the status of a project.
+    /// </summary>
+    public enum ProjectStatus { Active, Archived, OnHold, Planning }
+
+    /// <summary>
+    /// Specifies the role of a user within a project.
+    /// </summary>
+    public enum ProjectRole { ProjectOwner, Developer, QAEngineer, ScrumMaster, BusinessAnalyst, Stakeholder }
 }

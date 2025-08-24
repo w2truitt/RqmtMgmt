@@ -25,11 +25,90 @@ public class RequirementsPage
     }
     
     /// <summary>
+    /// Waits for the page to load
+    /// </summary>
+    public async Task WaitForPageLoadAsync()
+    {
+        await _page.WaitForSelectorAsync("h1:has-text('Requirements')", new PageWaitForSelectorOptions { Timeout = 30000 });
+    }
+    
+    /// <summary>
     /// Clicks the create requirement button
     /// </summary>
     public async Task ClickCreateRequirementAsync()
     {
-        await _page.ClickAsync("[data-testid='create-requirement-button']");
+        // Try both button texts to handle both global and project-specific requirements pages
+        var addRequirementButton = _page.Locator("text=Add Requirement");
+        var newRequirementButton = _page.Locator("text=New Requirement");
+        
+        if (await addRequirementButton.IsVisibleAsync())
+        {
+            await addRequirementButton.ClickAsync();
+        }
+        else if (await newRequirementButton.IsVisibleAsync())
+        {
+            await newRequirementButton.ClickAsync();
+        }
+        else
+        {
+            // Fallback: try both texts with a timeout
+            try
+            {
+                await _page.ClickAsync("text=Add Requirement", new PageClickOptions { Timeout = 5000 });
+            }
+            catch
+            {
+                await _page.ClickAsync("text=New Requirement", new PageClickOptions { Timeout = 5000 });
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Waits for the form modal to appear
+    /// </summary>
+    public async Task WaitForFormModalAsync()
+    {
+        // Wait for requirement modal structure: class="modal show d-block"
+        try 
+        {
+            // Requirements.razor uses: <div class="modal show d-block" tabindex="-1" role="dialog">
+            await _page.WaitForSelectorAsync("div.modal.show.d-block[role='dialog']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        }
+        catch
+        {
+            // Fallback patterns for different modal structures
+            try 
+            {
+                await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { Timeout = 5000 });
+            }
+            catch
+            {
+                await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { Timeout = 5000 });
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Waits for the form modal to hide
+    /// </summary>
+    public async Task WaitForFormModalToHideAsync()
+    {
+        try
+        {
+            await _page.WaitForSelectorAsync("div.modal.show.d-block[role='dialog']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
+        }
+        catch
+        {
+            // Fallback patterns
+            try 
+            {
+                await _page.WaitForSelectorAsync(".modal.show.d-block", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+            }
+            catch
+            {
+                await _page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+            }
+        }
     }
     
     /// <summary>
@@ -41,10 +120,27 @@ public class RequirementsPage
     /// <param name="status">Requirement status</param>
     public async Task FillRequirementFormAsync(string title, string description, string type = "CRS", string status = "Draft")
     {
+        // Clear and fill title with proper input events for Blazor binding
+        await _page.ClickAsync("[data-testid='title-input']");
         await _page.FillAsync("[data-testid='title-input']", title);
+        await _page.DispatchEventAsync("[data-testid='title-input']", "input");
+        await _page.DispatchEventAsync("[data-testid='title-input']", "change");
+        
+        // Clear and fill description with proper input events for Blazor binding  
+        await _page.ClickAsync("[data-testid='description-input']");
         await _page.FillAsync("[data-testid='description-input']", description);
+        await _page.DispatchEventAsync("[data-testid='description-input']", "input");
+        await _page.DispatchEventAsync("[data-testid='description-input']", "change");
+        
+        // Select options and trigger change events for Blazor binding
         await _page.SelectOptionAsync("[data-testid='type-select']", type);
+        await _page.DispatchEventAsync("[data-testid='type-select']", "change");
+        
         await _page.SelectOptionAsync("[data-testid='status-select']", status);
+        await _page.DispatchEventAsync("[data-testid='status-select']", "change");
+        
+        // Wait a moment for Blazor to process the binding updates
+        await _page.WaitForTimeoutAsync(500);
     }
     
     /// <summary>
@@ -52,7 +148,7 @@ public class RequirementsPage
     /// </summary>
     public async Task SaveRequirementAsync()
     {
-        await _page.ClickAsync("[data-testid='save-button']");
+        await _page.ClickAsync("text=Save");
     }
     
     /// <summary>
@@ -60,7 +156,15 @@ public class RequirementsPage
     /// </summary>
     public async Task CancelRequirementAsync()
     {
-        await _page.ClickAsync("[data-testid='cancel-button']");
+        await _page.ClickAsync("text=Cancel");
+    }
+    
+    /// <summary>
+    /// Gets the current value of the requirement title input
+    /// </summary>
+    public async Task<string> GetRequirementTitleInputValueAsync()
+    {
+        return await _page.InputValueAsync("[data-testid='title-input']");
     }
     
     /// <summary>
@@ -105,8 +209,8 @@ public class RequirementsPage
     /// <param name="searchTerm">Search term</param>
     public async Task SearchRequirementsAsync(string searchTerm)
     {
-        await _page.FillAsync("[data-testid='search-input']", searchTerm);
-        await _page.PressAsync("[data-testid='search-input']", "Enter");
+        await _page.FillAsync("input[placeholder*='Search requirements']", searchTerm);
+        await _page.ClickAsync("text=Search");
     }
     
     /// <summary>

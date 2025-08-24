@@ -18,6 +18,10 @@ namespace backend.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
+        /// <summary>Gets or sets the projects table.</summary>
+        public DbSet<Project> Projects { get; set; }
+        /// <summary>Gets or sets the project team members table.</summary>
+        public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; }
         /// <summary>Gets or sets the requirements table.</summary>
         public DbSet<Requirement> Requirements { get; set; }
         /// <summary>Gets or sets the requirement links table.</summary>
@@ -220,6 +224,17 @@ namespace backend.Data
 
             // User <-> Role many-to-many
             modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+            modelBuilder.Entity<ProjectTeamMember>().HasKey(ptm => new { ptm.ProjectId, ptm.UserId });
+            modelBuilder.Entity<ProjectTeamMember>()
+                .HasOne(ptm => ptm.Project)
+                .WithMany(p => p.TeamMembers)
+                .HasForeignKey(ptm => ptm.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ProjectTeamMember>()
+                .HasOne(ptm => ptm.User)
+                .WithMany()
+                .HasForeignKey(ptm => ptm.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<UserRole>()
                 .HasOne(ur => ur.User)
                 .WithMany(u => u.UserRoles)

@@ -11,7 +11,7 @@ obj/
 .vscode/
 
 # Node modules
-frontend/node_modules/
+node_modules/
 
 # Log files
 *.log
@@ -29,10 +29,17 @@ backend/bin/
 backend/obj/
 frontend/dist/
 coveragereport/
+coverage-report/
+TestResults/
+certs/
+keys/
+Migrations/
+publish/
 
 # Misc
 *.swp
 *.tmp
+*.trx
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -41,3 +48,4 @@ coverage.cobertura.xml
 swagger.json
 backend/NuGet.Config
 frontend/NuGet.Config
+*.jwk

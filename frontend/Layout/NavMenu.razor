@@ -1,9 +1,17 @@
+@using frontend.Components.Navigation
+@inject IProjectContextService ProjectContextService
+@implements IDisposable
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">
             <i class="bi bi-clipboard-check me-2"></i>
             TestFlow Pro
         </a>
+        
+        <!-- Project Selector in header -->
+        <ProjectSelector />
+        
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <i class="bi bi-list" style="color: white; font-size: 1.25rem;"></i>
         </button>
@@ -29,8 +37,28 @@
             REQUIREMENTS MANAGEMENT
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="requirements">
-                <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
+            @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+            {
+                <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/requirements")">
+                    <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="requirements">
+                    <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
+                </NavLink>
+            }
+        </div>
+
+        <!-- PROJECT MANAGEMENT -->
+        <div class="nav-section-header">
+            <i class="bi bi-folder-fill me-2"></i>
+            PROJECT MANAGEMENT
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="projects">
+                <span class="bi bi-folder-nav-menu" aria-hidden="true"></span> Projects
             </NavLink>
         </div>
 
@@ -84,8 +112,29 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to project changes to update navigation
+        ProjectContextService.ProjectChanged += OnProjectChanged;
+        
+        // Load persisted project context if available
+        await ProjectContextService.LoadPersistedProjectContextAsync();
+    }
+
+    private void OnProjectChanged(ProjectDto? project)
+    {
+        // Update UI when project context changes
+        InvokeAsync(StateHasChanged);
+    }
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    public void Dispose()
+    {
+        // Unsubscribe to prevent memory leaks
+        ProjectContextService.ProjectChanged -= OnProjectChanged;
     }
 }

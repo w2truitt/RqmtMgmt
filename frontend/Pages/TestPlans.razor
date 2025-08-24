@@ -1,70 +1,278 @@
 @page "/testplans"
 @using RqmtMgmtShared
 @inject ITestPlanService TestPlanService
+@inject IJSRuntime JSRuntime
 
-<h3>Test Plans</h3>
-<button class="btn btn-success" @onclick="ShowAddForm">Add Test Plan</button>
+<PageTitle>Test Plans</PageTitle>
 
-@if (testPlans == null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var plan in testPlans)
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Test Plans</h3>
+                <button class="btn btn-success" @onclick="ShowAddForm" data-testid="create-testplan-button">
+                    <i class="fas fa-plus me-1"></i>Add Test Plan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search test plans..." 
+                       @bind="searchTerm" @onkeypress="OnSearchKeyPress" data-testid="search-input" />
+                <button class="btn btn-outline-secondary" @onclick="SearchTestPlans">
+                    <i class="fas fa-search"></i>
+                </button>
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                        <i class="fas fa-times"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="filterType" @bind:after="FilterTestPlans">
+                <option value="">All Types</option>
+                <option value="UserValidation">User Validation</option>
+                <option value="SoftwareVerification">Software Verification</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="sortBy" @bind:after="SortTestPlans">
+                <option value="name">Sort by Name</option>
+                <option value="type">Sort by Type</option>
+                <option value="created">Sort by Created Date</option>
+            </select>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (testPlans == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading test plans...</p>
+        </div>
+    }
+    else
+    {
+        @if (!filteredTestPlans.Any())
+        {
+            <div class="text-center py-3 mb-3">
+                <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
+                <h5 class="text-muted">No Test Plans Found</h5>
+                <p class="text-muted mb-0">
+                    @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(filterType))
+                    {
+                        <span>No test plans match your current filters.</span>
+                    }
+                    else
+                    {
+                        <span>Get started by creating your first test plan.</span>
+                    }
+                </p>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" style="width: 80px;">ID</th>
+                                <th scope="col">Name</th>
+                                <th scope="col" style="width: 180px;">Type</th>
+                                <th scope="col" style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var plan in filteredTestPlans)
+                            {
+                                <tr data-testid="testplan-row">
+                                    <td class="align-middle">
+                                        @plan.Id
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="fw-medium">@plan.Name</div>
+                                        @if (!string.IsNullOrEmpty(plan.ProjectName))
+                                        {
+                                            <small class="text-muted">Project: @plan.ProjectName</small>
+                                        }
+                                        @if (!string.IsNullOrEmpty(plan.Description))
+                                        {
+                                            <br /><small class="text-muted">@plan.Description</small>
+                                        }
+                                        <br /><small class="text-muted">Created: @plan.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                    </td>
+                                    <td class="align-middle">
+                                        @plan.Type
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => Edit(plan)" title="Edit" data-testid="edit-@plan.Name">
+                                                Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowDeleteConfirm(plan)" title="Delete" data-testid="delete-@plan.Name">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @if (filteredTestPlans.Any())
             {
-                <tr>
-                    <td>@plan.Id</td>
-                    <td>@plan.Name</td>
-                    <td>@plan.Type</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(plan)">Edit</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(plan.Id)">Delete</button>
-                    </td>
-                </tr>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        Showing @filteredTestPlans.Count of @testPlans.Count test plans
+                    </small>
+                </div>
             }
-        </tbody>
-    </table>
+        </div>
+    }
+</div>
+
+<!-- Add/Edit Test Plan Modal -->
+@if (showForm)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas @(editTestPlan == null ? "fa-plus" : "fa-edit") me-2"></i>
+                        @(editTestPlan == null ? "Add Test Plan" : "Edit Test Plan")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HideForm" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(formErrorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>@formErrorMessage
+                        </div>
+                    }
+                    
+                    <form @onsubmit="SaveTestPlan" @onsubmit:preventDefault="true">
+                        <div class="mb-3">
+                            <label for="planName" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="planName" @bind="formModel.Name" 
+                                   placeholder="Enter test plan name" required maxlength="200" data-testid="name-input" />
+                            <div class="form-text">Maximum 200 characters</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="planType" class="form-label">Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="planType" @bind="formModel.Type" required data-testid="type-select">
+                                <option value="">Select test plan type</option>
+                                <option value="UserValidation">User Validation</option>
+                                <option value="SoftwareVerification">Software Verification</option>
+                            </select>
+                            <div class="form-text">
+                                User Validation: Tests for user acceptance and business requirements<br />
+                                Software Verification: Tests for technical functionality and system requirements
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="planDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="planDescription" @bind="formModel.Description" 
+                                      rows="4" placeholder="Enter a detailed description of this test plan" maxlength="1000" data-testid="description-input"></textarea>
+                            <div class="form-text">Maximum 1000 characters (Optional)</div>
+                        </div>
+
+                        @if (editTestPlan != null)
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Created</label>
+                                        <div class="form-control-plaintext">@editTestPlan.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Created By</label>
+                                        <div class="form-control-plaintext">User #@editTestPlan.CreatedBy</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideForm">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveTestPlan" disabled="@isProcessing" data-testid="save-button">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-save me-1"></i>
+                        }
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop show"></div>
 }
 
-@if (showForm)
+<!-- Delete Confirmation Modal -->
+@if (showDeleteConfirm && testPlanToDelete != null)
 {
     <div class="modal show d-block" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@((editTestPlan == null ? "Add" : "Edit")) Test Plan</h5>
-                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h5 class="modal-title text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>Name</label>
-                        <input class="form-control" @bind="formModel.Name" />
-                    </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <input class="form-control" @bind="formModel.Type" />
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input class="form-control" @bind="formModel.Description" />
+                    <p>Are you sure you want to delete the test plan "<strong>@testPlanToDelete.Name</strong>"?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Warning:</strong> This action cannot be undone. All associated test case links may also be affected.
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="SaveTestPlan">Save</button>
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteConfirmed" disabled="@isProcessing" data-testid="confirm-delete">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-trash me-1"></i>
+                        }
+                        Delete Test Plan
+                    </button>
                 </div>
             </div>
         </div>
@@ -74,19 +282,153 @@ else
 
 @code {
     List<TestPlanDto>? testPlans;
-    TestPlanDto formModel = new() { Name = string.Empty, Type = string.Empty };
+    List<TestPlanDto> filteredTestPlans = new();
+    TestPlanDto formModel = new() { Name = string.Empty, Type = "UserValidation" };
     TestPlanDto? editTestPlan = null;
+    TestPlanDto? testPlanToDelete = null;
+    
     bool showForm = false;
+    bool showDeleteConfirm = false;
+    bool isProcessing = false;
+    
+    string searchTerm = string.Empty;
+    string filterType = string.Empty;
+    string sortBy = "name";
+    string errorMessage = string.Empty;
+    string formErrorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        testPlans = await TestPlanService.GetAllAsync();
+        await LoadTestPlans();
+    }
+
+    async Task LoadTestPlans()
+    {
+        try
+        {
+            testPlans = await TestPlanService.GetAllAsync();
+            FilterAndSortTestPlans();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading test plans: {ex.Message}";
+        }
+    }
+
+    void FilterAndSortTestPlans()
+    {
+        if (testPlans == null) return;
+
+        var filtered = testPlans.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            filtered = filtered.Where(tp => 
+                tp.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (tp.Description?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        // Apply type filter
+        if (!string.IsNullOrEmpty(filterType))
+        {
+            filtered = filtered.Where(tp => tp.Type.Equals(filterType, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply sorting
+        filtered = sortBy switch
+        {
+            "type" => filtered.OrderBy(tp => tp.Type).ThenBy(tp => tp.Name),
+            "created" => filtered.OrderByDescending(tp => tp.CreatedAt),
+            _ => filtered.OrderBy(tp => tp.Name)
+        };
+
+        filteredTestPlans = filtered.ToList();
+    }
+
+    async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchTestPlans();
+        }
+    }
+
+    async Task SearchTestPlans()
+    {
+        FilterAndSortTestPlans();
+        await Task.CompletedTask;
+    }
+
+    async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        FilterAndSortTestPlans();
+        await Task.CompletedTask;
+    }
+
+    async Task FilterTestPlans()
+    {
+        FilterAndSortTestPlans();
+        await Task.CompletedTask;
+    }
+
+    async Task SortTestPlans()
+    {
+        FilterAndSortTestPlans();
+        await Task.CompletedTask;
     }
 
     async Task Delete(int id)
     {
-        if (await TestPlanService.DeleteAsync(id))
-            testPlans = await TestPlanService.GetAllAsync();
+        try
+        {
+            isProcessing = true;
+            if (await TestPlanService.DeleteAsync(id))
+            {
+                await LoadTestPlans();
+                errorMessage = string.Empty;
+            }
+            else
+            {
+                errorMessage = "Failed to delete test plan. It may be linked to test cases.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting test plan: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    void ShowDeleteConfirm(TestPlanDto plan)
+    {
+        testPlanToDelete = plan;
+        showDeleteConfirm = true;
+    }
+
+    void ConfirmDelete(TestPlanDto plan)
+    {
+        testPlanToDelete = plan;
+        showDeleteConfirm = true;
+    }
+
+    void CancelDelete()
+    {
+        testPlanToDelete = null;
+        showDeleteConfirm = false;
+    }
+
+    async Task DeleteConfirmed()
+    {
+        if (testPlanToDelete != null)
+        {
+            await Delete(testPlanToDelete.Id);
+            CancelDelete();
+        }
     }
 
     void Edit(TestPlanDto plan)
@@ -98,35 +440,95 @@ else
             Type = plan.Type,
             Description = plan.Description,
             CreatedBy = plan.CreatedBy,
-            CreatedAt = plan.CreatedAt
+            CreatedAt = plan.CreatedAt,
+            ProjectId = plan.ProjectId,
+            ProjectName = plan.ProjectName
         };
         editTestPlan = plan;
         showForm = true;
+        formErrorMessage = string.Empty;
     }
 
     void ShowAddForm()
     {
-        formModel = new TestPlanDto { Name = string.Empty, Type = string.Empty };
+        formModel = new TestPlanDto 
+        { 
+            Name = string.Empty, 
+            Type = "UserValidation", 
+            ProjectId = 1,  // Default to project 1 since test plans require a valid project
+            CreatedBy = 1,  // Default to user 1 since test plans require a valid user
+            CreatedAt = DateTime.UtcNow  // Set current timestamp
+        };
         editTestPlan = null;
         showForm = true;
+        formErrorMessage = string.Empty;
     }
 
     void HideForm()
     {
         showForm = false;
+        formErrorMessage = string.Empty;
     }
 
     async Task SaveTestPlan()
     {
-        if (editTestPlan != null)
+        if (string.IsNullOrWhiteSpace(formModel.Name))
         {
-            await TestPlanService.UpdateAsync(formModel);
+            formErrorMessage = "Name is required.";
+            return;
         }
-        else
+
+        if (string.IsNullOrWhiteSpace(formModel.Type))
         {
-            await TestPlanService.CreateAsync(formModel);
+            formErrorMessage = "Type is required.";
+            return;
         }
-        testPlans = await TestPlanService.GetAllAsync();
-        showForm = false;
+
+        try
+        {
+            isProcessing = true;
+            formErrorMessage = string.Empty;
+
+            if (editTestPlan != null)
+            {
+                await TestPlanService.UpdateAsync(formModel);
+            }
+            else
+            {
+                await TestPlanService.CreateAsync(formModel);
+            }
+            
+            await LoadTestPlans();
+            showForm = false;
+            errorMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            formErrorMessage = $"Error saving test plan: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    string GetTypeClassForPlan(string type)
+    {
+        return type switch
+        {
+            "UserValidation" => "bg-success",
+            "SoftwareVerification" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetFriendlyTypeName(string type)
+    {
+        return type switch
+        {
+            "UserValidation" => "User Validation",
+            "SoftwareVerification" => "Software Verification",
+            _ => type
+        };
     }
 }

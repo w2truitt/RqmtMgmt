@@ -1,0 +1,313 @@
+@page "/projects/{ProjectId:int}/requirements/{RequirementId:int}/edit"
+@inject IRequirementService RequirementService
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@using frontend.Components.Navigation
+@using RqmtMgmtShared
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Edit Requirement - @(requirement?.Title ?? "Loading...")</PageTitle>
+
+<div data-testid="requirement-edit-page">
+    <!-- Breadcrumb Navigation -->
+    <ProjectBreadcrumb ProjectId="@ProjectId" 
+                       ProjectName="@project?.Name" 
+                       Section="Requirements"
+                       SubSection="Edit Requirement" />
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading requirement...</p>
+        </div>
+    }
+    else if (requirement == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Requirement not found.
+        </div>
+    }
+    else
+    {
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Edit Requirement
+                </h2>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-tag me-1"></i>
+                    <strong>@requirement.FullRequirementId</strong> - @requirement.Title
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-folder me-1"></i>
+                    Project: <strong>@project?.Name (@project?.Code)</strong>
+                </p>
+            </div>
+            <button class="btn btn-outline-secondary" @onclick="CancelAndReturn">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Requirements
+            </button>
+        </div>
+
+        <!-- Requirement Form -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    Requirement Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="requirement" OnValidSubmit="SaveRequirement">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="row">
+                        <!-- Title -->
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">
+                                <strong>Title <span class="text-danger">*</span></strong>
+                            </label>
+                            <InputText id="title" class="form-control" @bind-Value="requirement.Title" placeholder="Enter requirement title..." />
+                            <ValidationMessage For="@(() => requirement.Title)" />
+                        </div>
+
+                        <!-- Type -->
+                        <div class="col-md-4 mb-3">
+                            <label for="type" class="form-label">
+                                <strong>Type <span class="text-danger">*</span></strong>
+                            </label>
+                            <InputSelect id="type" class="form-select" @bind-Value="requirement.Type">
+                                <option value="">Select Type...</option>
+                                @foreach (var type in Enum.GetValues<RequirementType>())
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => requirement.Type)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Status -->
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">
+                                <strong>Status <span class="text-danger">*</span></strong>
+                            </label>
+                            <InputSelect id="status" class="form-select" @bind-Value="requirement.Status">
+                                @foreach (var status in Enum.GetValues<RequirementStatus>())
+                                {
+                                    <option value="@status">@GetStatusDisplay(status)</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => requirement.Status)" />
+                        </div>
+
+                        <!-- Parent Requirement -->
+                        <div class="col-md-6 mb-3">
+                            <label for="parentId" class="form-label">
+                                <strong>Parent Requirement</strong>
+                            </label>
+                            <select id="parentId" class="form-select" @bind="requirement.ParentId">
+                                <option value="">None (Top-level requirement)</option>
+                                @if (availableRequirements != null)
+                                {
+                                    @foreach (var req in availableRequirements.Where(r => r.Id != requirement.Id))
+                                    {
+                                        <option value="@req.Id">@req.FullRequirementId - @req.Title</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Version (Read-only) -->
+                        <div class="col-md-6 mb-3">
+                            <label for="version" class="form-label">
+                                <strong>Version</strong>
+                            </label>
+                            <input id="version" class="form-control" value="@requirement.Version" readonly />
+                            <div class="form-text">Version number automatically increments when saved.</div>
+                        </div>
+
+                        <!-- Created Info (Read-only) -->
+                        <div class="col-md-6 mb-3">
+                            <label for="created" class="form-label">
+                                <strong>Created</strong>
+                            </label>
+                            <input id="created" class="form-control" value="@requirement.CreatedAt.ToString("yyyy-MM-dd HH:mm")" readonly />
+                            <div class="form-text">Original creation date and time.</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label">
+                            <strong>Description</strong>
+                        </label>
+                        <InputTextArea id="description" class="form-control" @bind-Value="requirement.Description" 
+                                     rows="6" placeholder="Enter detailed description of the requirement..." />
+                        <div class="form-text">Provide a detailed description of what this requirement entails.</div>
+                        <ValidationMessage For="@(() => requirement.Description)" />
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" @onclick="CancelAndReturn">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancel
+                            </button>
+                            <button type="button" class="btn btn-outline-info" @onclick="ViewRequirement">
+                                <i class="bi bi-eye me-1"></i>
+                                View
+                            </button>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-warning" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                }
+                                <i class="bi bi-check-circle me-1"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int ProjectId { get; set; }
+    [Parameter] public int RequirementId { get; set; }
+
+    private ProjectDto? project;
+    private RequirementDto? requirement;
+    private List<RequirementDto>? availableRequirements;
+    private string errorMessage = string.Empty;
+    private bool isSubmitting = false;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load project and requirement information
+            var projectTask = ProjectService.GetProjectByIdAsync(ProjectId);
+            var requirementTask = RequirementService.GetByIdAsync(RequirementId);
+            // TODO: Load requirements for parent selection
+            // var requirementsTask = RequirementService.GetByProjectIdAsync(ProjectId);
+
+            await Task.WhenAll(projectTask, requirementTask);
+
+            project = await projectTask;
+            requirement = await requirementTask;
+            availableRequirements = new List<RequirementDto>(); // TODO: Load actual requirements
+
+            if (project == null)
+            {
+                errorMessage = "Project not found.";
+                return;
+            }
+
+            if (requirement == null)
+            {
+                errorMessage = "Requirement not found.";
+                return;
+            }
+
+            // Verify requirement belongs to the project
+            if (requirement.ProjectId != ProjectId)
+            {
+                errorMessage = "Requirement does not belong to the specified project.";
+                requirement = null;
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading requirement: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveRequirement()
+    {
+        if (isSubmitting || requirement == null) return;
+
+        isSubmitting = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // Increment version and set update timestamp
+            requirement.Version++;
+            requirement.UpdatedAt = DateTime.UtcNow;
+
+            // Update the requirement
+            var success = await RequirementService.UpdateAsync(requirement);
+            if (success)
+            {
+                // Navigate back to requirements list
+                Navigation.NavigateTo($"/projects/{ProjectId}/requirements");
+            }
+            else
+            {
+                errorMessage = "Failed to update requirement. Please try again.";
+                requirement.Version--; // Revert version increment
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating requirement: {ex.Message}";
+            requirement.Version--; // Revert version increment
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void CancelAndReturn()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/requirements");
+    }
+
+    private void ViewRequirement()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/requirements/{RequirementId}");
+    }
+
+    private string GetStatusDisplay(RequirementStatus status)
+    {
+        return status switch
+        {
+            RequirementStatus.Draft => "📝 Draft",
+            RequirementStatus.Approved => "✅ Approved", 
+            RequirementStatus.Implemented => "🔧 Implemented",
+            RequirementStatus.Verified => "✔️ Verified",
+            _ => status.ToString()
+        };
+    }
+}

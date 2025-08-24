@@ -22,26 +22,47 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Create web application factory
-        Factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UseEnvironment("Testing");
-                // No need to configure services - backend handles database provider automatically
-            });
-        
-        // Initialize Playwright
+        // Initialize Playwright with resource-optimized settings
         PlaywrightInstance = await Playwright.CreateAsync();
         Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = true // Set to false for debugging
+            Headless = true, // Always headless for resource efficiency
+            Args = new[]
+            {
+                "--no-sandbox",
+                "--disable-setuid-sandbox", 
+                "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
+                "--disable-gpu",
+                "--disable-web-security",
+                "--ignore-certificate-errors", // Trust self-signed certificates
+                "--ignore-ssl-errors", // Ignore SSL errors
+                "--ignore-certificate-errors-spki-list", // Ignore certificate pinning
+                "--ignore-certificate-errors-skip-list", // Skip certificate error list
+                "--memory-pressure-off", // Disable memory pressure simulation
+                "--max_old_space_size=512" // Limit V8 memory usage
+            }
         });
         
-        // Create a new page for each test
-        Page = await Browser.NewPageAsync();
+        // Create a new page for each test with explicit viewport for desktop navigation
+        Page = await Browser.NewPageAsync(new BrowserNewPageOptions
+        {
+            ViewportSize = new ViewportSize
+            {
+                Width = 1280,
+                Height = 720
+            },
+            IgnoreHTTPSErrors = true // Ignore HTTPS certificate errors
+        });
+
+        // Set shorter timeouts to avoid hanging tests
+        Page.SetDefaultTimeout(30000); // 30 seconds instead of default 60
+        Page.SetDefaultNavigationTimeout(30000);
         
-        // Store base URL for page objects to use
-        BaseUrl = Factory.Server.BaseAddress.ToString().TrimEnd('/');
+        // Use HTTPS URL for testing with proper domain
+        BaseUrl = "https://rqmtmgmt.local";
+        
+        // Create a minimal factory just for cleanup purposes (some tests might reference it)
+        Factory = new WebApplicationFactory<Program>();
     }
     
     /// <summary>
@@ -49,10 +70,56 @@ public abstract class E2ETestBase : IAsyncLifetime
     /// </summary>
     public async Task DisposeAsync()
     {
-        await Page?.CloseAsync()!;
-        await Browser?.CloseAsync()!;
-        PlaywrightInstance?.Dispose();
-        Factory?.Dispose();
+        try
+        {
+            // Close page first to free browser resources quickly
+            if (Page != null)
+            {
+                await Page.CloseAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        try
+        {
+            // Close browser and free memory
+            if (Browser != null)
+            {
+                await Browser.CloseAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        try
+        {
+            // Dispose Playwright instance
+            PlaywrightInstance?.Dispose();
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        try
+        {
+            // Dispose factory last
+            Factory?.Dispose();
+        }
+        catch (Exception)
+        {
+            // Ignore cleanup errors
+        }
+        
+        // Force garbage collection to free memory immediately
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
     
     /// <summary>
@@ -75,5 +142,143 @@ public abstract class E2ETestBase : IAsyncLifetime
         {
             Timeout = timeout
         });
+    }
+
+    /// <summary>
+    /// Ensures the navigation menu is expanded and visible for link interaction
+    /// </summary>
+    protected async Task EnsureNavigationMenuVisible()
+    {
+        await Page.EvaluateAsync(@"
+            // Force the navigation menu to expand by removing the collapse class
+            const navMenu = document.querySelector('.nav-scrollable');
+            if (navMenu) {
+                navMenu.classList.remove('collapse');
+                navMenu.style.display = 'block';
+            }
+        ");
+        
+        // Wait for changes to take effect
+        await Page.WaitForTimeoutAsync(500);
+    }
+
+    /// <summary>
+    /// Selects an existing static project instead of creating a new one
+    /// </summary>
+    /// <param name="projectIndex">Index of the static project (0-3)</param>
+    protected async Task SelectExistingProject(int projectIndex = 0)
+    {
+        var project = TestData.TestDataFactory.GetStaticProject(projectIndex);
+        
+        // Ensure we start from home page in clean state
+        await Page.GotoAsync($"{BaseUrl}/");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        
+        // Click the project selector to open dropdown
+        await ClickProjectSelector();
+        
+        // Wait for dropdown to appear
+        await Page.WaitForTimeoutAsync(1000);
+        
+        // Force Bootstrap dropdowns to be visible using JavaScript
+        await Page.EvaluateAsync(@"
+            const dropdowns = document.querySelectorAll('.dropdown-menu');
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.add('show');
+                dropdown.style.display = 'block';
+                dropdown.style.position = 'static';
+                dropdown.style.transform = 'none';
+            });
+        ");
+        
+        // Wait for changes to take effect
+        await Page.WaitForTimeoutAsync(500);
+        
+        // Select the project by name
+        await SelectProjectByName(project.Name);
+    }
+
+    /// <summary>
+    /// Clicks the project selector dropdown button
+    /// </summary>
+    private async Task ClickProjectSelector()
+    {
+        // Try different possible selectors for the project selector
+        var selectors = new[]
+        {
+            ".project-selector-container button",
+            "button:has-text('Select Project')",
+            ".dropdown-toggle.project-selector-btn",
+            "[data-testid='project-selector']",
+            "button:has(.bi-folder)",
+            "button:has(.bi-folder-plus)"
+        };
+
+        foreach (var selector in selectors)
+        {
+            var element = Page.Locator(selector).First;
+            if (await element.CountAsync() > 0)
+            {
+                await element.ClickAsync();
+                await Page.WaitForTimeoutAsync(500); // Give time for dropdown to appear
+                return;
+            }
+        }
+        
+        throw new Exception("Could not find project selector button");
+    }
+
+    /// <summary>
+    /// Selects a project by name from the dropdown
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    private async Task SelectProjectByName(string projectName)
+    {
+        // Try multiple strategies to find the project
+        var strategies = new[]
+        {
+            // Strategy 1: Look for dropdown items directly by text
+            $".dropdown-item:has-text('{projectName}')",
+            
+            // Strategy 2: Look within project dropdown specifically
+            $".project-dropdown .dropdown-item:has-text('{projectName}')",
+            
+            // Strategy 3: Look for any button containing the project name
+            $"button:has-text('{projectName}')",
+            
+            // Strategy 4: Look within dropdown menu
+            $".dropdown-menu .dropdown-item:has-text('{projectName}')"
+        };
+
+        foreach (var strategy in strategies)
+        {
+            try
+            {
+                var projectItem = Page.Locator(strategy);
+                var count = await projectItem.CountAsync();
+                
+                if (count > 0)
+                {
+                    // Try regular click first, then force with JavaScript
+                    try
+                    {
+                        await projectItem.First.ClickAsync();
+                    }
+                    catch
+                    {
+                        // Fallback: force click with JavaScript
+                        await projectItem.First.EvaluateAsync("element => element.click()");
+                    }
+                    await Page.WaitForTimeoutAsync(1000);
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+        }
+        
+        throw new Exception($"Could not find project '{projectName}' in dropdown");
     }
 }

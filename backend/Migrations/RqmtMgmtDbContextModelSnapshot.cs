@@ -62,6 +62,68 @@ namespace backend.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("backend.Models.Project", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("backend.Models.ProjectTeamMember", b =>
+                {
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProjectId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ProjectTeamMembers");
+                });
+
             modelBuilder.Entity("backend.Models.Requirement", b =>
                 {
                     b.Property<int>("Id")
@@ -80,6 +142,12 @@ namespace backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProjectCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -108,6 +176,8 @@ namespace backend.Migrations
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("Type", "Status")
                         .HasDatabaseName("IX_Requirements_Type_Status");
@@ -359,6 +429,9 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -366,6 +439,8 @@ namespace backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("TestPlans");
                 });
@@ -570,9 +645,14 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("TestSuites");
                 });
@@ -631,6 +711,36 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("backend.Models.Project", b =>
+                {
+                    b.HasOne("backend.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("backend.Models.ProjectTeamMember", b =>
+                {
+                    b.HasOne("backend.Models.Project", "Project")
+                        .WithMany("TeamMembers")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("backend.Models.Requirement", b =>
                 {
                     b.HasOne("backend.Models.User", "Creator")
@@ -644,9 +754,17 @@ namespace backend.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("backend.Models.Project", "Project")
+                        .WithMany("Requirements")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Creator");
 
                     b.Navigation("Parent");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("backend.Models.RequirementLink", b =>
@@ -735,7 +853,15 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.Project", "Project")
+                        .WithMany("TestPlans")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Creator");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("backend.Models.TestPlanTestCase", b =>
@@ -836,7 +962,15 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.Project", "Project")
+                        .WithMany("TestSuites")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Creator");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("backend.Models.UserRole", b =>
@@ -856,6 +990,17 @@ namespace backend.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("backend.Models.Project", b =>
+                {
+                    b.Navigation("Requirements");
+
+                    b.Navigation("TeamMembers");
+
+                    b.Navigation("TestPlans");
+
+                    b.Navigation("TestSuites");
                 });
 
             modelBuilder.Entity("backend.Models.Requirement", b =>

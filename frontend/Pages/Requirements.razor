@@ -1,11 +1,14 @@
 @page "/requirements"
-@using RqmtMgmtShared
 @inject RqmtMgmtShared.IRequirementService ReqService
 @inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
 @inject RqmtMgmtShared.ITestCaseService TestCaseService
+@inject RqmtMgmtShared.IUserService UserService
+@inject frontend.Services.IProjectContextService ProjectContextService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Requirements</PageTitle>
 
+<div data-testid="requirements-page">
 <h1>Requirements</h1>
 
 <!-- Search and Controls -->
@@ -72,7 +75,7 @@ else
             <tbody>
                 @foreach (var req in pagedResult.Items)
                 {
-                    <tr>
+                    <tr data-testid="requirement-row">
                         <td>@req.Id</td>
                         <td>@req.Title</td>
                         <td>@req.Status</td>
@@ -80,8 +83,8 @@ else
                         <td>
                             <button class="btn btn-sm btn-secondary" @onclick="() => ShowLinkModal(req.Id)">Link Test Cases</button>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(req.Id)">Details</button>
-                            <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)">Edit</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)">Delete</button>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditRequirement(req)" data-testid="edit-@req.Title">Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteRequirement(req)" data-testid="delete-@req.Title">Delete</button>
                         </td>
                     </tr>
                 }
@@ -178,22 +181,22 @@ else
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Title</label>
-                        <input class="form-control" @bind="formModel.Title" />
+                        <input class="form-control" @bind="formModel.Title" data-testid="title-input" />
                     </div>
                     <div class="form-group">
                         <label>Description</label>
-                        <textarea class="form-control" @bind="formModel.Description" rows="3"></textarea>
+                        <textarea class="form-control" @bind="formModel.Description" rows="3" data-testid="description-input"></textarea>
                     </div>
                     <div class="form-group">
                         <label>Status</label>
-                        <select class="form-control" @bind="formModel.Status">
+                        <select class="form-control" @bind="formModel.Status" data-testid="status-select">
                             <option value="@RequirementStatus.Draft">Draft</option>
                             <option value="@RequirementStatus.Approved">Approved</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Type</label>
-                        <select class="form-control" @bind="formModel.Type">
+                        <select class="form-control" @bind="formModel.Type" data-testid="type-select">
                             <option value="@RequirementType.CRS">Customer Requirement</option>
                             <option value="@RequirementType.PRS">Product Requirement</option>
                             <option value="@RequirementType.SRS">Software Requirement</option>
@@ -215,7 +218,16 @@ else
     private PaginationParameters paginationParams = new() { PageNumber = 1, PageSize = 20 };
     private string? errorMessage;
 
-    RequirementDto formModel = new() { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
+    RequirementDto formModel = new() 
+    { 
+        Type = RequirementType.CRS, 
+        Title = string.Empty, 
+        Status = RequirementStatus.Draft,
+        CreatedBy = 1, // Will be updated when current user is loaded
+        ProjectId = 1, // Default project ID
+        ProjectCode = "DEFAULT", // Default project code
+        CreatedAt = DateTime.UtcNow
+    };
     RequirementDto? editRequirement = null;
     bool showForm = false;
 
@@ -234,9 +246,27 @@ else
     string sortBy = string.Empty;
     bool sortDescending = false;
 
+    // Current user information
+    private UserDto? currentUser = null;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentUser();
         await LoadData();
+    }
+
+    private async Task LoadCurrentUser()
+    {
+        try
+        {
+            currentUser = await UserService.GetCurrentUserAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user: {ex.Message}");
+            // If we can't get the current user, we'll fall back to a default
+            currentUser = null;
+        }
     }
 
     private async Task LoadData()
@@ -311,7 +341,17 @@ else
 
     void ShowAddForm()
     {
-        formModel = new RequirementDto { Type = RequirementType.CRS, Title = string.Empty, Status = RequirementStatus.Draft };
+        var currentProject = ProjectContextService.CurrentProject;
+        formModel = new RequirementDto 
+        { 
+            Type = RequirementType.CRS, 
+            Title = string.Empty, 
+            Status = RequirementStatus.Draft,
+            CreatedBy = currentUser?.Id ?? 1, // Use current user ID, fallback to 1 if not available
+            ProjectId = currentProject?.Id ?? 1, // Use project context, fallback to default project ID 1 if not set
+            ProjectCode = currentProject?.Code ?? "LEG", // Use project context, fallback to default project code if not set
+            CreatedAt = DateTime.UtcNow
+        };
         editRequirement = null;
         showForm = true;
     }
@@ -345,12 +385,33 @@ else
         if (editRequirement != null)
         {
             await ReqService.UpdateAsync(formModel);
+            await LoadData();
         }
         else
         {
-            await ReqService.CreateAsync(formModel);
+            var createdRequirement = await ReqService.CreateAsync(formModel);
+            if (createdRequirement != null)
+            {
+                // After creating a new requirement, search for it to ensure it's visible
+                searchTerm = createdRequirement.Title;
+                paginationParams.SearchTerm = searchTerm;
+                paginationParams.PageNumber = 1; // Start from first page of search results
+                await LoadData();
+                
+                // Optional: Clear search after a delay to show the user where their requirement is
+                // Comment out the lines below if you want to keep the search active
+                await Task.Delay(3000);
+                searchTerm = string.Empty;
+                paginationParams.SearchTerm = string.Empty;
+                paginationParams.PageNumber = 1;
+                await LoadData();
+            }
+            else
+            {
+                // Handle creation failure
+                errorMessage = "Failed to create requirement. Please try again.";
+            }
         }
-        await LoadData();
         showForm = false;
     }
 
@@ -396,3 +457,4 @@ else
         }
     }
 }
+</div>

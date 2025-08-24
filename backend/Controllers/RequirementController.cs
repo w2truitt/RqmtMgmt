@@ -52,7 +52,8 @@ namespace backend.Controllers
             [FromQuery] int pageSize = 20,
             [FromQuery] string? searchTerm = null,
             [FromQuery] string? sortBy = null,
-            [FromQuery] bool sortDescending = false)
+            [FromQuery] bool sortDescending = false,
+            [FromQuery] int? projectId = null)
         {
             var parameters = new PaginationParameters
             {
@@ -60,7 +61,8 @@ namespace backend.Controllers
                 PageSize = pageSize,
                 SearchTerm = searchTerm,
                 SortBy = sortBy,
-                SortDescending = sortDescending
+                SortDescending = sortDescending,
+                ProjectId = projectId
             };
 
             var pagedResult = await _requirementService.GetPagedAsync(parameters);

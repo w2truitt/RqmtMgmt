@@ -83,6 +83,20 @@ namespace backend.Data
         {
             var adminUser = await context.Users.FirstAsync();
 
+            // Create default project first (required for requirements and test suites)
+            var defaultProject = new Project
+            {
+                Name = "Legacy Requirements",
+                Code = "LEG",
+                Description = "Default project for existing requirements during project segmentation migration",
+                Status = ProjectStatus.Active,
+                OwnerId = adminUser.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await context.Projects.AddAsync(defaultProject);
+            await context.SaveChangesAsync();
+
             // Sample Requirements
             var customerReq = new Requirement
             {
@@ -92,7 +106,9 @@ namespace backend.Data
                 Status = RequirementStatus.Approved,
                 Version = 1,
                 CreatedBy = adminUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = defaultProject.Id,
+                ProjectCode = defaultProject.Code
             };
 
             var productReq = new Requirement
@@ -104,7 +120,9 @@ namespace backend.Data
                 Version = 1,
                 CreatedBy = adminUser.Id,
                 CreatedAt = DateTime.UtcNow,
-                Parent = customerReq
+                Parent = customerReq,
+                ProjectId = defaultProject.Id,
+                ProjectCode = defaultProject.Code
             };
 
             var softwareReq = new Requirement
@@ -116,7 +134,9 @@ namespace backend.Data
                 Version = 1,
                 CreatedBy = adminUser.Id,
                 CreatedAt = DateTime.UtcNow,
-                Parent = productReq
+                Parent = productReq,
+                ProjectId = defaultProject.Id,
+                ProjectCode = defaultProject.Code
             };
 
             await context.Requirements.AddRangeAsync(customerReq, productReq, softwareReq);
@@ -128,7 +148,8 @@ namespace backend.Data
                 Name = "Authentication Test Suite",
                 Description = "Tests for user authentication functionality",
                 CreatedBy = adminUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = defaultProject.Id
             };
 
             await context.TestSuites.AddAsync(testSuite);
@@ -189,7 +210,8 @@ namespace backend.Data
                 Description = "Test plan for authentication features",
                 Type = TestPlanType.UserValidation,
                 CreatedBy = adminUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = defaultProject.Id
             };
 
             await context.TestPlans.AddAsync(testPlan);

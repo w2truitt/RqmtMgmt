@@ -9,11 +9,11 @@ using RqmtMgmtShared;
 
 namespace backend.ApiTests
 {
-    public class RoleApiTests : IClassFixture<WebApplicationFactory<Program>>
+    public class RoleApiTests : IClassFixture<TestWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public RoleApiTests(WebApplicationFactory<Program> factory)
+        public RoleApiTests(TestWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }

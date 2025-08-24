@@ -4,16 +4,21 @@ services:
     working_dir: /src
     volumes:
       - ../frontend:/src
-      - ../local_nuget:/src/local_nuget
-      - ../nuget.config:/src/nuget.config
     expose:
-      - "5001:80"
+      - "5001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-    command: ["dotnet", "run", "--urls", "http://0.0.0.0:80", "--project", "/src/frontend.csproj"]
+    command: ["dotnet", "run", "--urls", "http://0.0.0.0:5001"]
     depends_on:
       backend:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          memory: 1G
 
   backend:
     build:
@@ -22,23 +27,28 @@ services:
     working_dir: /src
     volumes:
       - ../backend:/src
-      - ../local_nuget:/src/local_nuget
-      - ../nuget.config:/src/nuget.config
     expose:
-      - "5000:80"
+      - "5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;
-    command: ["dotnet", "run", "--urls", "http://0.0.0.0:80", "--project", "/src/backend.csproj"]
+    command: ["dotnet", "run", "--urls", "http://0.0.0.0:5000", "--project", "/src/backend.csproj"]
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          memory: 2G
 
   nginx:
     image: nginx:alpine
@@ -57,6 +67,8 @@ services:
     environment:
       SA_PASSWORD: "Your_password123"
       ACCEPT_EULA: "Y"
+      # Configure SQL Server memory settings for Docker
+      MSSQL_MEMORY_LIMIT_MB: "2048"
     ports:
       - "1433:1433"
     volumes:
@@ -67,6 +79,13 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3G
+        reservations:
+          memory: 2G
 
 volumes:
   sqlvolume:

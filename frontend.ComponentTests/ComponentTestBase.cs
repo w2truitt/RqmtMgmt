@@ -14,6 +14,11 @@ public abstract class ComponentTestBase : TestContext
 {
     protected ComponentTestBase()
     {
+        // Set up JavaScript interop for localStorage and other common JS calls
+        JSInterop.Setup<string>("localStorage.getItem", _ => true).SetResult(string.Empty);
+        JSInterop.Setup<object>("localStorage.setItem", _ => true);
+        JSInterop.Setup<object>("localStorage.removeItem", _ => true);
+
         // Register interface-based mock services only
         Services.AddSingleton(Mock.Of<IRequirementService>());
         Services.AddSingleton(Mock.Of<ITestCaseService>());
@@ -26,6 +31,8 @@ public abstract class ComponentTestBase : TestContext
         Services.AddSingleton(Mock.Of<IEnhancedDashboardService>());
         Services.AddSingleton(Mock.Of<ITestRunSessionDataService>());
         Services.AddSingleton(Mock.Of<ITestExecutionDataService>());
+        Services.AddSingleton(Mock.Of<IProjectService>());
+        Services.AddSingleton(Mock.Of<IProjectContextService>());
 
         // Add Blazor testing services
         Services.AddOptions();

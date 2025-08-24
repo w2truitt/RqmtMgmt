@@ -1,0 +1,481 @@
+@page "/projects/{ProjectId:int}"
+@inject IProjectService ProjectService
+@inject IRequirementService RequirementService
+@inject ITestSuiteService TestSuiteService
+@inject ITestPlanService TestPlanService
+@inject IProjectContextService ProjectContextService
+@inject NavigationManager Navigation
+@using frontend.Components.Navigation
+@using RqmtMgmtShared
+
+<PageTitle>Project Dashboard - @(project?.Name ?? "Loading...")</PageTitle>
+
+<!-- Breadcrumb Navigation -->
+<ProjectBreadcrumb ProjectId="@ProjectId" ProjectName="@project?.Name" />
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+@if (project == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading project dashboard...</p>
+    </div>
+}
+else
+{
+    <!-- Project Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="project-header-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1 class="project-title">
+                            @project.Name
+                            <span class="project-code badge bg-primary ms-2">@project.Code</span>
+                        </h1>
+                        @if (!string.IsNullOrEmpty(project.Description))
+                        {
+                            <p class="project-description text-muted">@project.Description</p>
+                        }
+                        <div class="project-meta">
+                            <span class="badge @GetStatusBadgeClass(project.Status.ToString()) me-2">@project.Status</span>
+                            <small class="text-muted">
+                                Owner: <strong>@project.OwnerName</strong> |
+                                Created: @project.CreatedAt.ToString("MMM dd, yyyy")
+                            </small>
+                        </div>
+                    </div>
+                    <div class="project-actions">
+                        <button class="btn btn-outline-primary btn-sm" @onclick="EditProject">
+                            <i class="bi bi-pencil me-1"></i>Edit Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card requirements-card">
+                <div class="stats-content">
+                    <div class="stats-number">@projectStats.RequirementCount</div>
+                    <div class="stats-label">Requirements</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <a href="/projects/@ProjectId/requirements" class="stats-link">
+                    View Requirements <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stats-card test-suites-card">
+                <div class="stats-content">
+                    <div class="stats-number">@projectStats.TestSuiteCount</div>
+                    <div class="stats-label">Test Suites</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="bi bi-collection"></i>
+                </div>
+                <a href="/projects/@ProjectId/testsuites" class="stats-link">
+                    View Test Suites <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stats-card test-plans-card">
+                <div class="stats-content">
+                    <div class="stats-number">@projectStats.TestPlanCount</div>
+                    <div class="stats-label">Test Plans</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="bi bi-journal-code"></i>
+                </div>
+                <a href="/projects/@ProjectId/testplans" class="stats-link">
+                    View Test Plans <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stats-card team-card">
+                <div class="stats-content">
+                    <div class="stats-number">@(project.TeamMembers?.Count ?? 0)</div>
+                    <div class="stats-label">Team Members</div>
+                </div>
+                <div class="stats-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <a href="/projects/@ProjectId/team" class="stats-link">
+                    View Team <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="quick-actions-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="action-group">
+                            <h6>Requirements Management</h6>
+                            <button class="btn btn-outline-primary btn-sm me-2 mb-2" @onclick="() => CreateNewRequirement()">
+                                <i class="bi bi-plus-circle me-1"></i>New Requirement
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm me-2 mb-2" @onclick="() => ViewRequirements()">
+                                <i class="bi bi-list-ul me-1"></i>View All Requirements
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="action-group">
+                            <h6>Test Management</h6>
+                            <button class="btn btn-outline-primary btn-sm me-2 mb-2" @onclick="() => CreateNewTestSuite()">
+                                <i class="bi bi-plus-circle me-1"></i>New Test Suite
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm me-2 mb-2" @onclick="() => ViewTestSuites()">
+                                <i class="bi bi-collection me-1"></i>View Test Suites
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Members -->
+    @if (project.TeamMembers?.Any() == true)
+    {
+        <div class="row">
+            <div class="col">
+                <div class="team-card">
+                    <h5 class="mb-3">
+                        <i class="bi bi-people me-2"></i>Team Members
+                    </h5>
+                    <div class="row">
+                        @foreach (var member in project.TeamMembers.Take(6))
+                        {
+                            <div class="col-md-4 mb-3">
+                                <div class="team-member-card">
+                                    <div class="d-flex align-items-center">
+                                        <div class="team-member-avatar">
+                                            <i class="bi bi-person-circle"></i>
+                                        </div>
+                                        <div class="team-member-info">
+                                            <div class="member-name">@member.UserName</div>
+                                            <div class="member-role text-muted">@member.Role</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        @if (project.TeamMembers.Count > 6)
+                        {
+                            <div class="col-md-4 mb-3">
+                                <div class="team-member-card more-members">
+                                    <div class="text-center">
+                                        <div class="more-count">+@(project.TeamMembers.Count - 6)</div>
+                                        <div class="text-muted">more members</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public int ProjectId { get; set; }
+    
+    private ProjectDto? project;
+    private ProjectStats projectStats = new();
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Update project context when route parameter changes
+        if (project?.Id != ProjectId)
+        {
+            await LoadProjectData();
+        }
+    }
+
+    private async Task LoadProjectData()
+    {
+        try
+        {
+            // Load project details
+            var project = await ProjectService.GetProjectByIdAsync(ProjectId);
+            if (project != null)
+            {
+                this.project = project;
+                await ProjectContextService.SetCurrentProjectAsync(project);
+                
+                // Force re-render to update breadcrumb with project name
+                StateHasChanged();
+                
+                // Load project statistics
+                await LoadProjectStats();
+            }
+            else
+            {
+                errorMessage = "Failed to load project";
+                Navigation.NavigateTo("/projects");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading project: {ex.Message}";
+            Console.WriteLine($"Error loading project {ProjectId}: {ex}");
+        }
+    }
+
+    private async Task LoadProjectStats()
+    {
+        try
+        {
+            // Load requirements count
+            var reqResult = await RequirementService.GetPagedAsync(new PaginationParameters
+            {
+                ProjectId = ProjectId,
+                PageSize = 1,
+                PageNumber = 1
+            });
+            if (reqResult != null)
+            {
+                projectStats.RequirementCount = reqResult.TotalItems;
+            }
+
+            // Load test suites count  
+            var suiteResult = await TestSuiteService.GetAllAsync();
+            if (suiteResult != null)
+            {
+                projectStats.TestSuiteCount = suiteResult.Where(ts => ts.ProjectId == ProjectId).Count();
+            }
+
+            // Load test plans count
+            var planResult = await TestPlanService.GetAllAsync();
+            if (planResult != null)
+            {
+                projectStats.TestPlanCount = planResult.Where(tp => tp.ProjectId == ProjectId).Count();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading project stats: {ex}");
+        }
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status.ToLower() switch
+        {
+            "active" => "bg-success",
+            "planning" => "bg-info",
+            "onhold" => "bg-warning text-dark",
+            "archived" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void EditProject()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/edit");
+    }
+
+    private void CreateNewRequirement()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/requirements/new");
+    }
+
+    private void ViewRequirements()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/requirements");
+    }
+
+    private void CreateNewTestSuite()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/new");
+    }
+
+    private void ViewTestSuites()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}/testsuites");
+    }
+
+    private class ProjectStats
+    {
+        public int RequirementCount { get; set; }
+        public int TestSuiteCount { get; set; }
+        public int TestPlanCount { get; set; }
+    }
+}
+
+<style>
+.project-header-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.project-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.project-code {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.project-description {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.project-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stats-content {
+    position: relative;
+    z-index: 2;
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stats-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 2.5rem;
+    opacity: 0.1;
+    z-index: 1;
+}
+
+.stats-link {
+    display: block;
+    margin-top: 1rem;
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.stats-link:hover {
+    color: #495057;
+    text-decoration: none;
+}
+
+.requirements-card .stats-number { color: #0d6efd; }
+.test-suites-card .stats-number { color: #198754; }
+.test-plans-card .stats-number { color: #fd7e14; }
+.team-card .stats-number { color: #6f42c1; }
+
+.quick-actions-card, .team-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-group h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.team-member-card {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    height: 100%;
+}
+
+.team-member-avatar {
+    font-size: 2rem;
+    color: #6c757d;
+    margin-right: 0.75rem;
+}
+
+.member-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.member-role {
+    font-size: 0.85rem;
+}
+
+.more-members {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.more-count {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+</style>

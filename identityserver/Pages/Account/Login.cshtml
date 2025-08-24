@@ -1,0 +1,148 @@
+@page "/Account/Login"
+@model identityserver.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="login-page">
+    <div class="page-header">
+        <h1>Requirements Management System</h1>
+        <h2>Login</h2>
+    </div>
+
+    <partial name="_ValidationSummary" />
+
+    <div class="row">
+        <div class="col-sm-6">
+            @if (Model.View.EnableLocalLogin)
+            {
+                <form asp-page="/Account/Login" method="post">
+                    <input type="hidden" asp-for="Input.ReturnUrl" />
+
+                    <fieldset>
+                        <legend>Local Account</legend>
+                        <div class="form-group">
+                            <label asp-for="Input.Username"></label>
+                            <input class="form-control" placeholder="Username or Email" asp-for="Input.Username" autofocus>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Input.Password"></label>
+                            <input type="password" class="form-control" placeholder="Password" asp-for="Input.Password" autocomplete="off">
+                        </div>
+                        @if (Model.View.AllowRememberLogin)
+                        {
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" asp-for="Input.RememberLogin">
+                                    <label class="form-check-label" asp-for="Input.RememberLogin">
+                                        Remember My Login
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                        <div class="form-group">
+                            <button class="btn btn-primary" name="Input.Button" value="login">Login</button>
+                            <button class="btn btn-secondary" name="Input.Button" value="cancel">Cancel</button>
+                        </div>
+                    </fieldset>
+                </form>
+            }
+
+            @if (Model.View.ExternalProviders?.Any() == true)
+            {
+                <fieldset>
+                    <legend>External Account</legend>
+                    <div class="form-group">
+                        @foreach (var provider in Model.View.ExternalProviders)
+                        {
+                            <a class="btn btn-outline-secondary"
+                               asp-page="/ExternalLogin/Challenge" 
+                               asp-route-scheme="@provider.AuthenticationScheme" 
+                               asp-route-returnUrl="@Model.Input.ReturnUrl">
+                                @provider.DisplayName
+                            </a>
+                        }
+                    </div>
+                </fieldset>
+            }
+        </div>
+
+        <div class="col-sm-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Test Users</h3>
+                </div>
+                <div class="card-body">
+                    <p>You can use any of these test accounts:</p>
+                    <ul class="list-unstyled">
+                        <li><strong>Administrator:</strong><br />admin@rqmtmgmt.local / Admin123!</li>
+                        <li><strong>Project Manager:</strong><br />pm@rqmtmgmt.local / PM123!</li>
+                        <li><strong>Developer:</strong><br />dev@rqmtmgmt.local / Dev123!</li>
+                        <li><strong>Tester:</strong><br />tester@rqmtmgmt.local / Test123!</li>
+                        <li><strong>Viewer:</strong><br />viewer@rqmtmgmt.local / View123!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-page {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-header h2 {
+        color: #7f8c8d;
+        font-weight: normal;
+    }
+    
+    fieldset {
+        border: 1px solid #ddd;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.25rem;
+    }
+    
+    legend {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding: 0 0.5rem;
+        width: auto;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .card {
+        border: 1px solid #ddd;
+        border-radius: 0.25rem;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        margin-right: 0.5rem;
+    }
+</style>

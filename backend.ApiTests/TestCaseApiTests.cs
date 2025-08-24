@@ -11,7 +11,7 @@ namespace backend.ApiTests
 {
     public class TestCaseApiTests : BaseApiTest
     {
-        public TestCaseApiTests(WebApplicationFactory<Program> factory) : base(factory)
+        public TestCaseApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
         {
         }
 

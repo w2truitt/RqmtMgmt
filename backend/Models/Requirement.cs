@@ -1,13 +1,12 @@
 using System.Collections.Generic;
-
 using RqmtMgmtShared;
+
 namespace backend.Models
 {
     /// <summary>
     /// Represents a requirement (CRS, PRS, or SRS) in the requirements management system.
     /// Supports hierarchical relationships and links to test cases.
     /// </summary>
-    using RqmtMgmtShared;
     public class Requirement
     {
         /// <summary>
@@ -61,6 +60,16 @@ namespace backend.Models
         public DateTime? UpdatedAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the project this requirement belongs to.
+        /// </summary>
+        public int ProjectId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the project code for generating structured requirement IDs.
+        /// </summary>
+        public string? ProjectCode { get; set; }
+
+        /// <summary>
         /// Gets or sets the parent requirement for hierarchy navigation.
         /// </summary>
         public Requirement? Parent { get; set; }
@@ -74,6 +83,11 @@ namespace backend.Models
         /// Gets or sets the creator user object.
         /// </summary>
         public User? Creator { get; set; }
+
+        /// <summary>
+        /// Gets or sets the project this requirement belongs to.
+        /// </summary>
+        public Project? Project { get; set; }
 
         /// <summary>
         /// Gets or sets outgoing links to other requirements.

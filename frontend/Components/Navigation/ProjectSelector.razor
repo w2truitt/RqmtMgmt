@@ -1,0 +1,306 @@
+@inject IProjectService ProjectService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="project-selector-container">
+    @if (currentProject != null)
+    {
+        <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle project-selector-btn" 
+                    type="button" 
+                    id="projectDropdown" 
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false">
+                <i class="bi bi-folder me-1"></i>
+                <span class="project-name">@currentProject.Name</span>
+                <span class="project-code badge bg-secondary ms-1">@currentProject.Code</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end project-dropdown" aria-labelledby="projectDropdown">
+                <li><h6 class="dropdown-header">Switch Project</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                
+                @if (availableProjects?.Any() == true)
+                {
+                    @foreach (var project in availableProjects)
+                    {
+                        <li>
+                            <button class="dropdown-item @(project.Id == currentProject.Id ? "active" : "")" 
+                                    type="button"
+                                    @onclick="() => SelectProject(project)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-medium">@project.Name</div>
+                                        <small class="text-muted">@project.Code</small>
+                                    </div>
+                                    @if (project.Id == currentProject.Id)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    }
+                                </div>
+                            </button>
+                        </li>
+                    }
+                    <li><hr class="dropdown-divider"></li>
+                }
+                
+                <li>
+                    <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
+                        <i class="bi bi-grid me-2"></i>View All Projects
+                    </button>
+                </li>
+                <li>
+                    <button class="dropdown-item" type="button" @onclick="ClearProjectContext">
+                        <i class="bi bi-x-circle me-2"></i>Clear Project Context
+                    </button>
+                </li>
+            </ul>
+        </div>
+    }
+    else
+    {
+        <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle project-selector-btn" 
+                    type="button" 
+                    id="projectDropdownNoSelection" 
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false">
+                <i class="bi bi-folder-plus me-1"></i>
+                Select Project
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end project-dropdown" aria-labelledby="projectDropdownNoSelection">
+                <li><h6 class="dropdown-header">Select Project</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                
+                @if (availableProjects?.Any() == true)
+                {
+                    @foreach (var project in availableProjects)
+                    {
+                        <li>
+                            <button class="dropdown-item" 
+                                    type="button"
+                                    @onclick="() => SelectProject(project)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-medium">@project.Name</div>
+                                        <small class="text-muted">@project.Code</small>
+                                    </div>
+                                </div>
+                            </button>
+                        </li>
+                    }
+                    <li><hr class="dropdown-divider"></li>
+                }
+                else
+                {
+                    <li>
+                        <span class="dropdown-item-text text-muted">No projects available</span>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                }
+                
+                <li>
+                    <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
+                        <i class="bi bi-grid me-2"></i>View All Projects
+                    </button>
+                </li>
+            </ul>
+        </div>
+    }
+</div>
+
+@code {
+    private ProjectDto? currentProject;
+    private List<ProjectDto>? availableProjects;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load available projects
+            await LoadProjects();
+            
+            // Check if we're in a project context route
+            await CheckProjectContext();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading projects: {ex.Message}";
+            Console.WriteLine($"ProjectSelector initialization error: {ex}");
+        }
+    }
+
+    private async Task LoadProjects()
+    {
+        try
+        {
+            var filter = new ProjectFilterDto { Page = 1, PageSize = 50 };
+            var result = await ProjectService.GetProjectsAsync(filter);
+            if (result != null)
+            {
+                availableProjects = result.Items.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading projects: {ex}");
+        }
+    }
+
+    private async Task CheckProjectContext()
+    {
+        var uri = Navigation.Uri;
+        var relativePath = Navigation.ToBaseRelativePath(uri);
+        
+        // Parse project ID from route like "/projects/1/requirements"
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length >= 2 && segments[0] == "projects" && int.TryParse(segments[1], out int projectId))
+        {
+            // We're in a project context route
+            await SetCurrentProject(projectId);
+        }
+        else
+        {
+            // Check local storage for persisted project context
+            await LoadPersistedProjectContext();
+        }
+    }
+
+    private async Task SetCurrentProject(int projectId)
+    {
+        try
+        {
+            if (availableProjects?.Any() == true)
+            {
+                currentProject = availableProjects.FirstOrDefault(p => p.Id == projectId);
+                if (currentProject != null)
+                {
+                    // Persist project context in local storage
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", projectId.ToString());
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+            // Fallback: try to load the specific project
+            var result = await ProjectService.GetProjectByIdAsync(projectId);
+            if (result != null)
+            {
+                currentProject = result;
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", projectId.ToString());
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting current project: {ex}");
+        }
+    }
+
+    private async Task LoadPersistedProjectContext()
+    {
+        try
+        {
+            var storedProjectId = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "currentProjectId");
+            if (!string.IsNullOrEmpty(storedProjectId) && int.TryParse(storedProjectId, out int projectId))
+            {
+                await SetCurrentProject(projectId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading persisted project context: {ex}");
+        }
+    }
+
+    private async Task SelectProject(ProjectDto project)
+    {
+        currentProject = project;
+        await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", project.Id.ToString());
+        
+        // Navigate to project dashboard
+        Navigation.NavigateTo($"/projects/{project.Id}");
+        StateHasChanged();
+    }
+
+    private void ViewAllProjects()
+    {
+        Navigation.NavigateTo("/projects");
+    }
+
+    private async Task ClearProjectContext()
+    {
+        currentProject = null;
+        await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "currentProjectId");
+        Navigation.NavigateTo("/");
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+}
+
+<style>
+.project-selector-container {
+    margin-left: auto;
+}
+
+.project-selector-btn {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.project-selector-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.project-selector-btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.project-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.project-code {
+    font-size: 0.7rem;
+}
+
+.project-dropdown {
+    min-width: 280px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.project-dropdown .dropdown-item {
+    padding: 0.75rem 1rem;
+}
+
+.project-dropdown .dropdown-item.active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.project-dropdown .dropdown-item:hover:not(.active) {
+    background-color: var(--bs-light);
+}
+
+.project-dropdown .dropdown-header {
+    color: var(--bs-primary);
+    font-weight: 600;
+}
+</style>
