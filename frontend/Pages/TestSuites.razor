@@ -1,7 +1,6 @@
 @page "/testsuites"
 @using RqmtMgmtShared
 @inject ITestSuiteService TestSuiteService
-@inject RqmtMgmtShared.IUserService UserService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Test Suites</PageTitle>
@@ -302,6 +301,8 @@
     <div class="modal-backdrop show"></div>
 }
 
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
+
 @code {
     // Data and form model
     private List<TestSuiteDto> testSuites = new();
@@ -323,12 +324,9 @@
     private string sortColumn = "Name";
     private bool sortDescending = false;
 
-    // Current user information
-    private UserDto? currentUser = null;
-
     protected override async Task OnInitializedAsync()
     {
-        await LoadCurrentUser();
+        await LoadCurrentUserAsync();
         await LoadTestSuites();
     }
 
@@ -349,20 +347,6 @@
         finally
         {
             isLoading = false;
-        }
-    }
-
-    private async Task LoadCurrentUser()
-    {
-        try
-        {
-            currentUser = await UserService.GetCurrentUserAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading current user: {ex.Message}");
-            // If we can't get the current user, we'll fall back to a default
-            currentUser = null;
         }
     }
 

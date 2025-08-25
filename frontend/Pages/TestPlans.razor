@@ -1,8 +1,8 @@
 @page "/testplans"
 @using RqmtMgmtShared
 @inject ITestPlanService TestPlanService
-@inject RqmtMgmtShared.IUserService UserService
 @inject IJSRuntime JSRuntime
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>Test Plans</PageTitle>
 
@@ -298,12 +298,9 @@
     string errorMessage = string.Empty;
     string formErrorMessage = string.Empty;
 
-    // Current user information
-    private UserDto? currentUser = null;
-
     protected override async Task OnInitializedAsync()
     {
-        await LoadCurrentUser();
+        await LoadCurrentUserAsync();
         await LoadTestPlans();
     }
 
@@ -317,20 +314,6 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading test plans: {ex.Message}";
-        }
-    }
-
-    private async Task LoadCurrentUser()
-    {
-        try
-        {
-            currentUser = await UserService.GetCurrentUserAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading current user: {ex.Message}");
-            // If we can't get the current user, we'll fall back to a default
-            currentUser = null;
         }
     }
 

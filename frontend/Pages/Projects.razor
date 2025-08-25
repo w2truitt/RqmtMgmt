@@ -1,9 +1,9 @@
 @page "/projects"
 @using RqmtMgmtShared
 @inject IProjectService ProjectService
-@inject IUserService UserService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>Projects</PageTitle>
 
@@ -279,12 +279,9 @@
     private ProjectDto? editProject;
     private ProjectFormModel formModel = new();
 
-    // Current user information
-    private UserDto? currentUser = null;
-
     protected override async Task OnInitializedAsync()
     {
-        await LoadCurrentUser();
+        await LoadCurrentUserAsync();
         await LoadProjects();
         await LoadUsers();
     }
@@ -314,20 +311,6 @@
         catch (Exception ex)
         {
             errorMessage = $"Error loading users: {ex.Message}";
-        }
-    }
-
-    private async Task LoadCurrentUser()
-    {
-        try
-        {
-            currentUser = await UserService.GetCurrentUserAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading current user: {ex.Message}");
-            // If we can't get the current user, we'll fall back to a default
-            currentUser = null;
         }
     }
 
