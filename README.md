@@ -50,7 +50,7 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
   - `Components/`: Component test suites organized by feature
   - `TestHelpers/`: Test utilities and helper classes
   - `ComponentTestBase.cs`: Base class with common test setup
-- **Test Results:** ✅ **65 tests passing** - Complete component coverage
+- **Test Results:** ✅ **73 tests passing** - Complete component coverage
 
 ### 4. Frontend E2E Tests (Playwright + xUnit)
 
@@ -73,7 +73,7 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
   - Unit tests for backend services, controllers, and business logic.
   - Isolated testing with mocked dependencies.
   - Fast-running tests for individual component validation.
-- **Test Results:** ✅ **267 tests passing** - Comprehensive backend coverage
+- **Test Results:** ✅ **499 tests passing** - Comprehensive backend coverage
 
 ### 6. Backend API Tests (xUnit)
 
@@ -82,7 +82,7 @@ This solution provides a web-based enterprise tool for managing Customer, Produc
   - Integration tests for API endpoints and workflows.
   - End-to-end backend testing with real database integration.
   - Performance and error handling validation.
-- **Test Results:** ✅ **107 tests passing** - Complete API coverage
+- **Test Results:** ✅ **160 tests passing** - Complete API coverage
 
 ### 7. Shared Library (RqmtMgmtShared)
 
@@ -109,15 +109,15 @@ See `architecture.md` for detailed architecture decisions and diagrams.
 
 ## Test Infrastructure
 
-The solution includes a comprehensive testing framework with **492 total tests** across all layers:
+The solution includes a comprehensive testing framework with **732 total tests** across all layers:
 
-### **Frontend Testing (118 tests)**
-- **Component Tests (65):** bUnit-based isolated component testing
+### **Frontend Testing (126 tests)**
+- **Component Tests (73):** bUnit-based isolated component testing
 - **E2E Tests (53):** Playwright-based browser automation testing
 
-### **Backend Testing (374 tests)**  
-- **Unit Tests (267):** Service and business logic testing
-- **API Tests (107):** Integration and endpoint testing
+### **Backend Testing (659 tests)**  
+- **Unit Tests (499):** Service and business logic testing
+- **API Tests (160):** Integration and endpoint testing (using HTTPS for integration tests)
 
 ### **Test Commands**
 ```bash
@@ -165,10 +165,17 @@ The solution is designed to run in Docker containers with nginx as a reverse pro
    ```
 
 3. **Access the application:**
-   - Frontend: http://localhost:8080 (via nginx)
-   - Backend API: http://localhost:8080/api (via nginx)
-   - Swagger: http://localhost:8080/swagger (via nginx)
+   - Frontend: http://localhost:8080 or https://localhost (via nginx)
+   - Backend API: http://localhost:8080/api or https://localhost/api (via nginx)
+   - Swagger: http://localhost:8080/swagger or https://localhost/swagger (via nginx)
    - Database: localhost:1433 (direct connection)
+
+**Note:** HTTPS access requires adding `rqmtmgmt.local` to your `/etc/hosts` file:
+```
+127.0.0.1   rqmtmgmt.local
+```
+
+For production and integration testing, HTTPS is recommended.
 
 The nginx configuration forwards:
 - `/api/*` requests to the backend container (port 80)

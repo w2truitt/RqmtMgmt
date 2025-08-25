@@ -6,6 +6,7 @@
 @using frontend.Components.Navigation
 @using RqmtMgmtShared
 @using Microsoft.AspNetCore.Components.Forms
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>New Requirement - @(project?.Name ?? "Loading...")</PageTitle>
 
@@ -168,8 +169,8 @@
         Type = RequirementType.SRS,
         Title = string.Empty,
         Version = 1,
-        CreatedAt = DateTime.UtcNow,
-        CreatedBy = 1 // Default user ID
+        CreatedAt = DateTime.UtcNow
+        // CreatedBy will be set in OnInitializedAsync after loading current user
     };
     private List<RequirementDto>? availableRequirements;
     private string errorMessage = string.Empty;
@@ -179,6 +180,9 @@
     {
         try
         {
+            // Load current user
+            await LoadCurrentUserAsync();
+
             // Load project information
             project = await ProjectService.GetProjectByIdAsync(ProjectId);
             if (project == null)
@@ -191,6 +195,7 @@
             requirement.ProjectId = ProjectId;
             requirement.ProjectName = project.Name;
             requirement.ProjectCode = project.Code;
+            requirement.CreatedBy = currentUser?.Id ?? 1; // Use current user ID, fallback to 1 if not available
 
             // TODO: Load available requirements for parent selection
             // availableRequirements = await RequirementService.GetByProjectIdAsync(ProjectId);
