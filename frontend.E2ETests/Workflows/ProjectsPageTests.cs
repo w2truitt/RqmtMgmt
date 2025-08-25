@@ -4,35 +4,51 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using static Microsoft.Playwright.Assertions;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
-/// E2E tests for the Projects page
+/// E2E tests for the Projects page with authentication
 /// </summary>
-public class ProjectsPageTests : E2ETestBase
+public class ProjectsPageTests : AuthenticatedE2ETestBase
 {
-    [Fact]
-    public async Task Projects_NavigatesSuccessfully()
+    public ProjectsPageTests(ITestOutputHelper output) : base(output)
     {
-        // Arrange
-        var projectsPage = new ProjectsPage(Page, BaseUrl);
+    }
+
+    [Fact]
+    public async Task Projects_NavigatesSuccessfully_AuthenticatedUser()
+    {
+        // Arrange - Login as admin (will skip if already authenticated)
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+
+        // Act - Navigate to projects page
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
         
-        // Act
-        await projectsPage.NavigateToAsync();
+        await WaitForBlazorAppAsync();
         
         // Assert
         Assert.Contains("/projects", Page.Url);
+        _output.WriteLine($"Successfully navigated to projects page: {Page.Url}");
     }
     
     [Fact]
-    public async Task Projects_LoadsWithoutErrors()
+    public async Task Projects_LoadsWithoutErrors_AuthenticatedUser()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         
         // Assert
@@ -42,16 +58,23 @@ public class ProjectsPageTests : E2ETestBase
         
         // Check that we can access the page
         Assert.Contains("/projects", Page.Url);
+        _output.WriteLine("Projects page loaded without errors");
     }
     
     [Fact]
-    public async Task Projects_HasExpectedPageElements()
+    public async Task Projects_HasExpectedPageElements_AuthenticatedUser()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         
         // Assert
@@ -62,18 +85,26 @@ public class ProjectsPageTests : E2ETestBase
         await Expect(Page.Locator("[data-testid='create-project-button']")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-testid='search-input']")).ToBeVisibleAsync();
         await Expect(Page.Locator("h3:has-text('Projects')")).ToBeVisibleAsync();
+        
+        _output.WriteLine("All expected page elements are present");
     }
     
     [Fact]
-    public async Task Projects_CanCreateNewProject()
+    public async Task Projects_CanCreateNewProject_AuthenticatedAdmin()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var testId = CreateTestId();
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         var project = TestDataFactory.CreateProject(testId);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.ClickCreateProjectAsync();
         await projectsPage.WaitForFormModalAsync();
@@ -97,17 +128,25 @@ public class ProjectsPageTests : E2ETestBase
         Assert.NotNull(project);
         Assert.Contains(testId, project.Name);
         Assert.Contains("/projects", Page.Url);
+        
+        _output.WriteLine($"Successfully created project: {project.Name}");
     }
     
     [Fact]
-    public async Task Projects_CanSearchProjects()
+    public async Task Projects_CanSearchProjects_AuthenticatedUser()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var testId = CreateTestId();
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.SearchProjectsAsync("Test");
         
@@ -120,16 +159,24 @@ public class ProjectsPageTests : E2ETestBase
         // Verify the search input has the expected value
         var searchValue = await Page.InputValueAsync("[data-testid='search-input']");
         Assert.Equal("Test", searchValue);
+        
+        _output.WriteLine("Search functionality works correctly");
     }
     
     [Fact]
-    public async Task Projects_CanOpenAndCancelForm()
+    public async Task Projects_CanOpenAndCancelForm_AuthenticatedUser()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.ClickCreateProjectAsync();
         await projectsPage.WaitForFormModalAsync();
@@ -144,16 +191,24 @@ public class ProjectsPageTests : E2ETestBase
         // Assert
         // Form should be hidden
         await Expect(Page.Locator(".modal.show")).Not.ToBeVisibleAsync();
+        
+        _output.WriteLine("Form modal can be opened and cancelled successfully");
     }
     
     [Fact]
-    public async Task Projects_FormValidatesRequiredFields()
+    public async Task Projects_FormValidatesRequiredFields_AuthenticatedUser()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.ClickCreateProjectAsync();
         await projectsPage.WaitForFormModalAsync();
@@ -167,18 +222,26 @@ public class ProjectsPageTests : E2ETestBase
         // Assert
         // Form should still be visible (not saved due to validation)
         await Expect(Page.Locator(".modal.show")).ToBeVisibleAsync();
+        
+        _output.WriteLine("Form validation works correctly for required fields");
     }
     
     [Fact]
-    public async Task Projects_CanEditExistingProject()
+    public async Task Projects_CanEditExistingProject_AuthenticatedAdmin()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var testId = CreateTestId();
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         var project = TestDataFactory.CreateProject(testId);
         
         // First create a project
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.ClickCreateProjectAsync();
         await projectsPage.WaitForFormModalAsync();
@@ -213,18 +276,26 @@ public class ProjectsPageTests : E2ETestBase
         // Assert
         var isUpdatedVisible = await projectsPage.IsProjectVisibleAsync(updatedName);
         Assert.True(isUpdatedVisible);
+        
+        _output.WriteLine($"Successfully edited project from {project.Name} to {updatedName}");
     }
     
     [Fact]
-    public async Task Projects_CanDeleteProject()
+    public async Task Projects_CanDeleteProject_AuthenticatedAdmin()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var testId = CreateTestId();
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         var project = TestDataFactory.CreateProject(testId);
         
         // First create a project
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.ClickCreateProjectAsync();
         await projectsPage.WaitForFormModalAsync();
@@ -256,18 +327,26 @@ public class ProjectsPageTests : E2ETestBase
         // Assert
         var isDeletedVisible = await projectsPage.IsProjectVisibleAsync(project.Name);
         Assert.False(isDeletedVisible);
+        
+        _output.WriteLine($"Successfully deleted project: {project.Name}");
     }
     
     [Fact]
-    public async Task Projects_CanPerformFullCrudWorkflow()
+    public async Task Projects_CanPerformFullCrudWorkflow_AuthenticatedAdmin()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var testId = CreateTestId();
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         var project = TestDataFactory.CreateProject(testId);
         
         // Act & Assert: Create
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         await projectsPage.ClickCreateProjectAsync();
         await projectsPage.WaitForFormModalAsync();
@@ -311,20 +390,30 @@ public class ProjectsPageTests : E2ETestBase
         // Verify deletion
         var isDeletedVisible = await projectsPage.IsProjectVisibleAsync(updatedName);
         Assert.False(isDeletedVisible, "Project should not be visible after deletion");
+        
+        _output.WriteLine($"Successfully completed full CRUD workflow for project: {project.Name}");
     }
     
     [Fact]
-    public async Task Projects_ShowsProjectCounts()
+    public async Task Projects_ShowsProjectCounts_AuthenticatedUser()
     {
-        // Arrange
+        // Arrange - Login as admin
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Should be able to login as admin");
+        
         var projectsPage = new ProjectsPage(Page, BaseUrl);
         
         // Act
-        await projectsPage.NavigateToAsync();
+        var canAccessProjects = await NavigateToProtectedPageAsync("/projects");
+        Assert.True(canAccessProjects, "Should be able to access projects page");
+        
+        await WaitForBlazorAppAsync();
         await projectsPage.WaitForPageLoadAsync();
         
         // Assert
         // Check that project count elements are present
         await Expect(Page.Locator("text=/Showing \\d+ of \\d+ project/")).ToBeVisibleAsync();
+        
+        _output.WriteLine("Project counts are displayed correctly");
     }
 }
