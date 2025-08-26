@@ -34,8 +34,8 @@ namespace backend.Controllers
         /// </summary>
         /// <returns>The current user's information if authenticated and found in the system.</returns>
         /// <response code="200">Returns the current user's information.</response>
-        /// <response code="401">If the user is not authenticated.</response>
-        /// <response code="404">If the authenticated user is not found in the system.</response>
+        /// <response code="460">If the user is authenticated but email claim is missing from token.</response>
+        /// <response code="461">If the authenticated user is not found in the system.</response>
         [HttpGet("me")]
         [Authorize]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
@@ -59,11 +59,12 @@ namespace backend.Controllers
                 
                 Console.WriteLine($"No email claim found. SubjectId: {subjectId}, UserName: {userName}");
                 
-                return Unauthorized(new { 
-                    error = "Email claim not found in token",
+                return StatusCode(460, new { 
+                    error = "AUTHENTICATED_BUT_NO_EMAIL_CLAIM - User is authenticated but email claim is missing from JWT token (460)",
                     availableClaims = allClaims,
                     subjectId = subjectId,
-                    userName = userName
+                    userName = userName,
+                    debugInfo = "This is a 460 custom status, not 401 Unauthorized - authentication worked, but email claim missing"
                 });
             }
 
@@ -74,10 +75,11 @@ namespace backend.Controllers
             if (user == null)
             {
                 Console.WriteLine($"User with email '{email}' not found in database");
-                return NotFound(new { 
-                    error = $"User with email '{email}' not found in the system",
+                return StatusCode(461, new { 
+                    error = $"AUTHENTICATED_BUT_USER_NOT_IN_DB - User with email '{email}' not found in the system (461)",
                     email = email,
-                    availableClaims = allClaims
+                    availableClaims = allClaims,
+                    debugInfo = "This is a 461 custom status, not 401 Unauthorized - authentication worked, but user not in database"
                 });
             }
 

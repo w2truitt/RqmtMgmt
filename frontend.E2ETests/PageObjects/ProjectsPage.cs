@@ -144,7 +144,7 @@ public class ProjectsPage
     public async Task<string> GetProjectNameInputValueAsync()
     {
         var element = await _page.QuerySelectorAsync("[data-testid='name-input']");
-        return await element?.InputValueAsync() ?? "";
+        return element != null ? await element.InputValueAsync() : "";
     }
     
     /// <summary>
@@ -154,7 +154,7 @@ public class ProjectsPage
     public async Task<string> GetProjectCodeInputValueAsync()
     {
         var element = await _page.QuerySelectorAsync("[data-testid='code-input']");
-        return await element?.InputValueAsync() ?? "";
+        return element != null ? await element.InputValueAsync() : "";
     }
     
     /// <summary>
@@ -164,7 +164,7 @@ public class ProjectsPage
     public async Task<string> GetProjectDescriptionInputValueAsync()
     {
         var element = await _page.QuerySelectorAsync("[data-testid='description-input']");
-        return await element?.InputValueAsync() ?? "";
+        return element != null ? await element.InputValueAsync() : "";
     }
     
     /// <summary>
@@ -240,18 +240,16 @@ public class ProjectsPage
         var viewButton = await _page.QuerySelectorAsync($"[data-testid='view-{projectName}']");
         if (viewButton != null)
         {
-            await _page.RunAndWaitForNavigationAsync(async () =>
-            {
-                await viewButton.ClickAsync();
-            }, new PageRunAndWaitForNavigationOptions { Timeout = 30000 });
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await viewButton.ClickAsync();
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         else
         {
             // Fallback: look for any View button and use navigation waiting
-            await _page.RunAndWaitForNavigationAsync(async () =>
-            {
-                await _page.ClickAsync("button:has-text('View')");
-            }, new PageRunAndWaitForNavigationOptions { Timeout = 30000 });
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.ClickAsync("button:has-text('View')");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
     
@@ -265,18 +263,16 @@ public class ProjectsPage
         var projectLink = await _page.QuerySelectorAsync($"[data-testid='project-name-link-{projectName}']");
         if (projectLink != null)
         {
-            await _page.RunAndWaitForNavigationAsync(async () =>
-            {
-                await projectLink.ClickAsync();
-            }, new PageRunAndWaitForNavigationOptions { Timeout = 30000 });
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await projectLink.ClickAsync();
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         else
         {
             // Fallback: click the first project name link
-            await _page.RunAndWaitForNavigationAsync(async () =>
-            {
-                await _page.ClickAsync("tbody tr:first-child td:nth-child(2) a");
-            }, new PageRunAndWaitForNavigationOptions { Timeout = 30000 });
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.ClickAsync("tbody tr:first-child td:nth-child(2) a");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
 }

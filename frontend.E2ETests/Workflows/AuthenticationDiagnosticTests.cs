@@ -105,7 +105,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
             }
             
             // Always fail this test so we can see the output
-            Assert.True(false, "Diagnostic test - check output for authentication flow details");
+            Assert.Fail("Diagnostic test - check output for authentication flow details");
         }
         catch (Exception ex)
         {
@@ -168,7 +168,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                 }
             }
             
-            Assert.True(false, "Diagnostic test - check output for projects page redirect details");
+            Assert.Fail("Diagnostic test - check output for projects page redirect details");
         }
         catch (Exception ex)
         {
@@ -232,7 +232,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                 _output.WriteLine(formContent.Length > 1000 ? formContent.Substring(0, 1000) + "..." : formContent);
             }
             
-            Assert.True(false, "Diagnostic test - check output for identity server endpoint details");
+            Assert.Fail("Diagnostic test - check output for identity server endpoint details");
         }
         catch (Exception ex)
         {
@@ -326,7 +326,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                 _output.WriteLine($"Not on login page. Current URL: {currentUrl}");
             }
             
-            Assert.True(false, "Diagnostic test - check output for login form structure details");
+            Assert.Fail("Diagnostic test - check output for login form structure details");
         }
         catch (Exception ex)
         {
@@ -378,7 +378,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                     _output.WriteLine($"Found existing user authentication: {userInfo.Substring(0, Math.Min(200, userInfo.Length))}...");
                 }
                 
-                Assert.True(false, $"Expected redirect to login page, but stayed on: {currentUrl}");
+                Assert.Fail($"Expected redirect to login page, but stayed on: {currentUrl}");
             }
             
             // Verify we're on the login page

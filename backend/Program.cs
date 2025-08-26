@@ -62,6 +62,9 @@ public class Program
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ClockSkew = TimeSpan.FromMinutes(5),
+
+                    // Explicitly set the valid issuer to match IdentityServer
+                    ValidIssuer = identityServerUrl,
                     
                     // Configure multiple valid audiences to handle different token formats
                     ValidAudiences = new[] { 
@@ -81,8 +84,15 @@ public class Program
                     OnMessageReceived = context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-                        logger.LogDebug("JWT Token received: {TokenPresent}", !string.IsNullOrEmpty(token));
+                        if (context.Request.Headers.ContainsKey("Authorization"))
+                        {
+                            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                            logger.LogDebug("Authorization header found. Token present: {TokenPresent}", !string.IsNullOrEmpty(token));
+                        }
+                        else
+                        {
+                            logger.LogWarning("Authorization header is MISSING from the request.");
+                        }
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
@@ -111,6 +121,9 @@ public class Program
         });
 
         // Configure CORS policy to allow frontend connections from various development ports
+
+        // Add authorization services (CRITICAL: Required for RequireAuthorization() to work)
+        builder.Services.AddAuthorization();
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
@@ -254,7 +267,7 @@ public class Program
 
         app.UseAuthorization();
 
-        app.MapControllers();
+        app.MapControllers().RequireAuthorization();
         
         // Health check endpoint for Docker container monitoring
         app.MapGet("/health", async (RqmtMgmtDbContext context) =>
