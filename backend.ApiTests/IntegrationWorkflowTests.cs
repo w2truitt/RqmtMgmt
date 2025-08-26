@@ -130,10 +130,11 @@ namespace backend.ApiTests
             await SkipIfSystemNotAvailableAsync();
 
             // 1. Create a new user
+                var uniqueId = Guid.NewGuid().ToString("N")[..8]; // Use first 8 characters for uniqueness
             var userDto = new UserDto
             {
-                UserName = "roletest",
-                Email = "roletest@example.com"
+                    UserName = $"roletest_{uniqueId}",
+                    Email = $"roletest_{uniqueId}@example.com"
             };
 
             var userResponse = await _client.PostAsJsonAsync("/api/user", userDto, _jsonOptions);
