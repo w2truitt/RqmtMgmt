@@ -26,7 +26,7 @@ namespace backend.Tests
             Assert.True(await db.UserRoles.AnyAsync());
             var admin = await db.Users.FirstAsync();
             Assert.Equal("admin", admin.UserName);
-            Assert.Equal("admin@example.com", admin.Email);
+            Assert.Equal("admin@rqmtmgmt.local", admin.Email);
         }
 
         [Fact]

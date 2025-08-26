@@ -39,6 +39,11 @@ namespace RqmtMgmtShared
         public int CreatedBy { get; set; }
 
         /// <summary>
+        /// Gets or sets the details of the user who created this test case.
+        /// </summary>
+        public UserDto? CreatedByUser { get; set; }
+
+        /// <summary>
         /// Gets or sets the timestamp when the test case was created.
         /// </summary>
         public DateTime CreatedAt { get; set; }

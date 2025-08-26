@@ -50,6 +50,11 @@ namespace RqmtMgmtShared
         public int CreatedBy { get; set; }
 
         /// <summary>
+        /// Gets or sets the details of the user who created this requirement.
+        /// </summary>
+        public UserDto? CreatedByUser { get; set; }
+
+        /// <summary>
         /// Gets or sets the timestamp when the requirement was created.
         /// </summary>
         public DateTime CreatedAt { get; set; }
