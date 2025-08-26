@@ -144,7 +144,7 @@ namespace backend.ApiTests
             // 2. Create a new role
             var roleDto = new RoleDto
             {
-                Name = "TestRole"
+                Name = $"TestRole_{Guid.NewGuid():N}"
             };
 
             var roleResponse = await _client.PostAsJsonAsync("/api/role/dto", roleDto, _jsonOptions);
