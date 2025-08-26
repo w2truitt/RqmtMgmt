@@ -299,7 +299,13 @@ namespace backend.Services
             };
             _context.RequirementVersions.Add(version);
             await _context.SaveChangesAsync();
-            return EntityToDto(entity);
+            
+                // Reload the entity with Creator to ensure navigation property is populated
+                var createdEntity = await _context.Requirements
+                    .Include(r => r.Creator)
+                    .FirstOrDefaultAsync(r => r.Id == entity.Id);
+            
+                return createdEntity == null ? null : EntityToDto(createdEntity);
         }
 
         /// <summary>

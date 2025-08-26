@@ -1,23 +1,25 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
 
 namespace backend.ApiTests
 {
-    public class RequirementApiTests : BaseApiTest
+    /// <summary>
+    /// API tests for the Requirements controller endpoints.
+    /// These tests run against the actual docker-compose.identity.yml instance with JWT authentication.
+    /// </summary>
+    [Collection("Integration Tests")]
+    public class RequirementApiTests : BaseIntegrationTest
     {
-        public RequirementApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanCreateAndGetRequirement()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new RequirementDto
             {
                 Title = "API Requirement",
@@ -25,7 +27,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "Created by API test",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -43,6 +46,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanListRequirements()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/requirement");
             response.EnsureSuccessStatusCode();
             var list = await response.Content.ReadFromJsonAsync<List<RequirementDto>>(_jsonOptions);
@@ -53,6 +59,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateRequirement()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First create
             var createDto = new RequirementDto
             {
@@ -61,7 +70,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "To be updated",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -86,6 +96,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanDeleteRequirement()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Create
             var createDto = new RequirementDto
             {
@@ -94,7 +107,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "To be deleted",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -113,6 +127,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetNonExistentRequirementReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.GetAsync("/api/requirement/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -120,6 +137,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateNonExistentRequirementReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var updateDto = new RequirementDto
             {
                 Id = 9999999,
@@ -128,7 +148,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "No such requirement",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var resp = await _client.PutAsJsonAsync("/api/requirement/9999999", updateDto, _jsonOptions);
             Assert.False(resp.IsSuccessStatusCode);
@@ -137,6 +158,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentRequirementReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/requirement/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -144,6 +168,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CreatingRequirementAddsInitialVersion()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new RequirementDto
             {
                 Title = "Versioned Requirement",
@@ -151,7 +178,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "Initial version test",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -169,6 +197,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdatingRequirementAddsNewVersion()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new RequirementDto
             {
                 Title = "Versioned Requirement Update",
@@ -176,7 +207,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "Initial version",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -209,6 +241,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task MultipleUpdatesAddAllIntermediateVersions()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new RequirementDto
             {
                 Title = "Initial Title",
@@ -216,7 +251,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "Initial description",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
             var response = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -242,6 +278,36 @@ namespace backend.ApiTests
             Assert.Equal("Initial Title", versions[0].Title);
             Assert.Equal("Initial Title", versions[1].Title);
             Assert.Equal("Intermediate Title", versions[2].Title);
+        }
+
+        /// <summary>
+        /// Helper method to get a valid project ID for testing.
+        /// </summary>
+        private async Task<int> GetValidProjectIdAsync()
+        {
+            var response = await _client.GetAsync("/api/projects");
+            response.EnsureSuccessStatusCode();
+            var projects = await response.Content.ReadFromJsonAsync<PagedResult<ProjectDto>>(_jsonOptions);
+            
+            if (projects?.Items?.Count == 0)
+            {
+                // Create a test project if none exist
+                var createDto = new CreateProjectDto
+                {
+                    Name = $"Test Project for Requirements {Guid.NewGuid():N}",
+                    Code = $"REQ{DateTime.UtcNow:mmss}",
+                    Description = "Auto-created for requirement testing",
+                    OwnerId = 1,
+                    Status = ProjectStatus.Planning
+                };
+
+                var createResponse = await _client.PostAsJsonAsync("/api/projects", createDto, _jsonOptions);
+                createResponse.EnsureSuccessStatusCode();
+                var created = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+                return created!.Id;
+            }
+
+            return projects!.Items![0].Id;
         }
     }
 }

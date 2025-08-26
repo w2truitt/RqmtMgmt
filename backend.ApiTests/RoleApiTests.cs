@@ -1,26 +1,25 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using System.Collections.Generic;
 using System;
 using RqmtMgmtShared;
 
 namespace backend.ApiTests
 {
-    public class RoleApiTests : IClassFixture<TestWebApplicationFactory<Program>>
+    /// <summary>
+    /// Integration tests for the Role API endpoints.
+    /// These tests run against the actual docker-compose.identity.yml instance with JWT authentication.
+    /// </summary>
+    [Collection("Integration Tests")]
+    public class RoleApiTests : BaseIntegrationTest
     {
-        private readonly HttpClient _client;
-
-        public RoleApiTests(TestWebApplicationFactory<Program> factory)
-        {
-            _client = factory.CreateClient();
-        }
-
         [Fact]
         public async Task CanCreateAndListRoles()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var roleName = $"apitestrole_{Guid.NewGuid().ToString().Substring(0, 8)}";
             var response = await _client.PostAsJsonAsync("/api/role", roleName);
             response.EnsureSuccessStatusCode();
@@ -38,6 +37,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanDeleteRole()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var roleName = $"apitestrole_{Guid.NewGuid().ToString().Substring(0, 8)}";
             var response = await _client.PostAsJsonAsync("/api/role", roleName);
             response.EnsureSuccessStatusCode();
@@ -58,6 +60,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentRoleReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/role/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -65,6 +70,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DuplicateRoleCreateDoesNotFailButReturnsSameRole()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var roleName = $"apitestrole_{Guid.NewGuid().ToString().Substring(0, 8)}";
             var response = await _client.PostAsJsonAsync("/api/role", roleName);
             response.EnsureSuccessStatusCode();
