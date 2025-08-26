@@ -1,17 +1,26 @@
 using frontend.E2ETests.PageObjects;
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
 /// E2E tests for Project Requirements Management functionality
 /// </summary>
-public class ProjectRequirementsE2ETests : E2ETestBase
+public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
 {
+    public ProjectRequirementsE2ETests(ITestOutputHelper output) : base(output)
+    {
+    }
+
     [Fact]
     public async Task NewRequirement_NavigationFromProjectDashboard_Success()
     {
+        // Arrange - Login as project manager to manage requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var projectDashboard = new ProjectDashboardPage(Page, BaseUrl);
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
@@ -30,6 +39,10 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     [Fact]
     public async Task CreateRequirement_WithValidData_Success()
     {
+        // Arrange - Login as project manager to create requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
         var projectDashboard = new ProjectDashboardPage(Page, BaseUrl);
@@ -75,6 +88,10 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     [Fact]
     public async Task CreateRequirement_WithMissingTitle_ShowsValidation()
     {
+        // Arrange - Login as project manager to create requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
         
@@ -121,6 +138,10 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     [Fact]
     public async Task EditRequirement_Navigation_Success()
     {
+        // Arrange - Login as project manager to edit requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var requirementView = new RequirementViewPage(Page, BaseUrl);
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
@@ -139,6 +160,10 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     [Fact]
     public async Task ViewRequirement_DisplaysRequirementDetails_Success()
     {
+        // Arrange - Login as project manager to view requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var requirementView = new RequirementViewPage(Page, BaseUrl);
         
@@ -156,6 +181,10 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     [Fact]
     public async Task RequirementForm_CancelButton_RedirectsBack()
     {
+        // Arrange - Login as project manager to manage requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
         
@@ -180,6 +209,10 @@ public class ProjectRequirementsE2ETests : E2ETestBase
     [Fact]
     public async Task RequirementWorkflow_CreateViewEdit_Success()
     {
+        // Arrange - Login as project manager to manage requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Arrange
         var requirementForm = new RequirementFormPage(Page, BaseUrl);
         var requirementView = new RequirementViewPage(Page, BaseUrl);

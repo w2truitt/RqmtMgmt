@@ -99,6 +99,7 @@ namespace backend.Services
 
         /// <summary>
         /// Updates an existing user with validation for email format and uniqueness.
+        /// Also updates user role assignments.
         /// </summary>
         /// <param name="dto">The user data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
@@ -120,8 +121,28 @@ namespace backend.Services
             if (string.IsNullOrWhiteSpace(dto.UserName))
                 return false;
 
+            // Update basic user information
             tracked.UserName = dto.UserName;
             tracked.Email = dto.Email;
+
+            // Update user roles if provided
+            if (dto.Roles != null)
+            {
+                // Remove existing roles
+                var currentRoles = tracked.UserRoles.ToList();
+                _context.UserRoles.RemoveRange(currentRoles);
+
+                // Add new roles
+                foreach (var roleName in dto.Roles)
+                {
+                    var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+                    if (role != null)
+                    {
+                        tracked.UserRoles.Add(new UserRole { UserId = dto.Id, RoleId = role.Id });
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync();
             return true;
         }

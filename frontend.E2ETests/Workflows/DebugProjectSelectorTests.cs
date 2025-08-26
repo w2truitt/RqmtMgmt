@@ -1,14 +1,23 @@
 using frontend.E2ETests.PageObjects;
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows
 {
-    public class DebugProjectSelectorTests : E2ETestBase
+    public class DebugProjectSelectorTests : AuthenticatedE2ETestBase
     {
+        public DebugProjectSelectorTests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public async Task Debug_ProjectSelector_ShowDropdownContents()
         {
+            // Arrange - Login as developer for debugging access
+            var loginSuccess = await LoginAsDeveloperAsync();
+            Assert.True(loginSuccess, "Failed to login as developer");
+            
             // Navigate to home page
             await Page.GotoAsync($"{BaseUrl}/");
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -32,45 +41,31 @@ namespace frontend.E2ETests.Workflows
             
             foreach (var button in allButtons)
             {
-                var isVisible = await button.IsVisibleAsync();
-                var text = await button.TextContentAsync();
-                var className = await button.GetAttributeAsync("class");
-                Console.WriteLine($"Button: visible={isVisible}, text='{text}', class='{className}'");
+                var buttonText = await button.TextContentAsync();
+                var buttonClass = await button.GetAttributeAsync("class");
+                Console.WriteLine($"Button: '{buttonText}' (class: {buttonClass})");
+            }
+            
+            // Try to click the first button if it exists
+            if (allButtons.Count > 0)
+            {
+                await allButtons[0].ClickAsync();
+                await Task.Delay(1000);
                 
-                if (isVisible)
+                // Check for dropdown menu
+                var dropdownMenu = Page.Locator(".dropdown-menu");
+                var dropdownExists = await dropdownMenu.CountAsync() > 0;
+                Console.WriteLine($"Dropdown menu appeared: {dropdownExists}");
+                
+                if (dropdownExists)
                 {
-                    // Click the button to open dropdown
-                    Console.WriteLine("Clicking project selector button...");
-                    await button.ClickAsync();
-                    await Page.WaitForTimeoutAsync(2000);
-                    
-                    // Check for dropdown
-                    var dropdown = Page.Locator(".dropdown-menu");
-                    var dropdownVisible = await dropdown.IsVisibleAsync();
-                    Console.WriteLine($"Dropdown visible: {dropdownVisible}");
-                    
-                    if (dropdownVisible)
-                    {
-                        var dropdownItems = await dropdown.Locator(".dropdown-item").AllAsync();
-                        Console.WriteLine($"Dropdown items found: {dropdownItems.Count}");
-                        
-                        foreach (var item in dropdownItems)
-                        {
-                            var itemText = await item.TextContentAsync();
-                            var itemVisible = await item.IsVisibleAsync();
-                            Console.WriteLine($"Item: visible={itemVisible}, text='{itemText?.Trim()}'");
-                        }
-                    }
-                    break;
+                    var dropdownHTML = await dropdownMenu.InnerHTMLAsync();
+                    Console.WriteLine($"Dropdown HTML: {dropdownHTML}");
                 }
             }
             
-            // Check browser console for errors
-            Page.Console += (_, e) => Console.WriteLine($"BROWSER: {e.Type}: {e.Text}");
-            
-            // Take a screenshot for debugging
-            await Page.ScreenshotAsync(new() { Path = "debug_project_selector.png", FullPage = true });
-            Console.WriteLine("Screenshot saved as debug_project_selector.png");
+            // Assert that debug completed
+            Assert.True(true, "Debug test completed - check console output");
         }
     }
 }

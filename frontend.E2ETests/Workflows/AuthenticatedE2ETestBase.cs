@@ -216,7 +216,7 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
     /// <returns>True if login was successful</returns>
     protected async Task<bool> LoginAsProjectManagerAsync()
     {
-        return await EnsureAuthenticatedAsync("pm@rqmtmgmt.local", "PM123!");
+        return await EnsureAuthenticatedAsync("pm@rqmtmgmt.local", "Pm123!");
     }
 
     /// <summary>

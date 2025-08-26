@@ -1,19 +1,28 @@
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
 /// Debug test for exploring project page elements and structure
 /// </summary>
-public class DebugProjectPageElements : E2ETestBase
+public class DebugProjectPageElements : AuthenticatedE2ETestBase
 {
+    public DebugProjectPageElements(ITestOutputHelper output) : base(output)
+    {
+    }
+
     /// <summary>
     /// Debug test to explore and document project page elements
     /// </summary>
     [Fact]
     public async Task Debug_ProjectPageElements()
     {
+        // Arrange - Login as developer for debugging access
+        var loginSuccess = await LoginAsDeveloperAsync();
+        Assert.True(loginSuccess, "Failed to login as developer");
+        
         // Navigate to the homepage first
         await Page.GotoAsync(BaseUrl);
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -31,46 +40,18 @@ public class DebugProjectPageElements : E2ETestBase
             });
         ");
 
-        // Select "Legacy Requirements" project
-        await Page.ClickAsync(".dropdown-item:has-text('Legacy Requirements')");
-        
-        // Wait for navigation
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Task.Delay(2000);
+        // Get all project options
+        var projectOptions = await Page.QuerySelectorAllAsync(".dropdown-item");
+        Console.WriteLine($"Found {projectOptions.Count} project options");
 
-        // Debug: Print current URL
-        var currentUrl = Page.Url;
-        Console.WriteLine($"Current URL: {currentUrl}");
+        foreach (var option in projectOptions)
+        {
+            var text = await option.TextContentAsync();
+            var href = await option.GetAttributeAsync("href");
+            Console.WriteLine($"Project option: '{text}' -> {href}");
+        }
 
-        // Debug: Print page title
-        var pageTitle = await Page.TitleAsync();
-        Console.WriteLine($"Page title: {pageTitle}");
-
-        // Debug: Print all elements with data-testid
-        var testIdElements = await Page.EvaluateAsync<string[]>(@"
-            Array.from(document.querySelectorAll('[data-testid]')).map(el => el.getAttribute('data-testid'))
-        ");
-        Console.WriteLine($"Elements with data-testid: {string.Join(", ", testIdElements)}");
-
-        // Debug: Print main navigation elements
-        var navElements = await Page.EvaluateAsync<string[]>(@"
-            Array.from(document.querySelectorAll('nav a, .navbar a, .nav-link')).map(el => el.textContent?.trim() || el.getAttribute('href') || 'no text')
-        ");
-        Console.WriteLine($"Navigation elements: {string.Join(", ", navElements)}");
-
-        // Debug: Check for breadcrumb-like elements
-        var breadcrumbElements = await Page.EvaluateAsync<string[]>(@"
-            Array.from(document.querySelectorAll('.breadcrumb, .breadcrumb-item, [class*=""breadcrumb""]')).map(el => el.textContent?.trim() || el.className)
-        ");
-        Console.WriteLine($"Breadcrumb elements: {string.Join(", ", breadcrumbElements)}");
-
-        // Debug: Check for project-related elements
-        var projectElements = await Page.EvaluateAsync<string[]>(@"
-            Array.from(document.querySelectorAll('[class*=""project""], [data-testid*=""project""]')).map(el => el.className + ' | ' + (el.getAttribute('data-testid') || 'no testid'))
-        ");
-        Console.WriteLine($"Project elements: {string.Join(", ", projectElements)}");
-
-        // Success if we made it this far
-        Assert.True(true);
+        // Assert that we found some debug information
+        Assert.True(true, "Debug test completed - check console output for project elements");
     }
 }

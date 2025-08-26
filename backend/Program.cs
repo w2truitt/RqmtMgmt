@@ -105,16 +105,27 @@ public class Program
             { 
                 Title = "Requirements Management API", 
                 Version = "v1",
-                Description = "API for Requirements Management System with JWT Bearer authentication"
+                Description = "API for Requirements Management System with OIDC authentication"
             });
 
-            // Add JWT Bearer authentication to Swagger
-            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            // Add OAuth2 authentication to Swagger
+            c.AddSecurityDefinition("oauth2", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                Description = "JWT Authorization header using the Bearer scheme."
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.OAuth2,
+                Flows = new Microsoft.OpenApi.Models.OpenApiOAuthFlows
+                {
+                    AuthorizationCode = new Microsoft.OpenApi.Models.OpenApiOAuthFlow
+                    {
+                        AuthorizationUrl = new Uri("https://rqmtmgmt.local/connect/authorize"),
+                        TokenUrl = new Uri("https://rqmtmgmt.local/connect/token"),
+                        Scopes = new Dictionary<string, string>
+                        {
+                            ["openid"] = "OpenID Connect",
+                            ["profile"] = "User profile",
+                            ["rqmtmgmt.api"] = "Requirements Management API"
+                        }
+                    }
+                }
             });
 
             // Add security requirement
@@ -126,10 +137,10 @@ public class Program
                         Reference = new Microsoft.OpenApi.Models.OpenApiReference
                         {
                             Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                            Id = "Bearer"
+                            Id = "oauth2"
                         }
                     },
-                    new string[] {}
+                    new string[] { "openid", "profile", "rqmtmgmt.api" }
                 }
             });
         });
@@ -161,9 +172,9 @@ public class Program
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Requirements Management API v1");
-                c.OAuthClientId("rqmtmgmt-wasm");
+                c.OAuthClientId("swagger-ui");
                 c.OAuthAppName("Requirements Management API");
-                c.OAuthScopes("openid", "profile", "email", "rqmtapi");
+                c.OAuthScopes("openid", "profile", "rqmtmgmt.api");
                 c.OAuthUsePkce();
             });
         }
