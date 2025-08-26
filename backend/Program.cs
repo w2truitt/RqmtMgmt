@@ -43,21 +43,61 @@ public class Program
                 options.UseSqlServer(connectionString));
         }
 
+        // Disable default JWT claim mapping to preserve original claim names
+        Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
+        System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+
         // Add JWT Bearer authentication for API protection
-        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "http://localhost:5002";
+        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "https://rqmtmgmt.local";
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
                 options.Authority = identityServerUrl;
-                options.Audience = builder.Configuration["Authentication:Audience"] ?? "rqmtapi";
-                options.RequireHttpsMetadata = false; // Allow HTTP for development
+                options.RequireHttpsMetadata = false; // Allow HTTP for development, but use HTTPS authority
+                
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ClockSkew = TimeSpan.FromMinutes(5)
+                    ClockSkew = TimeSpan.FromMinutes(5),
+                    
+                    // Configure multiple valid audiences to handle different token formats
+                    ValidAudiences = new[] { 
+                        "rqmtapi", 
+                        "rqmtmgmt-api", 
+                        "rqmtmgmt.api" 
+                    },
+                    
+                    // Configure claim mapping for proper user identity extraction
+                    NameClaimType = "name",
+                    RoleClaimType = "role"
+                };
+                
+                // Add event handlers for debugging token validation
+                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                        logger.LogDebug("JWT Token received: {TokenPresent}", !string.IsNullOrEmpty(token));
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        var claims = context.Principal?.Claims?.Select(c => $"{c.Type}={c.Value}") ?? new string[0];
+                        logger.LogDebug("Token validated successfully. Claims: {Claims}", string.Join(", ", claims));
+                        return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        logger.LogError(context.Exception, "JWT authentication failed: {Error}", context.Exception.Message);
+                        return Task.CompletedTask;
+                    }
                 };
             });
 

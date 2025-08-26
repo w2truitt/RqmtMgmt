@@ -40,21 +40,48 @@ namespace backend.Controllers
         [Authorize]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            // Get the email claim from the JWT token
-            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
+            // Log all available claims for debugging
+            var allClaims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+            Console.WriteLine($"Available claims: {string.Join(", ", allClaims)}");
+            Console.WriteLine($"User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"User.Identity.Name: {User.Identity?.Name}");
+            
+            // Try multiple approaches to get the email claim
+            var email = User.FindFirst(ClaimTypes.Email)?.Value 
+                       ?? User.FindFirst("email")?.Value 
+                       ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
             
             if (string.IsNullOrEmpty(email))
             {
-                return Unauthorized("Email claim not found in token");
+                // If no email claim, try to get it from the 'sub' claim or name claim
+                var subjectId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("name")?.Value;
+                
+                Console.WriteLine($"No email claim found. SubjectId: {subjectId}, UserName: {userName}");
+                
+                return Unauthorized(new { 
+                    error = "Email claim not found in token",
+                    availableClaims = allClaims,
+                    subjectId = subjectId,
+                    userName = userName
+                });
             }
+
+            Console.WriteLine($"Found email claim: {email}");
 
             // Get the user by email
             var user = await _userService.GetByEmailAsync(email);
             if (user == null)
             {
-                return NotFound($"User with email '{email}' not found in the system");
+                Console.WriteLine($"User with email '{email}' not found in database");
+                return NotFound(new { 
+                    error = $"User with email '{email}' not found in the system",
+                    email = email,
+                    availableClaims = allClaims
+                });
             }
 
+            Console.WriteLine($"Successfully found user: {user.Email}");
             return Ok(user);
         }
 

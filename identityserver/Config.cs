@@ -45,7 +45,9 @@ public static class Config
             new ApiResource("rqmtmgmt-api", "Requirements Management API")
             {
                 Scopes = { "rqmtmgmt.api" },
-                UserClaims = new List<string> { "role", "email", "name" }
+                UserClaims = new List<string> { "role", "email", "name", "sub" },
+                // Ensure the audience claim matches what the backend expects
+                ShowInDiscoveryDocument = true
             }
         };
 
