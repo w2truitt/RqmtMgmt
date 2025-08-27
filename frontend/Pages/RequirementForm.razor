@@ -163,7 +163,7 @@
     [Parameter] public int ProjectId { get; set; }
 
     private ProjectDto? project;
-    private RequirementDto requirement = new RequirementDto
+    private readonly RequirementDto requirement = new RequirementDto
     {
         Status = RequirementStatus.Draft,
         Type = RequirementType.SRS,
@@ -198,7 +198,6 @@
             requirement.CreatedBy = currentUser?.Id ?? 1; // Use current user ID, fallback to 1 if not available
 
             // TODO: Load available requirements for parent selection
-            // availableRequirements = await RequirementService.GetByProjectIdAsync(ProjectId);
             availableRequirements = new List<RequirementDto>();
         }
         catch (Exception ex)

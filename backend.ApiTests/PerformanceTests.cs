@@ -52,7 +52,8 @@ namespace backend.ApiTests
             Assert.True(stopwatch.ElapsedMilliseconds < 30000); // Should complete within 30 seconds
             foreach (var task in tasks.Cast<Task<System.Net.Http.HttpResponseMessage>>())
             {
-                Assert.True(task.Result.IsSuccessStatusCode);
+                var response = await task;
+                Assert.True(response.IsSuccessStatusCode);
             }
         }
 

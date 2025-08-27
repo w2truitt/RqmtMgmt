@@ -77,7 +77,7 @@ namespace RqmtMgmtShared
         public int PageSize 
         { 
             get => _pageSize; 
-            set => _pageSize = value < 1 ? 1 : value > 100 ? 100 : value; 
+            set { if (value < 1) _pageSize = 1; else if (value > 100) _pageSize = 100; else _pageSize = value; } 
         }
 
         /// <summary>

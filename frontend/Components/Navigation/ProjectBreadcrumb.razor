@@ -49,7 +49,7 @@
     [Parameter] public string? ItemName { get; set; }
     [Parameter] public List<frontend.Models.BreadcrumbItem>? CustomItems { get; set; }
     
-    private List<frontend.Models.BreadcrumbItem> breadcrumbItems = new();
+    private readonly List<frontend.Models.BreadcrumbItem> breadcrumbItems = new();
 
     protected override void OnParametersSet()
     {

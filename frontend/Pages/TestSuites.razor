@@ -386,19 +386,6 @@
         ApplyFiltersAndSort();
     }
 
-    private void SortBy(string column)
-    {
-        if (sortColumn == column)
-        {
-            sortDescending = !sortDescending;
-        }
-        else
-        {
-            sortColumn = column;
-            sortDescending = false;
-        }
-        ApplyFiltersAndSort();
-    }
 
     private string GetSortIcon(string column)
     {

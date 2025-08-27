@@ -216,7 +216,7 @@ else
 
 @code {
     private PagedResult<RequirementDto>? pagedResult;
-    private PaginationParameters paginationParams = new() { PageNumber = 1, PageSize = 20 };
+    private readonly PaginationParameters paginationParams = new() { PageNumber = 1, PageSize = 20 };
     private string? errorMessage;
 
     RequirementDto formModel = new() 
@@ -267,7 +267,7 @@ else
         catch (Exception ex)
         {
             // In a real app, you'd use a proper logging framework
-            Console.Error.WriteLine($"Error loading requirements: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error loading requirements: {ex.Message}");
             errorMessage = "Could not load requirements. Please try again later.";
         }
     }
