@@ -94,7 +94,14 @@ namespace backend.Services
             var entity = FromDto(dto);
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
-            return ToDto(entity);
+            
+                // Reload the entity with UserRoles to ensure navigation property is populated
+                var createdEntity = await _context.Users
+                    .Include(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                    .FirstOrDefaultAsync(u => u.Id == entity.Id);
+            
+                return createdEntity == null ? null : ToDto(createdEntity);
         }
 
         /// <summary>
