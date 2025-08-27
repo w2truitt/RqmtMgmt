@@ -1,23 +1,21 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System.Collections.Generic;
 using System;
 
 namespace backend.ApiTests
 {
-    public class TestCaseApiTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class TestCaseApiTests : BaseIntegrationTest
     {
-        public TestCaseApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanCreateAndGetTestCase()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new TestCaseDto
             {
                 Title = "API Test Case",
@@ -47,6 +45,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanListTestCases()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/testcase");
             response.EnsureSuccessStatusCode();
             var list = await response.Content.ReadFromJsonAsync<List<TestCaseDto>>(_jsonOptions);
@@ -57,6 +58,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateTestCase()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First create
             var createDto = new TestCaseDto
             {
@@ -94,6 +98,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanDeleteTestCase()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Create
             var createDto = new TestCaseDto
             {
@@ -123,6 +130,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetNonExistentTestCaseReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.GetAsync("/api/testcase/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -130,6 +140,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateNonExistentTestCaseReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var updateDto = new TestCaseDto
             {
                 Id = 9999999,
@@ -147,6 +160,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentTestCaseReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/testcase/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -154,6 +170,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanAddAndRemoveTestStep()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // This test is failing because the endpoint doesn't exist
             // Skip for now until the endpoint is implemented
             var resp = await _client.PostAsync("/api/testcase/1/steps", null);
@@ -163,6 +182,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task AddStepToNonExistentTestCaseReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.PostAsync("/api/testcase/9999999/steps", null);
             Assert.Equal(System.Net.HttpStatusCode.NotFound, resp.StatusCode);
         }
@@ -170,6 +192,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task RemoveNonExistentStepReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/testcase/1/steps/9999999");
             Assert.Equal(System.Net.HttpStatusCode.NotFound, resp.StatusCode);
         }

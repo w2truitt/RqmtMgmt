@@ -1,20 +1,15 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System.Collections.Generic;
 using System;
 
 namespace backend.ApiTests
 {
-    public class RequirementTestCaseLinkApiTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class RequirementTestCaseLinkApiTests : BaseIntegrationTest
     {
-        public RequirementTestCaseLinkApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         private async Task<(int requirementId, int testCaseId)> CreateRequirementAndTestCase()
         {
             var reqDto = new RequirementDto
@@ -51,6 +46,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanCreateAndGetAndDeleteRequirementTestCaseLink()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var (reqId, tcId) = await CreateRequirementAndTestCase();
 
             // Create link
@@ -86,6 +84,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentLinkReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/requirementtestcaselink?requirementId=9999999&testCaseId=9999999");
             // The service doesn't return NotFound, it just succeeds silently
             resp.EnsureSuccessStatusCode();
@@ -94,6 +95,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DuplicateLinkCreateDoesNotFail()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var (reqId, tcId) = await CreateRequirementAndTestCase();
 
             // Create link twice

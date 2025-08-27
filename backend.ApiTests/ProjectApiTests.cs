@@ -2,8 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
@@ -15,15 +13,14 @@ namespace backend.ApiTests
     /// API tests for the Projects controller endpoints.
     /// Tests project CRUD operations, team management, and project-specific resource access.
     /// </summary>
-    public class ProjectApiTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class ProjectApiTests : BaseIntegrationTest
     {
-        public ProjectApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanCreateAndGetProject()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange
             var createDto = new CreateProjectDto
             {
@@ -71,6 +68,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanListProjects()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act
             var response = await _client.GetAsync("/api/projects");
             response.EnsureSuccessStatusCode();
@@ -87,6 +87,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetNonExistentProjectReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/projects/99999");
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
@@ -94,6 +97,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetProjectRequirements()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -120,6 +126,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetProjectTestSuites()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -146,6 +155,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetProjectTestPlans()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -174,6 +186,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetProjectTeamMembers()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -208,6 +223,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetTeamMembersForNonExistentProjectReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act
             var response = await _client.GetAsync("/api/projects/99999/team");
             
@@ -218,6 +236,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanAddTeamMember()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -272,6 +293,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task AddTeamMemberWithInvalidUserIdReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -302,6 +326,8 @@ namespace backend.ApiTests
         [Fact]
         public async Task AddTeamMemberToNonExistentProjectReturnsNotFound()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange
             var addTeamMemberDto = new AddProjectTeamMemberDto
             {
@@ -319,6 +345,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateTeamMemberRole()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -374,6 +403,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateNonExistentTeamMemberReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -404,6 +436,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanRemoveTeamMember()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -444,6 +479,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task RemoveNonExistentTeamMemberReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act
             var response = await _client.DeleteAsync("/api/projects/99999/team/99999");
             
@@ -456,6 +494,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetProjectRequirementsWithPagination()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -497,6 +538,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetProjectRequirementsWithSearchAndSort()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
@@ -524,6 +568,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetRequirementsForNonExistentProjectReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act
             var response = await _client.GetAsync("/api/projects/99999/requirements?page=1&pageSize=20");
             
@@ -534,6 +581,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetProjectRequirementsWithInvalidPaginationHandlesGracefully()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First, get an existing project to work with
             var projectsResponse = await _client.GetAsync("/api/projects");
             projectsResponse.EnsureSuccessStatusCode();
