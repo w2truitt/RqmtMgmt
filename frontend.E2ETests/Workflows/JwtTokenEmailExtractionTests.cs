@@ -274,12 +274,14 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
             _output.WriteLine($"API Response Status: {statusCode}");
             _output.WriteLine($"API Response Body: {responseBody}");
 
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
             if (statusCode == 200)
             {
-                var userData = JsonSerializer.Deserialize<UserData>(responseBody, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                    var userData = JsonSerializer.Deserialize<UserData>(responseBody, JsonOptions);
 
                 return new ApiResponse<UserData>
                 {

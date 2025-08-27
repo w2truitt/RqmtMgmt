@@ -345,14 +345,14 @@ else
 
     private async Task FilterRequirements()
     {
-        currentPage = 1;
-        await LoadRequirements();
+        // Delegate to SearchRequirements
+        await SearchRequirements();
     }
 
     private async Task SortRequirements()
     {
-        currentPage = 1;
-        await LoadRequirements();
+        // Delegate to SearchRequirements
+        await SearchRequirements();
     }
 
     private async Task GoToPage(int page)
@@ -385,7 +385,7 @@ else
         Console.WriteLine($"Delete requirement {requirement.Id}: {requirement.Title}");
     }
 
-    private string GetTypeBadgeClass(string type)
+    private static string GetTypeBadgeClass(string type)
     {
         return type.ToLower() switch
         {
@@ -397,7 +397,7 @@ else
         };
     }
 
-    private string GetStatusBadgeClass(string status)
+    private static string GetStatusBadgeClass(string status)
     {
         return status.ToLower() switch
         {

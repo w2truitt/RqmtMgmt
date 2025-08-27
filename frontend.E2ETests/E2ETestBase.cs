@@ -23,24 +23,25 @@ public abstract class E2ETestBase : IAsyncLifetime
     public async Task InitializeAsync()
     {
         // Initialize Playwright with resource-optimized settings
+        private static readonly string[] BrowserArgs = {
+            "--no-sandbox",
+            "--disable-setuid-sandbox", 
+            "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
+            "--disable-gpu",
+            "--disable-web-security",
+            "--ignore-certificate-errors", // Trust self-signed certificates
+            "--ignore-ssl-errors", // Ignore SSL errors
+            "--ignore-certificate-errors-spki-list", // Ignore certificate pinning
+            "--ignore-certificate-errors-skip-list", // Skip certificate error list
+            "--memory-pressure-off", // Disable memory pressure simulation
+            "--max_old_space_size=512" // Limit V8 memory usage
+        };
+
         PlaywrightInstance = await Playwright.CreateAsync();
         Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = true, // Always headless for resource efficiency
-            Args = new[]
-            {
-                "--no-sandbox",
-                "--disable-setuid-sandbox", 
-                "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
-                "--disable-gpu",
-                "--disable-web-security",
-                "--ignore-certificate-errors", // Trust self-signed certificates
-                "--ignore-ssl-errors", // Ignore SSL errors
-                "--ignore-certificate-errors-spki-list", // Ignore certificate pinning
-                "--ignore-certificate-errors-skip-list", // Skip certificate error list
-                "--memory-pressure-off", // Disable memory pressure simulation
-                "--max_old_space_size=512" // Limit V8 memory usage
-            }
+                Args = BrowserArgs
         });
         
         // Create a new page for each test with explicit viewport for desktop navigation

@@ -34,14 +34,16 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
         _output.WriteLine($"API Response Status: {apiResult.StatusCode}");
         _output.WriteLine($"API Response Body: {apiResult.ResponseBody}");
         
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         Assert.Equal(200, apiResult.StatusCode);
         Assert.NotNull(apiResult.ResponseBody);
         
         // Parse the response to verify email is correctly extracted
-        var userData = JsonSerializer.Deserialize<UserResponseDto>(apiResult.ResponseBody, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+            var userData = JsonSerializer.Deserialize<UserResponseDto>(apiResult.ResponseBody, JsonOptions);
         
         Assert.NotNull(userData);
         Assert.Equal("admin@rqmtmgmt.local", userData.Email);

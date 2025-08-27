@@ -323,7 +323,7 @@
     // Search and filter state
     private string searchTerm = string.Empty;
     private string sortColumn = "Name";
-    private bool sortDescending = false;
+    private readonly bool sortDescending = false;
 
     protected override async Task OnInitializedAsync()
     {

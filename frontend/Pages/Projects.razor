@@ -518,7 +518,7 @@
         _ => "bg-secondary"
     };
 
-    private class ProjectFormModel
+    private sealed class ProjectFormModel
     {
         public string Name { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;

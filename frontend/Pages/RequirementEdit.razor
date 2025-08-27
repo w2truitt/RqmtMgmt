@@ -298,7 +298,7 @@
         Navigation.NavigateTo($"/projects/{ProjectId}/requirements/{RequirementId}");
     }
 
-    private string GetStatusDisplay(RequirementStatus status)
+    private static string GetStatusDisplay(RequirementStatus status)
     {
         return status switch
         {

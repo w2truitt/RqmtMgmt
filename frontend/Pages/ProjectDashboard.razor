@@ -293,7 +293,7 @@ else
         }
     }
 
-    private string GetStatusBadgeClass(string status)
+    private static string GetStatusBadgeClass(string status)
     {
         return status.ToLower() switch
         {
@@ -330,7 +330,7 @@ else
         Navigation.NavigateTo($"/projects/{ProjectId}/testsuites");
     }
 
-    private class ProjectStats
+    private sealed class ProjectStats
     {
         public int RequirementCount { get; set; }
         public int TestSuiteCount { get; set; }
