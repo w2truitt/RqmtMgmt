@@ -91,7 +91,7 @@ namespace backend.ApiTests
         {
             try
             {
-                var healthResponse = await _client.GetAsync("/health");
+                    var healthResponse = await _client.GetAsync("/health/");
                 return healthResponse.IsSuccessStatusCode;
             }
             catch
