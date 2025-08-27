@@ -1,23 +1,25 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System.Collections.Generic;
 using System;
 
 namespace backend.ApiTests
 {
-    public class TestPlanApiTests : BaseApiTest
+    /// <summary>
+    /// API tests for the TestPlan controller endpoints.
+    /// These tests run against the actual docker-compose.identity.yml instance with JWT authentication.
+    /// </summary>
+    [Collection("Integration Tests")]
+    public class TestPlanApiTests : BaseIntegrationTest
     {
-        public TestPlanApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanCreateAndGetTestPlan()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new TestPlanDto
             {
                 Name = "API Test Plan",
@@ -42,6 +44,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanListTestPlans()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/testplan");
             response.EnsureSuccessStatusCode();
             var list = await response.Content.ReadFromJsonAsync<List<TestPlanDto>>(_jsonOptions);
@@ -52,6 +57,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateTestPlan()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First create
             var createDto = new TestPlanDto
             {
@@ -84,6 +92,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanDeleteTestPlan()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Create
             var createDto = new TestPlanDto
             {
@@ -110,6 +121,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetNonExistentTestPlanReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.GetAsync("/api/testplan/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -117,6 +131,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateNonExistentTestPlanReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var updateDto = new TestPlanDto
             {
                 Id = 9999999,
@@ -133,6 +150,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentTestPlanReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/testplan/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
