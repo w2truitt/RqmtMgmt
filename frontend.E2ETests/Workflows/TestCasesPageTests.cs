@@ -2,17 +2,26 @@ using frontend.E2ETests.PageObjects;
 using frontend.E2ETests.TestData;
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
 /// E2E tests for the Test Cases page
 /// </summary>
-public class TestCasesPageTests : E2ETestBase
+public class TestCasesPageTests : AuthenticatedE2ETestBase
 {
+    public TestCasesPageTests(ITestOutputHelper output) : base(output)
+    {
+    }
+
     [Fact]
     public async Task TestCases_NavigatesSuccessfully()
     {
+        // Arrange - Login as tester to access test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
         
@@ -26,6 +35,10 @@ public class TestCasesPageTests : E2ETestBase
     [Fact]
     public async Task TestCases_LoadsWithoutErrors()
     {
+        // Arrange - Login as tester to access test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
         
@@ -44,6 +57,10 @@ public class TestCasesPageTests : E2ETestBase
     [Fact]
     public async Task TestCases_HasExpectedPageElements()
     {
+        // Arrange - Login as tester to access test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
         
@@ -52,7 +69,10 @@ public class TestCasesPageTests : E2ETestBase
         
         // Assert
         var title = await Page.TitleAsync();
-        // Page title may not be implemented yet, so just check it's not null`n        Assert.NotNull(title);`n        // TODO: Uncomment when page titles are implemented`n        // Assert.Contains("Test Cases", title, StringComparison.OrdinalIgnoreCase);
+        // Page title may not be implemented yet, so just check it's not null
+        Assert.NotNull(title);
+        // TODO: Uncomment when page titles are implemented
+        // Assert.Contains("Test Cases", title, StringComparison.OrdinalIgnoreCase);
         
         // TODO: Add more specific element checks when frontend is implemented
         /*
@@ -65,6 +85,10 @@ public class TestCasesPageTests : E2ETestBase
     [Fact]
     public async Task TestCases_CanCreateNewTestCase_WhenImplemented()
     {
+        // Arrange - Login as tester to create test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testId = CreateTestId();
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
@@ -93,6 +117,10 @@ public class TestCasesPageTests : E2ETestBase
     [Fact]
     public async Task TestCases_CanSearchTestCases_WhenImplemented()
     {
+        // Arrange - Login as tester to search test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testId = CreateTestId();
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
@@ -118,6 +146,10 @@ public class TestCasesPageTests : E2ETestBase
     [Fact]
     public async Task TestCases_DisplaysTestCasesList_WhenDataExists()
     {
+        // Arrange - Login as tester to view test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
         
@@ -145,6 +177,10 @@ public class TestCasesPageTests : E2ETestBase
     [Fact]
     public async Task TestCases_CanEditAndDeleteTestCases_WhenImplemented()
     {
+        // Arrange - Login as tester to edit/delete test cases
+        var loginSuccess = await LoginAsTesterAsync();
+        Assert.True(loginSuccess, "Failed to login as tester");
+        
         // Arrange
         var testCasesPage = new TestCasesPage(Page, BaseUrl);
         

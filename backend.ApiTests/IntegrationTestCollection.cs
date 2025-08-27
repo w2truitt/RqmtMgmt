@@ -23,7 +23,7 @@ namespace backend.ApiTests
         {
             // Verify the docker-compose instance is running before any tests start
             using var client = new HttpClient();
-            client.BaseAddress = new Uri("http://localhost");
+            client.BaseAddress = new Uri("https://localhost");
             
             try
             {

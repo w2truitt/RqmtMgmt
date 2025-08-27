@@ -1,5 +1,6 @@
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 using frontend.E2ETests.TestData;
 
 namespace frontend.E2ETests.Workflows;
@@ -7,14 +8,22 @@ namespace frontend.E2ETests.Workflows;
 /// <summary>
 /// Tests for project requirements filtering functionality
 /// </summary>
-public class ProjectRequirementsFilterTest : E2ETestBase
+public class ProjectRequirementsFilterTest : AuthenticatedE2ETestBase
 {
+    public ProjectRequirementsFilterTest(ITestOutputHelper output) : base(output)
+    {
+    }
+
     /// <summary>
     /// Test that project requirements are shown with correct count when viewing specific project requirements
     /// </summary>
     [Fact]
     public async Task ProjectRequirements_ShouldShowCorrectCount_WhenProjectSelected()
     {
+        // Arrange - Login as project manager to filter project requirements
+        var loginSuccess = await LoginAsProjectManagerAsync();
+        Assert.True(loginSuccess, "Failed to login as project manager");
+        
         // Get stable test project from factory (Legacy Requirements project)
         var testProject = TestDataFactory.GetStaticProject(0); // First static project
         

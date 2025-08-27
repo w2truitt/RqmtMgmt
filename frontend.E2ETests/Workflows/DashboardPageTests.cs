@@ -1,17 +1,26 @@
 using frontend.E2ETests.PageObjects;
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
 /// E2E tests for the Dashboard (Home) page
 /// </summary>
-public class DashboardPageTests : E2ETestBase
+public class DashboardPageTests : AuthenticatedE2ETestBase
 {
+    public DashboardPageTests(ITestOutputHelper output) : base(output)
+    {
+    }
+
     [Fact]
     public async Task Dashboard_NavigatesSuccessfully()
     {
+        // Arrange - Login as admin to access dashboard
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var dashboardPage = new DashboardPage(Page, BaseUrl);
         
@@ -28,6 +37,10 @@ public class DashboardPageTests : E2ETestBase
     [Fact]
     public async Task Dashboard_LoadsWithoutErrors()
     {
+        // Arrange - Login as admin to access dashboard
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var dashboardPage = new DashboardPage(Page, BaseUrl);
         
@@ -47,6 +60,10 @@ public class DashboardPageTests : E2ETestBase
     [Fact]
     public async Task Dashboard_HasExpectedTitle()
     {
+        // Arrange - Login as admin to access dashboard
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var dashboardPage = new DashboardPage(Page, BaseUrl);
         
@@ -64,6 +81,10 @@ public class DashboardPageTests : E2ETestBase
     [Fact]
     public async Task Dashboard_CanAccessSummaryWidgets_WhenImplemented()
     {
+        // Arrange - Login as admin to access dashboard
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var dashboardPage = new DashboardPage(Page, BaseUrl);
         
@@ -91,6 +112,10 @@ public class DashboardPageTests : E2ETestBase
     [Fact]
     public async Task Dashboard_DisplaysCorrectCounts_WhenDataExists()
     {
+        // Arrange - Login as admin to access dashboard
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var dashboardPage = new DashboardPage(Page, BaseUrl);
         

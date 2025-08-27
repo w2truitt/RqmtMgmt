@@ -256,7 +256,9 @@ namespace backend.Services
         /// <returns>The requirement DTO if found; otherwise, null.</returns>
         public async Task<RequirementDto?> GetByIdAsync(int id)
         {
-            var entity = await _context.Requirements.FindAsync(id);
+            var entity = await _context.Requirements
+                .Include(r => r.Creator)
+                .FirstOrDefaultAsync(r => r.Id == id);
             return entity == null ? null : EntityToDto(entity);
         }
 
@@ -297,7 +299,13 @@ namespace backend.Services
             };
             _context.RequirementVersions.Add(version);
             await _context.SaveChangesAsync();
-            return EntityToDto(entity);
+            
+                // Reload the entity with Creator to ensure navigation property is populated
+                var createdEntity = await _context.Requirements
+                    .Include(r => r.Creator)
+                    .FirstOrDefaultAsync(r => r.Id == entity.Id);
+            
+                return createdEntity == null ? null : EntityToDto(createdEntity);
         }
 
         /// <summary>
@@ -421,6 +429,13 @@ namespace backend.Services
             Status = r.Status,
             Version = r.Version,
             CreatedBy = r.CreatedBy,
+            CreatedByUser = r.Creator != null ? new UserDto
+            {
+                Id = r.Creator.Id,
+                UserName = r.Creator.UserName,
+                Email = r.Creator.Email,
+                Roles = new List<string>()
+            } : null,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt,
             ProjectId = r.ProjectId

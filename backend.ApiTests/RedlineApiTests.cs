@@ -1,8 +1,6 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using backend.Models;
 using RqmtMgmtShared;
 using System;
@@ -16,17 +14,16 @@ namespace backend.ApiTests
     /// API integration tests for RedlineController endpoints.
     /// Tests version history retrieval and redline comparison functionality for requirements and test cases.
     /// </summary>
-    public class RedlineApiTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class RedlineApiTests : BaseIntegrationTest
     {
-        public RedlineApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         #region Requirement Version Tests
 
         [Fact]
         public async Task GetRequirementVersions_WithValidId_ReturnsVersionList()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange: Create a requirement first
             var createDto = new RequirementDto
             {
@@ -63,6 +60,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetRequirementVersions_WithInvalidId_ReturnsEmptyList()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act: Try to get versions for non-existent requirement
             var response = await _client.GetAsync("/api/redline/requirement/99999/versions");
 
@@ -76,6 +76,8 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetRequirementVersion_WithValidId_ReturnsVersion()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange: Create a requirement to generate a version
             var createDto = new RequirementDto
             {
@@ -113,6 +115,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetRequirementVersion_WithInvalidId_ReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act: Try to get non-existent version
             var response = await _client.GetAsync("/api/redline/requirement/version/99999");
 
@@ -123,6 +128,8 @@ namespace backend.ApiTests
         [Fact]
         public async Task RedlineRequirement_WithValidVersions_ReturnsComparison()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange: Create a requirement and modify it to create versions
             var createDto = new RequirementDto
             {
@@ -180,6 +187,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task RedlineRequirement_WithInvalidVersions_ReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act: Try to compare non-existent versions
             var response = await _client.GetAsync("/api/redline/requirement/redline/99999/99998");
 
@@ -190,6 +200,8 @@ namespace backend.ApiTests
         [Fact]
         public async Task RedlineRequirement_WithSameVersionTwice_ReturnsValidComparison()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange: Create a requirement
             var createDto = new RequirementDto
             {
@@ -228,6 +240,8 @@ namespace backend.ApiTests
         [Fact]
         public async Task RedlineRequirement_WithMixedValidInvalidVersions_ReturnsNotFound()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange: Create a requirement to get one valid version
             var createDto = new RequirementDto
             {
@@ -266,6 +280,8 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetTestCaseVersions_WithValidId_ReturnsEmptyList()
         {
+            await SkipIfSystemNotAvailableAsync();
+
             // Arrange: Create a test case first
             var createDto = new TestCaseDto
             {
@@ -293,6 +309,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetTestCaseVersions_WithInvalidId_ReturnsEmptyList()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act: Try to get versions for non-existent test case
             var response = await _client.GetAsync("/api/redline/testcase/99999/versions");
 
@@ -306,6 +325,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetTestCaseVersion_WithInvalidId_ReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act: Try to get non-existent version
             var response = await _client.GetAsync("/api/redline/testcase/version/99999");
 
@@ -316,6 +338,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task RedlineTestCase_WithInvalidVersions_ReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Act: Try to compare non-existent versions
             var response = await _client.GetAsync("/api/redline/testcase/redline/99999/99998");
 

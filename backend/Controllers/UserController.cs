@@ -34,27 +34,56 @@ namespace backend.Controllers
         /// </summary>
         /// <returns>The current user's information if authenticated and found in the system.</returns>
         /// <response code="200">Returns the current user's information.</response>
-        /// <response code="401">If the user is not authenticated.</response>
-        /// <response code="404">If the authenticated user is not found in the system.</response>
+        /// <response code="460">If the user is authenticated but email claim is missing from token.</response>
+        /// <response code="461">If the authenticated user is not found in the system.</response>
         [HttpGet("me")]
         [Authorize]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            // Get the email claim from the JWT token
-            var email = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value;
+            // Log all available claims for debugging
+            var allClaims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+            Console.WriteLine($"Available claims: {string.Join(", ", allClaims)}");
+            Console.WriteLine($"User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"User.Identity.Name: {User.Identity?.Name}");
+            
+            // Try multiple approaches to get the email claim
+            var email = User.FindFirst(ClaimTypes.Email)?.Value 
+                       ?? User.FindFirst("email")?.Value 
+                       ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
             
             if (string.IsNullOrEmpty(email))
             {
-                return Unauthorized("Email claim not found in token");
+                // If no email claim, try to get it from the 'sub' claim or name claim
+                var subjectId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("name")?.Value;
+                
+                Console.WriteLine($"No email claim found. SubjectId: {subjectId}, UserName: {userName}");
+                
+                return StatusCode(460, new { 
+                    error = "AUTHENTICATED_BUT_NO_EMAIL_CLAIM - User is authenticated but email claim is missing from JWT token (460)",
+                    availableClaims = allClaims,
+                    subjectId = subjectId,
+                    userName = userName,
+                    debugInfo = "This is a 460 custom status, not 401 Unauthorized - authentication worked, but email claim missing"
+                });
             }
+
+            Console.WriteLine($"Found email claim: {email}");
 
             // Get the user by email
             var user = await _userService.GetByEmailAsync(email);
             if (user == null)
             {
-                return NotFound($"User with email '{email}' not found in the system");
+                Console.WriteLine($"User with email '{email}' not found in database");
+                return StatusCode(461, new { 
+                    error = $"AUTHENTICATED_BUT_USER_NOT_IN_DB - User with email '{email}' not found in the system (461)",
+                    email = email,
+                    availableClaims = allClaims,
+                    debugInfo = "This is a 461 custom status, not 401 Unauthorized - authentication worked, but user not in database"
+                });
             }
 
+            Console.WriteLine($"Successfully found user: {user.Email}");
             return Ok(user);
         }
 

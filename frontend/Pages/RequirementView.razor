@@ -139,6 +139,18 @@
                             <div class="mb-3">
                                 <small class="text-muted d-block">Created</small>
                                 <small>@requirement.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                @if (requirement.CreatedByUser != null)
+                                {
+                                    <br>
+                                    <small class="text-muted d-block">Created By</small>
+                                    <small data-testid="created-by-user" title="@requirement.CreatedByUser.Email">@requirement.CreatedByUser.UserName</small>
+                                }
+                                else
+                                {
+                                    <br>
+                                    <small class="text-muted d-block">Created By</small>
+                                    <small data-testid="created-by-user" class="text-muted">User ID: @requirement.CreatedBy</small>
+                                }
                             </div>
 
                             @if (requirement.UpdatedAt.HasValue)

@@ -126,58 +126,58 @@ public class ProjectsPage
     /// </summary>
     public async Task CancelFormAsync()
     {
-        await _page.ClickAsync("button:has-text('Cancel')");
+        await _page.ClickAsync("[data-testid='cancel-button']");
     }
     
     /// <summary>
-    /// Confirms a delete dialog
+    /// Confirms deletion in the confirmation dialog
     /// </summary>
     public async Task ConfirmDeleteAsync()
     {
-        await _page.ClickAsync("button:has-text('OK')");
+        await _page.ClickAsync("[data-testid='confirm-delete']");
     }
     
     /// <summary>
-    /// Gets the project name input value
+    /// Gets the value of the project name input field
     /// </summary>
-    /// <returns>Current value in the name input field</returns>
+    /// <returns>Project name input value</returns>
     public async Task<string> GetProjectNameInputValueAsync()
     {
-        var value = await _page.InputValueAsync("[data-testid='name-input']");
-        return value ?? "";
+        var element = await _page.QuerySelectorAsync("[data-testid='name-input']");
+        return element != null ? await element.InputValueAsync() : "";
     }
     
     /// <summary>
-    /// Gets the project code input value
+    /// Gets the value of the project code input field
     /// </summary>
-    /// <returns>Current value in the code input field</returns>
+    /// <returns>Project code input value</returns>
     public async Task<string> GetProjectCodeInputValueAsync()
     {
-        var value = await _page.InputValueAsync("[data-testid='code-input']");
-        return value ?? "";
+        var element = await _page.QuerySelectorAsync("[data-testid='code-input']");
+        return element != null ? await element.InputValueAsync() : "";
     }
     
     /// <summary>
-    /// Gets the project description input value
+    /// Gets the value of the project description input field
     /// </summary>
-    /// <returns>Current value in the description input field</returns>
+    /// <returns>Project description input value</returns>
     public async Task<string> GetProjectDescriptionInputValueAsync()
     {
-        var value = await _page.InputValueAsync("[data-testid='description-input']");
-        return value ?? "";
+        var element = await _page.QuerySelectorAsync("[data-testid='description-input']");
+        return element != null ? await element.InputValueAsync() : "";
     }
     
     /// <summary>
-    /// Waits for the page to load
+    /// Waits for the projects page to load completely
     /// </summary>
     public async Task WaitForPageLoadAsync()
     {
-        await _page.WaitForSelectorAsync("h3:has-text('Projects')");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync("[data-testid='projects-table'], .projects-container", new PageWaitForSelectorOptions { Timeout = 10000 });
     }
     
     /// <summary>
-    /// Clicks the View button for a project
+    /// Clicks the View button for a specific project
     /// </summary>
     /// <param name="projectName">Project name</param>
     public async Task ClickViewProjectButtonAsync(string projectName)
@@ -186,7 +186,7 @@ public class ProjectsPage
     }
     
     /// <summary>
-    /// Clicks on a project name link to navigate to the project dashboard
+    /// Clicks the project name link for navigation
     /// </summary>
     /// <param name="projectName">Project name</param>
     public async Task ClickProjectNameLinkAsync(string projectName)
@@ -205,7 +205,7 @@ public class ProjectsPage
     }
     
     /// <summary>
-    /// Checks if the project name is clickable (appears as a link)
+    /// Checks if the project name is clickable
     /// </summary>
     /// <param name="projectName">Project name</param>
     /// <returns>True if project name is clickable</returns>
@@ -217,11 +217,11 @@ public class ProjectsPage
     /// <summary>
     /// Gets the name of the first project in the list
     /// </summary>
-    /// <returns>First project name or empty string if no projects</returns>
+    /// <returns>First project name</returns>
     public async Task<string> GetFirstProjectNameAsync()
     {
-        // Try multiple selectors to find project names
-        var firstProjectElement = await _page.QuerySelectorAsync("tbody tr:first-child td:nth-child(2) a, .project-name-link, .mud-table-row .mud-table-cell:first-child");
+        // Try to get the first project name from the table
+        var firstProjectElement = await _page.QuerySelectorAsync("[data-testid='project-row']:first-child [data-testid*='project-name'], tbody tr:first-child td:nth-child(2)");
         if (firstProjectElement != null)
         {
             var text = await firstProjectElement.TextContentAsync();
@@ -231,7 +231,7 @@ public class ProjectsPage
     }
     
     /// <summary>
-    /// Navigates to project dashboard using the View button
+    /// Navigates to project dashboard using the View button with proper navigation waiting
     /// </summary>
     /// <param name="projectName">Project name</param>
     public async Task NavigateToProjectDashboardUsingViewButtonAsync(string projectName)
@@ -240,17 +240,21 @@ public class ProjectsPage
         var viewButton = await _page.QuerySelectorAsync($"[data-testid='view-{projectName}']");
         if (viewButton != null)
         {
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await viewButton.ClickAsync();
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         else
         {
-            // Fallback: look for any View button
+            // Fallback: look for any View button and use navigation waiting
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await _page.ClickAsync("button:has-text('View')");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
     
     /// <summary>
-    /// Navigates to project dashboard using the clickable project name
+    /// Navigates to project dashboard using the clickable project name with proper navigation waiting
     /// </summary>
     /// <param name="projectName">Project name</param>
     public async Task NavigateToProjectDashboardUsingProjectNameAsync(string projectName)
@@ -259,12 +263,16 @@ public class ProjectsPage
         var projectLink = await _page.QuerySelectorAsync($"[data-testid='project-name-link-{projectName}']");
         if (projectLink != null)
         {
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await projectLink.ClickAsync();
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         else
         {
             // Fallback: click the first project name link
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await _page.ClickAsync("tbody tr:first-child td:nth-child(2) a");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
 }

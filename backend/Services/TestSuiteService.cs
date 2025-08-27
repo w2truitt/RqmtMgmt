@@ -57,7 +57,14 @@ namespace backend.Services
             entity.CreatedAt = dto.CreatedAt;
             _context.TestSuites.Add(entity);
             await _context.SaveChangesAsync();
-            return ToDto(entity);
+            
+                // Reload the entity with navigation properties to ensure DTO is properly populated
+                var createdEntity = await _context.TestSuites
+                    .Include(ts => ts.Project)
+                    .Include(ts => ts.TestCases)
+                    .FirstOrDefaultAsync(ts => ts.Id == entity.Id);
+            
+                return createdEntity == null ? null : ToDto(createdEntity);
         }
 
         /// <summary>
@@ -104,7 +111,9 @@ namespace backend.Services
             Description = s.Description,
             CreatedBy = s.CreatedBy,
             CreatedAt = s.CreatedAt,
-            ProjectId = s.ProjectId
+                ProjectId = s.ProjectId,
+                ProjectName = s.Project?.Name ?? string.Empty,
+                TestCaseCount = s.TestCases?.Count ?? 0
         };
 
         /// <summary>

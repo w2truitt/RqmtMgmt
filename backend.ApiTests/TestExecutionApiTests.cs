@@ -1,8 +1,6 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
@@ -11,15 +9,15 @@ using System.Text.Json;
 
 namespace backend.ApiTests
 {
-    public class TestExecutionApiTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class TestExecutionApiTests : BaseIntegrationTest
     {
-        public TestExecutionApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanGetExecutionStatistics()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/testexecution/statistics");
             response.EnsureSuccessStatusCode();
             var stats = await response.Content.ReadFromJsonAsync<TestExecutionStatsDto>(_jsonOptions);
@@ -37,6 +35,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanExecuteTestCase()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First create a test case execution DTO
             var execution = new TestCaseExecutionDto
             {
@@ -69,6 +70,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task ExecuteTestCaseRejectsInvalidData()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Test with invalid model state
             var invalidExecution = new TestCaseExecutionDto
             {
@@ -84,6 +88,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateStepResult()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var stepExecution = new TestStepExecutionDto
             {
                 Id = 999,
@@ -117,6 +124,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateStepResultRejectsInvalidData()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var invalidStepExecution = new TestStepExecutionDto
             {
                 // Missing required fields
@@ -131,6 +141,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetExecutionsForSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int sessionId = 1;
             var response = await _client.GetAsync($"/api/testexecution/session/{sessionId}/executions");
             
@@ -150,6 +163,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetStepExecutionsForCase()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int caseExecutionId = 1;
             var response = await _client.GetAsync($"/api/testexecution/case-execution/{caseExecutionId}/steps");
             
@@ -169,6 +185,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetExecutionStatsForSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int sessionId = 1;
             var response = await _client.GetAsync($"/api/testexecution/session/{sessionId}/statistics");
             
@@ -188,6 +207,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateTestCaseExecution()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var execution = new TestCaseExecutionDto
             {
                 Id = 999,
@@ -219,6 +241,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateTestCaseExecutionRejectsIdMismatch()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var execution = new TestCaseExecutionDto
             {
                 Id = 2, // Different from URL
@@ -234,6 +259,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateTestCaseExecutionRejectsInvalidData()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var invalidExecution = new TestCaseExecutionDto
             {
                 Id = 999,

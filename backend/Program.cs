@@ -43,21 +43,71 @@ public class Program
                 options.UseSqlServer(connectionString));
         }
 
+        // Disable default JWT claim mapping to preserve original claim names
+        Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
+        System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
+
         // Add JWT Bearer authentication for API protection
-        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "http://localhost:5002";
+        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "https://rqmtmgmt.local";
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
                 options.Authority = identityServerUrl;
-                options.Audience = builder.Configuration["Authentication:Audience"] ?? "rqmtapi";
-                options.RequireHttpsMetadata = false; // Allow HTTP for development
+                options.RequireHttpsMetadata = false; // Allow HTTP for development, but use HTTPS authority
+                
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ClockSkew = TimeSpan.FromMinutes(5)
+                    ClockSkew = TimeSpan.FromMinutes(5),
+
+                    // Explicitly set the valid issuer to match IdentityServer
+                    ValidIssuer = identityServerUrl,
+                    
+                    // Configure multiple valid audiences to handle different token formats
+                    ValidAudiences = new[] { 
+                        "rqmtapi", 
+                        "rqmtmgmt-api", 
+                        "rqmtmgmt.api" 
+                    },
+                    
+                    // Configure claim mapping for proper user identity extraction
+                    NameClaimType = "name",
+                    RoleClaimType = "role"
+                };
+                
+                // Add event handlers for debugging token validation
+                options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        if (context.Request.Headers.ContainsKey("Authorization"))
+                        {
+                            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                            logger.LogDebug("Authorization header found. Token present: {TokenPresent}", !string.IsNullOrEmpty(token));
+                        }
+                        else
+                        {
+                            logger.LogWarning("Authorization header is MISSING from the request.");
+                        }
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        var claims = context.Principal?.Claims?.Select(c => $"{c.Type}={c.Value}") ?? new string[0];
+                        logger.LogDebug("Token validated successfully. Claims: {Claims}", string.Join(", ", claims));
+                        return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        logger.LogError(context.Exception, "JWT authentication failed: {Error}", context.Exception.Message);
+                        return Task.CompletedTask;
+                    }
                 };
             });
 
@@ -71,6 +121,9 @@ public class Program
         });
 
         // Configure CORS policy to allow frontend connections from various development ports
+
+        // Add authorization services (CRITICAL: Required for RequireAuthorization() to work)
+        builder.Services.AddAuthorization();
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
@@ -105,16 +158,27 @@ public class Program
             { 
                 Title = "Requirements Management API", 
                 Version = "v1",
-                Description = "API for Requirements Management System with JWT Bearer authentication"
+                Description = "API for Requirements Management System with OIDC authentication"
             });
 
-            // Add JWT Bearer authentication to Swagger
-            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            // Add OAuth2 authentication to Swagger
+            c.AddSecurityDefinition("oauth2", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                Description = "JWT Authorization header using the Bearer scheme."
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.OAuth2,
+                Flows = new Microsoft.OpenApi.Models.OpenApiOAuthFlows
+                {
+                    AuthorizationCode = new Microsoft.OpenApi.Models.OpenApiOAuthFlow
+                    {
+                        AuthorizationUrl = new Uri("https://rqmtmgmt.local/connect/authorize"),
+                        TokenUrl = new Uri("https://rqmtmgmt.local/connect/token"),
+                        Scopes = new Dictionary<string, string>
+                        {
+                            ["openid"] = "OpenID Connect",
+                            ["profile"] = "User profile",
+                            ["rqmtmgmt.api"] = "Requirements Management API"
+                        }
+                    }
+                }
             });
 
             // Add security requirement
@@ -126,10 +190,10 @@ public class Program
                         Reference = new Microsoft.OpenApi.Models.OpenApiReference
                         {
                             Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                            Id = "Bearer"
+                            Id = "oauth2"
                         }
                     },
-                    new string[] {}
+                    new string[] { "openid", "profile", "rqmtmgmt.api" }
                 }
             });
         });
@@ -161,9 +225,9 @@ public class Program
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Requirements Management API v1");
-                c.OAuthClientId("rqmtmgmt-wasm");
+                c.OAuthClientId("swagger-ui");
                 c.OAuthAppName("Requirements Management API");
-                c.OAuthScopes("openid", "profile", "email", "rqmtapi");
+                c.OAuthScopes("openid", "profile", "rqmtmgmt.api");
                 c.OAuthUsePkce();
             });
         }
@@ -203,7 +267,7 @@ public class Program
 
         app.UseAuthorization();
 
-        app.MapControllers();
+        app.MapControllers().RequireAuthorization();
         
         // Health check endpoint for Docker container monitoring
         app.MapGet("/health", async (RqmtMgmtDbContext context) =>

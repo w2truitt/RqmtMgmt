@@ -1,8 +1,6 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
@@ -12,25 +10,17 @@ namespace backend.ApiTests
 {
     /// <summary>
     /// Integration tests that test complex workflows across multiple API controllers
+    /// These tests run against the actual docker-compose.identity.yml instance with JWT authentication.
     /// </summary>
-    public class IntegrationWorkflowTests : IClassFixture<TestWebApplicationFactory<Program>>
+    [Collection("Integration Tests")]
+    public class IntegrationWorkflowTests : BaseIntegrationTest
     {
-        private readonly HttpClient _client;
-        private readonly System.Text.Json.JsonSerializerOptions _jsonOptions;
-
-        public IntegrationWorkflowTests(TestWebApplicationFactory<Program> factory)
-        {
-            _client = factory.CreateClient();
-            _jsonOptions = new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-            };
-        }
-
         [Fact]
         public async Task CompleteRequirementToTestWorkflow()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // 1. Create a requirement
             var requirementDto = new RequirementDto
             {
@@ -39,7 +29,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "A requirement for integration testing",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
 
             var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
@@ -53,7 +44,8 @@ namespace backend.ApiTests
                 Name = "Integration Test Suite",
                 Description = "Test suite for integration testing",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
 
             var suiteResponse = await _client.PostAsJsonAsync("/api/testsuite", testSuiteDto, _jsonOptions);
@@ -109,7 +101,8 @@ namespace backend.ApiTests
                 Description = "Test plan for integration testing",
                 Type = "UserValidation",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ProjectId = await GetValidProjectIdAsync()
             };
 
             var planResponse = await _client.PostAsJsonAsync("/api/testplan", testPlanDto, _jsonOptions);
@@ -133,11 +126,15 @@ namespace backend.ApiTests
         [Fact]
         public async Task UserRoleManagementWorkflow()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // 1. Create a new user
+                var uniqueId = Guid.NewGuid().ToString("N")[..8]; // Use first 8 characters for uniqueness
             var userDto = new UserDto
             {
-                UserName = "roletest",
-                Email = "roletest@example.com"
+                    UserName = $"roletest_{uniqueId}",
+                    Email = $"roletest_{uniqueId}@example.com"
             };
 
             var userResponse = await _client.PostAsJsonAsync("/api/user", userDto, _jsonOptions);
@@ -148,7 +145,7 @@ namespace backend.ApiTests
             // 2. Create a new role
             var roleDto = new RoleDto
             {
-                Name = "TestRole"
+                Name = $"TestRole_{Guid.NewGuid():N}"
             };
 
             var roleResponse = await _client.PostAsJsonAsync("/api/role/dto", roleDto, _jsonOptions);
@@ -187,6 +184,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task RequirementHierarchyWorkflow()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // 1. Create a parent requirement
             var parentRequirement = new RequirementDto
             {
@@ -195,7 +195,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "Parent requirement for hierarchy test",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
             };
 
             var parentResponse = await _client.PostAsJsonAsync("/api/requirement", parentRequirement, _jsonOptions);
@@ -212,7 +213,8 @@ namespace backend.ApiTests
                 Description = "First child requirement",
                 ParentId = createdParent.Id,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = createdParent.ProjectId
             };
 
             var child1Response = await _client.PostAsJsonAsync("/api/requirement", childRequirement1, _jsonOptions);
@@ -229,7 +231,8 @@ namespace backend.ApiTests
                 Description = "Second child requirement",
                 ParentId = createdParent.Id,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = createdParent.ProjectId
             };
 
             var child2Response = await _client.PostAsJsonAsync("/api/requirement", childRequirement2, _jsonOptions);
@@ -254,6 +257,36 @@ namespace backend.ApiTests
             Assert.Null(parent.ParentId);
             Assert.Equal(parent.Id, child1.ParentId);
             Assert.Equal(parent.Id, child2.ParentId);
+        }
+
+        /// <summary>
+        /// Helper method to get a valid project ID for testing.
+        /// </summary>
+        private async Task<int> GetValidProjectIdAsync()
+        {
+            var response = await _client.GetAsync("/api/projects");
+            response.EnsureSuccessStatusCode();
+            var projects = await response.Content.ReadFromJsonAsync<PagedResult<ProjectDto>>(_jsonOptions);
+            
+            if (projects?.Items?.Count == 0)
+            {
+                // Create a test project if none exist
+                var createDto = new CreateProjectDto
+                {
+                    Name = $"Test Project for Integration {Guid.NewGuid():N}",
+                    Code = $"INT{DateTime.UtcNow:mmss}",
+                    Description = "Auto-created for integration testing",
+                    OwnerId = 1,
+                    Status = ProjectStatus.Planning
+                };
+
+                var createResponse = await _client.PostAsJsonAsync("/api/projects", createDto, _jsonOptions);
+                createResponse.EnsureSuccessStatusCode();
+                var created = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+                return created!.Id;
+            }
+
+            return projects!.Items![0].Id;
         }
     }
 }

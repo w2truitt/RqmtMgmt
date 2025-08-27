@@ -1,9 +1,10 @@
 @page "/projects"
+@attribute [Authorize]
 @using RqmtMgmtShared
 @inject IProjectService ProjectService
-@inject IUserService UserService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>Projects</PageTitle>
 
@@ -281,6 +282,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentUserAsync();
         await LoadProjects();
         await LoadUsers();
     }
@@ -388,7 +390,7 @@
             Name = string.Empty,
             Code = string.Empty,
             Status = ProjectStatus.Planning,
-            OwnerId = 1  // Default to first user
+            OwnerId = currentUser?.Id ?? 1  // Use current user ID, fallback to 1 if not available
         };
         formErrorMessage = string.Empty;
         showForm = true;

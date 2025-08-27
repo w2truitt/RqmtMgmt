@@ -1,7 +1,9 @@
 @page "/testplans"
+@attribute [Authorize]
 @using RqmtMgmtShared
 @inject ITestPlanService TestPlanService
 @inject IJSRuntime JSRuntime
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>Test Plans</PageTitle>
 
@@ -299,6 +301,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadCurrentUserAsync();
         await LoadTestPlans();
     }
 
@@ -456,7 +459,7 @@
             Name = string.Empty, 
             Type = "UserValidation", 
             ProjectId = 1,  // Default to project 1 since test plans require a valid project
-            CreatedBy = 1,  // Default to user 1 since test plans require a valid user
+            CreatedBy = currentUser?.Id ?? 1,  // Use current user ID, fallback to 1 if not available
             CreatedAt = DateTime.UtcNow  // Set current timestamp
         };
         editTestPlan = null;

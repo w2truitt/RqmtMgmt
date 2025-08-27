@@ -1,23 +1,25 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System.Collections.Generic;
 using System;
 
 namespace backend.ApiTests
 {
-    public class TestSuiteApiTests : BaseApiTest
+    /// <summary>
+    /// API tests for the TestSuite controller endpoints.
+    /// These tests run against the actual docker-compose.identity.yml instance with JWT authentication.
+    /// </summary>
+    [Collection("Integration Tests")]
+    public class TestSuiteApiTests : BaseIntegrationTest
     {
-        public TestSuiteApiTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanCreateAndGetTestSuite()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var createDto = new TestSuiteDto
             {
                 Name = "API Test Suite",
@@ -41,6 +43,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanListTestSuites()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/testsuite");
             response.EnsureSuccessStatusCode();
             var list = await response.Content.ReadFromJsonAsync<List<TestSuiteDto>>(_jsonOptions);
@@ -51,6 +56,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateTestSuite()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // First create
             var createDto = new TestSuiteDto
             {
@@ -82,6 +90,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanDeleteTestSuite()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             // Create
             var createDto = new TestSuiteDto
             {
@@ -107,6 +118,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetNonExistentTestSuiteReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.GetAsync("/api/testsuite/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -114,6 +128,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateNonExistentTestSuiteReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var updateDto = new TestSuiteDto
             {
                 Id = 9999999,
@@ -129,6 +146,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentTestSuiteReturnsNotFound()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var resp = await _client.DeleteAsync("/api/testsuite/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }

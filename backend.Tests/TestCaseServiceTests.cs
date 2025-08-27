@@ -26,8 +26,9 @@ namespace backend.Tests
         public async Task CreateAsync_AddsTestCase()
         {
             using var db = GetDbContext(nameof(CreateAsync_AddsTestCase));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
-            var testCase = new TestCaseDto { Title = "Test Case", Description = "Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var testCase = new TestCaseDto { Title = "Test Case", Description = "Description", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow };
             
             var result = await service.CreateAsync(testCase);
             
@@ -40,8 +41,9 @@ namespace backend.Tests
         public async Task GetAllAsync_ReturnsAllTestCases()
         {
             using var db = GetDbContext(nameof(GetAllAsync_ReturnsAllTestCases));
-            db.TestCases.Add(new TestCase { Title = "TC1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
-            db.TestCases.Add(new TestCase { Title = "TC2", Description = "Desc2", CreatedBy = 1, CreatedAt = DateTime.UtcNow });
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
+            db.TestCases.Add(new TestCase { Title = "TC1", Description = "Desc1", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow });
+            db.TestCases.Add(new TestCase { Title = "TC2", Description = "Desc2", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow });
             await db.SaveChangesAsync();
             var service = new TestCaseService(db);
             
@@ -54,7 +56,8 @@ namespace backend.Tests
         public async Task GetByIdAsync_ReturnsCorrectTestCaseOrNull()
         {
             using var db = GetDbContext(nameof(GetByIdAsync_ReturnsCorrectTestCaseOrNull));
-            var testCase = new TestCase { Title = "TC1", Description = "Desc1", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
+            var testCase = new TestCase { Title = "TC1", Description = "Desc1", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow };
             db.TestCases.Add(testCase);
             await db.SaveChangesAsync();
             var service = new TestCaseService(db);
@@ -71,7 +74,8 @@ namespace backend.Tests
         public async Task UpdateAsync_UpdatesTestCase()
         {
             using var db = GetDbContext(nameof(UpdateAsync_UpdatesTestCase));
-            var testCase = new TestCase { Title = "Old", Description = "Old Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
+            var testCase = new TestCase { Title = "Old", Description = "Old Desc", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow };
             db.TestCases.Add(testCase);
             await db.SaveChangesAsync();
             var service = new TestCaseService(db);
@@ -86,7 +90,8 @@ namespace backend.Tests
         public async Task DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse()
         {
             using var db = GetDbContext(nameof(DeleteAsync_DeletesWhenExists_ReturnsTrueElseFalse));
-            var testCase = new TestCase { Title = "ToDelete", Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
+            var testCase = new TestCase { Title = "ToDelete", Description = "Desc", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow };
             db.TestCases.Add(testCase);
             await db.SaveChangesAsync();
             var service = new TestCaseService(db);
@@ -109,11 +114,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(CreateAsync_WithInvalidTitle_ReturnsNull) + invalidTitle?.Replace(" ", "_"));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
                 Title = invalidTitle!,
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>
                 {
@@ -137,6 +143,7 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(CreateAsync_WithInvalidCreatedBy_ReturnsNull) + invalidUserId);
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
@@ -169,11 +176,12 @@ namespace backend.Tests
             // Arrange
             using var db = GetDbContext(nameof(CreateAsync_WithInvalidStepDetails_ReturnsNull) + 
                 (description?.Replace(" ", "_") ?? "null") + "_" + (expectedResult?.Replace(" ", "_") ?? "null"));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
                 Title = "Valid Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>
                 {
@@ -194,11 +202,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(CreateAsync_WithNullSteps_Succeeds));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
                 Title = "Valid Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow
             };
             dto.Steps = null!; // Explicitly test null assignment
@@ -217,11 +226,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(CreateAsync_WithEmptySteps_Succeeds));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
                 Title = "Valid Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>()
             };
@@ -241,11 +251,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(CreateAsync_WithMultipleValidSteps_Succeeds));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
                 Title = "Valid Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>
                 {
@@ -275,12 +286,13 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithNonExistentId_ReturnsFalse));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestCaseService(db);
             var dto = new TestCaseDto
             {
                 Id = 999,
                 Title = "Some Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -299,11 +311,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithInvalidTitle_ReturnsFalseAndDoesNotUpdate) + invalidTitle?.Replace(" ", "_"));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var originalTestCase = new TestCase 
             { 
                 Id = 1, 
                 Title = "Original Title", 
-                CreatedBy = 1, 
+                CreatedBy = user.Id, 
                 CreatedAt = DateTime.UtcNow 
             };
             db.TestCases.Add(originalTestCase);
@@ -314,7 +327,7 @@ namespace backend.Tests
             {
                 Id = 1,
                 Title = invalidTitle!,
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -335,11 +348,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithInvalidCreatedBy_ReturnsFalseAndDoesNotUpdate) + invalidUserId);
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var originalTestCase = new TestCase 
             { 
                 Id = 1, 
                 Title = "Original Title", 
-                CreatedBy = 1, 
+                CreatedBy = user.Id, 
                 CreatedAt = DateTime.UtcNow 
             };
             db.TestCases.Add(originalTestCase);
@@ -368,11 +382,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithInvalidStepDetails_ReturnsFalseAndDoesNotUpdate));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var originalTestCase = new TestCase
             {
                 Id = 1,
                 Title = "Original Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep> 
                 { 
@@ -387,7 +402,7 @@ namespace backend.Tests
             {
                 Id = 1,
                 Title = "Updated Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>
                 {
@@ -411,11 +426,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithValidData_CorrectlyReplacesSteps));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var originalTestCase = new TestCase
             {
                 Id = 1,
                 Title = "Original Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>
                 {
@@ -431,7 +447,7 @@ namespace backend.Tests
             {
                 Id = 1,
                 Title = "Updated Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>
                 {
@@ -456,11 +472,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithNullSteps_ClearsAllSteps));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var originalTestCase = new TestCase
             {
                 Id = 1,
                 Title = "Original Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>
                 {
@@ -476,7 +493,7 @@ namespace backend.Tests
             {
                 Id = 1,
                 Title = "Updated Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow
             };
             dto.Steps = null!; // Explicitly test null assignment
@@ -496,11 +513,12 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(UpdateAsync_WithEmptySteps_ClearsAllSteps));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var originalTestCase = new TestCase
             {
                 Id = 1,
                 Title = "Original Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>
                 {
@@ -515,7 +533,7 @@ namespace backend.Tests
             {
                 Id = 1,
                 Title = "Updated Title",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStepDto>()
             };
@@ -539,10 +557,11 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(DeleteAsync_WithExistingTestCase_CascadeDeletesSteps));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var testCase = new TestCase
             {
                 Title = "Test Case To Delete",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>
                 {
@@ -573,10 +592,11 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(GetByIdAsync_WithValidId_ReturnsTestCaseWithSteps));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var testCase = new TestCase
             {
                 Title = "Test Case",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>
                 {
@@ -624,10 +644,11 @@ namespace backend.Tests
         {
             // Arrange
             using var db = GetDbContext(nameof(GetAllAsync_WithTestCases_ReturnsAllWithSteps));
+            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var testCase1 = new TestCase
             {
                 Title = "Test Case 1",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>
                 {
@@ -637,7 +658,7 @@ namespace backend.Tests
             var testCase2 = new TestCase
             {
                 Title = "Test Case 2",
-                CreatedBy = 1,
+                CreatedBy = user.Id,
                 CreatedAt = DateTime.UtcNow,
                 Steps = new List<TestStep>()
             };

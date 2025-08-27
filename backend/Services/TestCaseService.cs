@@ -25,23 +25,29 @@ namespace backend.Services
         }
 
         /// <summary>
-        /// Retrieves all test cases from the database including their associated test steps.
+        /// Retrieves all test cases from the database including their associated test steps and creator details.
         /// </summary>
-        /// <returns>A list of all test cases as DTOs with their test steps.</returns>
+        /// <returns>A list of all test cases as DTOs with their test steps and creator information.</returns>
         public async Task<List<TestCaseDto>> GetAllAsync()
         {
-            var testCases = await _context.TestCases.Include(tc => tc.Steps).ToListAsync();
+            var testCases = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .ToListAsync();
             return testCases.Select(ToDto).ToList();
         }
 
         /// <summary>
-        /// Retrieves a specific test case by its ID including associated test steps.
+        /// Retrieves a specific test case by its ID including associated test steps and creator details.
         /// </summary>
         /// <param name="id">The unique identifier of the test case.</param>
         /// <returns>The test case DTO if found; otherwise, null.</returns>
         public async Task<TestCaseDto?> GetByIdAsync(int id)
         {
-            var testCase = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == id);
+            var testCase = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .FirstOrDefaultAsync(tc => tc.Id == id);
             return testCase == null ? null : ToDto(testCase);
         }
 
@@ -74,7 +80,14 @@ namespace backend.Services
             entity.CreatedAt = dto.CreatedAt;
             _context.TestCases.Add(entity);
             await _context.SaveChangesAsync();
-            return ToDto(entity);
+            
+            // Reload with creator details
+            var createdTestCase = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .FirstOrDefaultAsync(tc => tc.Id == entity.Id);
+            
+            return createdTestCase == null ? null : ToDto(createdTestCase);
         }
 
         /// <summary>
@@ -180,10 +193,10 @@ namespace backend.Services
 
         /// <summary>
         /// Converts a TestCase entity to a TestCaseDto for API responses.
-        /// Includes mapping of associated test steps.
+        /// Includes mapping of associated test steps and creator details.
         /// </summary>
         /// <param name="tc">The test case entity to convert.</param>
-        /// <returns>A TestCaseDto with all properties and test steps mapped.</returns>
+        /// <returns>A TestCaseDto with all properties, test steps, and creator details mapped.</returns>
         private static TestCaseDto ToDto(TestCase tc) => new TestCaseDto
         {
             Id = tc.Id,
@@ -199,6 +212,13 @@ namespace backend.Services
                 }).ToList()
                 : new List<TestStepDto>(),
             CreatedBy = tc.CreatedBy,
+            CreatedByUser = tc.Creator != null ? new UserDto
+            {
+                Id = tc.Creator.Id,
+                UserName = tc.Creator.UserName,
+                Email = tc.Creator.Email,
+                Roles = new List<string>() // Roles are not loaded in this context for performance
+            } : null,
             CreatedAt = tc.CreatedAt
         };
 

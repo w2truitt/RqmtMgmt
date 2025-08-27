@@ -122,7 +122,7 @@ public class Program
             var testUsers = new[]
             {
                 new { Email = "admin@rqmtmgmt.local", Password = "Admin123!", Role = "Administrator", Name = "System Administrator" },
-                new { Email = "pm@rqmtmgmt.local", Password = "PM123!", Role = "ProjectManager", Name = "Project Manager" },
+                new { Email = "pm@rqmtmgmt.local", Password = "Pm123!", Role = "ProjectManager", Name = "Project Manager" },
                 new { Email = "dev@rqmtmgmt.local", Password = "Dev123!", Role = "Developer", Name = "Developer" },
                 new { Email = "tester@rqmtmgmt.local", Password = "Test123!", Role = "Tester", Name = "Quality Tester" },
                 new { Email = "viewer@rqmtmgmt.local", Password = "View123!", Role = "Viewer", Name = "Requirements Viewer" }
