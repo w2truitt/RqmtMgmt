@@ -3,69 +3,85 @@ using System.Threading.Tasks;
 using Xunit;
 using RqmtMgmtShared;
 using System;
-using System.Net;
 
 namespace backend.ApiTests
 {
     /// <summary>
-    /// Temporary debug test to capture actual HTTP error responses
+    /// Debug test to investigate integration test failures
     /// </summary>
     [Collection("Integration Tests")]
     public class DebugIntegrationTest : BaseIntegrationTest
     {
         [Fact]
-        public async Task Debug_RequirementCreation_CaptureError()
+        public async Task Debug_RequirementCreation()
         {
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
-            try
+            // 1. Try to create a simple requirement
+            var requirementDto = new RequirementDto
             {
-                // Try to get a project first
-                var projectResponse = await _client.GetAsync("/api/projects");
-                var projectContent = await projectResponse.Content.ReadAsStringAsync();
-                
-                if (!projectResponse.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Project API failed: {projectResponse.StatusCode} - {projectContent}");
-                }
+                Title = "Debug Test Requirement",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
+                Description = "A requirement for debugging",
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync()
+            };
 
-                var projects = await projectResponse.Content.ReadFromJsonAsync<PagedResult<ProjectDto>>(_jsonOptions);
-                
-                int projectId = 1; // Default fallback
-                if (projects?.Items?.Count > 0)
-                {
-                    projectId = projects.Items[0].Id;
-                }
+            var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
+            
+            if (!reqResponse.IsSuccessStatusCode)
+            {
+                var errorContent = await reqResponse.Content.ReadAsStringAsync();
+                throw new Exception($"Requirement creation failed - Status: {reqResponse.StatusCode}, Content: {errorContent}");
+            }
+            
+            var createdRequirement = await reqResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
+            Assert.NotNull(createdRequirement);
+        }
 
-                // Try to create a requirement
-                var requirementDto = new RequirementDto
+        /// <summary>
+        /// Helper method to get a valid project ID for testing.
+        /// </summary>
+        private async Task<int> GetValidProjectIdAsync()
+        {
+            var response = await _client.GetAsync("/api/projects");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Projects fetch failed - Status: {response.StatusCode}, Content: {errorContent}");
+            }
+            
+            var projects = await response.Content.ReadFromJsonAsync<PagedResult<ProjectDto>>(_jsonOptions);
+            
+            if (projects?.Items?.Count == 0)
+            {
+                // Create a test project if none exist
+                var createDto = new CreateProjectDto
                 {
-                    Title = "Debug Test Requirement",
-                    Type = RequirementType.CRS,
-                    Status = RequirementStatus.Draft,
-                    Description = "Debug requirement for error analysis",
-                    CreatedBy = 1,
-                    CreatedAt = DateTime.UtcNow,
-                    ProjectId = projectId
+                    Name = $"Debug Test Project {Guid.NewGuid():N}",
+                    Code = $"DBG{DateTime.UtcNow:mmss}",
+                    Description = "Auto-created for debugging",
+                    OwnerId = 1,
+                    Status = ProjectStatus.Planning
                 };
 
-                var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
-                var reqContent = await reqResponse.Content.ReadAsStringAsync();
+                var createResponse = await _client.PostAsJsonAsync("/api/projects", createDto, _jsonOptions);
                 
-                if (!reqResponse.IsSuccessStatusCode)
+                if (!createResponse.IsSuccessStatusCode)
                 {
-                    throw new Exception($"Requirement creation failed: {reqResponse.StatusCode} - {reqContent}");
+                    var errorContent = await createResponse.Content.ReadAsStringAsync();
+                    throw new Exception($"Project creation failed - Status: {createResponse.StatusCode}, Content: {errorContent}");
                 }
+                
+                var created = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+                return created!.Id;
+            }
 
-                // If we get here, it worked
-                Assert.True(true, "Requirement creation succeeded");
-            }
-            catch (Exception ex)
-            {
-                // This will show us the actual error
-                throw new Exception($"Debug test failed with details: {ex.Message}", ex);
-            }
+            return projects!.Items![0].Id;
         }
     }
 }
