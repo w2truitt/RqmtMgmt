@@ -84,9 +84,9 @@ public class Program
                     OnMessageReceived = context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                        if (context.Request.Headers.ContainsKey("Authorization"))
+                        if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
                         {
-                            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                            var token = authHeader.FirstOrDefault()?.Split(" ").Last();
                             logger.LogDebug("Authorization header found. Token present: {TokenPresent}", !string.IsNullOrEmpty(token));
                         }
                         else

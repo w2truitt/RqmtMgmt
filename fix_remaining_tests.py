@@ -13,11 +13,11 @@ fixed_content = content
 for full_match, test_name, method_body in test_methods:
     # Check if this method uses user.Id but doesn't have user creation
     if 'user.Id' in method_body and 'TestDataHelper.SetupBasicTestDataAsync' not in method_body:
-        print(f"Fixing test: {test_name}")
+        print("Fixing test: " + test_name)
         
         # Find the pattern to replace
-        pattern = rf'(\[Fact\]\s+public async Task {test_name}\(\)\s+\{{\s+using var db = GetDbContext\(nameof\({test_name}\)\);)'
-        replacement = rf'\1\n            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);'
+        pattern = r'(\[Fact\]\s+public async Task ' + re.escape(test_name) + r'\(\)\s+\{\s+using var db = GetDbContext\(nameof\(' + re.escape(test_name) + r'\)\);)'
+        replacement = r'\1\n            var (user, _) = await TestDataHelper.SetupBasicTestDataAsync(db);'
         
         fixed_content = re.sub(pattern, replacement, fixed_content, flags=re.MULTILINE | re.DOTALL)
 
