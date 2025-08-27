@@ -16,22 +16,6 @@ using Microsoft.OpenApi.Models;
 /// Configures services, middleware, authentication, and database seeding for the application.
 /// </summary>
 public class Program
-
-    private const string API_SCOPE = "rqmtmgmt.api";
-    private static readonly string[] ValidAudiences = { "rqmtapi", "rqmtmgmt-api", API_SCOPE };
-    private static readonly string[] OAuthScopes = { "openid", "profile", API_SCOPE };
-    private static readonly string[] CorsOrigins = {
-        "http://localhost:80",  // Docker nginx proxy
-        "https://localhost:443",  // Docker nginx proxy HTTPS
-        "https://localhost:7160", 
-        "http://localhost:5239", 
-        "https://localhost:5001", 
-        "http://localhost:5000",
-        "http://localhost:5001",  // Frontend container
-        "http://frontend:5001",   // Internal container communication
-        "http://rqmtmgmt.local:80",  // E2E test HTTP access
-        "https://rqmtmgmt.local:443"  // E2E test HTTPS access
-    };
 {
     /// <summary>
     /// Main entry point for the application.
@@ -64,7 +48,7 @@ public class Program
         System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
 
         // Add JWT Bearer authentication for API protection
-        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? identityServerUrl;
+        var identityServerUrl = builder.Configuration["Authentication:Authority"] ?? "https://rqmtmgmt.local";
         builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
@@ -100,9 +84,9 @@ public class Program
                     OnMessageReceived = context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                        if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
+                        if (context.Request.Headers.ContainsKey("Authorization"))
                         {
-                            var token = authHeader.FirstOrDefault()?.Split(" ").Last();
+                            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
                             logger.LogDebug("Authorization header found. Token present: {TokenPresent}", !string.IsNullOrEmpty(token));
                         }
                         else
@@ -144,7 +128,18 @@ public class Program
         {
             options.AddPolicy("AllowFrontend", policy =>
             {
-                policy.WithOrigins(CorsOrigins)
+                policy.WithOrigins(
+                    "http://localhost:80",  // Docker nginx proxy
+                    "https://localhost:443",  // Docker nginx proxy HTTPS
+                    "https://localhost:7160", 
+                    "http://localhost:5239", 
+                    "https://localhost:5001", 
+                    "http://localhost:5000",
+                    "http://localhost:5001",  // Frontend container
+                    "http://frontend:5001",   // Internal container communication
+                    "http://rqmtmgmt.local:80",  // E2E test HTTP access
+                    "https://rqmtmgmt.local:443"  // E2E test HTTPS access
+                )
                       .AllowAnyHeader()
                       .AllowAnyMethod()
                       .AllowCredentials();
@@ -198,7 +193,7 @@ public class Program
                             Id = "oauth2"
                         }
                     },
-                    OAuthScopes
+                    new string[] { "openid", "profile", "rqmtmgmt.api" }
                 }
             });
         });
@@ -339,6 +334,7 @@ public class Program
 
         // Test database connectivity first
         await context.Database.CanConnectAsync();
+        logger.LogInformation("Database connection established successfully");
 
         // Apply migrations and seed data based on environment
         await InitializeDatabaseByEnvironment(app, context, logger);

@@ -56,7 +56,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
             // Capture page content for analysis
             var pageContent = await Page.ContentAsync();
             _output.WriteLine("=== PAGE CONTENT (first 1000 chars) ===");
-            _output.WriteLine(pageContent.Length > 1000 ? string.Concat(pageContent.AsSpan(0, 1000)) + "..." : pageContent);
+            _output.WriteLine(pageContent.Length > 1000 ? pageContent.Substring(0, 1000) + "..." : pageContent);
             
             // Check for specific authentication-related elements
             var authElements = new[]
@@ -195,7 +195,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
             {
                 var content = await Page.ContentAsync();
                 _output.WriteLine("Discovery endpoint accessible - content preview:");
-                _output.WriteLine(content.Length > 500 ? string.Concat(content.AsSpan(0, 500)) + "..." : content);
+                _output.WriteLine(content.Length > 500 ? content.Substring(0, 500) + "..." : content);
             }
             
             // Test the authorization endpoint by trying to navigate there
@@ -229,7 +229,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                 // Capture form content
                 var formContent = await Page.ContentAsync();
                 _output.WriteLine("=== LOGIN FORM CONTENT (first 1000 chars) ===");
-                _output.WriteLine(formContent.Length > 1000 ? string.Concat(formContent.AsSpan(0, 1000)) + "..." : formContent);
+                _output.WriteLine(formContent.Length > 1000 ? formContent.Substring(0, 1000) + "..." : formContent);
             }
             
             Assert.Fail("Diagnostic test - check output for identity server endpoint details");
@@ -362,7 +362,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
             {
                 _output.WriteLine("No redirect to login detected. Checking page content...");
                 var pageContent = await Page.ContentAsync();
-                _output.WriteLine($"Page content (first 500 chars): {string.Concat(pageContent.AsSpan(0, Math.Min(500, pageContent.Length)))}");
+                _output.WriteLine($"Page content (first 500 chars): {pageContent.Substring(0, Math.Min(500, pageContent.Length))}");
                 
                 // Check if we're actually on a Blazor app page
                 var hasBlazorApp = await Page.IsVisibleAsync("#app");
@@ -375,7 +375,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                 var userInfo = await Page.EvaluateAsync<string>("() => window.localStorage.getItem('oidc.user')");
                 if (userInfo != null)
                 {
-                    _output.WriteLine($"Found existing user authentication: {string.Concat(userInfo.AsSpan(0, Math.Min(200, userInfo.Length)))}...");
+                    _output.WriteLine($"Found existing user authentication: {userInfo.Substring(0, Math.Min(200, userInfo.Length))}...");
                 }
                 
                 Assert.Fail($"Expected redirect to login page, but stayed on: {currentUrl}");
@@ -473,7 +473,7 @@ public class AuthenticationDiagnosticTests : E2ETestBase
                 }
                 
                 var pageContent = await Page.ContentAsync();
-                _output.WriteLine($"Login page content (first 1000 chars): {string.Concat(pageContent.AsSpan(0, Math.Min(1000, pageContent.Length)))}");
+                _output.WriteLine($"Login page content (first 1000 chars): {pageContent.Substring(0, Math.Min(1000, pageContent.Length))}");
             }
             else if (isAuthenticated)
             {
