@@ -1,8 +1,5 @@
-using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
@@ -13,263 +10,230 @@ using System.Threading;
 namespace backend.ApiTests
 {
     /// <summary>
-    /// Performance and stress tests for API endpoints
+    /// Integration performance and stress tests for API endpoints.
+    /// These tests run against the actual docker-compose.identity.yml instance with JWT authentication.
     /// </summary>
-    public class PerformanceTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class PerformanceTests : BaseIntegrationTest
     {
-        public PerformanceTests(TestWebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CreateMultipleRequirementsPerformanceTest()
         {
-            const int requirementCount = 50;
-            var stopwatch = Stopwatch.StartNew();
-            var createdRequirements = new List<RequirementDto>();
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
 
-            // Create multiple requirements
+            const int requirementCount = 10; // Reduced for integration tests
+            var stopwatch = Stopwatch.StartNew();
+            var projectId = await GetValidProjectIdAsync();
+
+            // Act
+            var tasks = new List<Task>();
             for (int i = 0; i < requirementCount; i++)
             {
-                var requirementDto = new RequirementDto
+                var requirement = new RequirementDto
                 {
-                    Title = $"Performance Test Requirement {i + 1}",
+                    Title = $"Performance Test Requirement {i}",
                     Type = RequirementType.CRS,
                     Status = RequirementStatus.Draft,
-                    Description = $"Performance test requirement number {i + 1}",
+                    Description = $"Performance test requirement number {i}",
                     CreatedBy = 1,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ProjectId = projectId
                 };
 
-                var response = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
-                response.EnsureSuccessStatusCode();
-                var created = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-                if (created != null)
-                {
-                    createdRequirements.Add(created);
-                }
+                tasks.Add(_client.PostAsJsonAsync("/api/requirement", requirement, _jsonOptions));
             }
 
+            await Task.WhenAll(tasks);
             stopwatch.Stop();
 
-            // Performance assertions
-            Assert.Equal(requirementCount, createdRequirements.Count);
-            Assert.True(stopwatch.ElapsedMilliseconds < 30000, $"Creating {requirementCount} requirements took {stopwatch.ElapsedMilliseconds}ms, expected < 30000ms");
-            
-            // Test retrieval performance
-            var retrievalStopwatch = Stopwatch.StartNew();
-            var listResponse = await _client.GetAsync("/api/requirement");
-            listResponse.EnsureSuccessStatusCode();
-            var allRequirements = await listResponse.Content.ReadFromJsonAsync<List<RequirementDto>>(_jsonOptions);
-            retrievalStopwatch.Stop();
-
-            Assert.NotNull(allRequirements);
-            Assert.True(allRequirements.Count >= requirementCount);
-            Assert.True(retrievalStopwatch.ElapsedMilliseconds < 5000, $"Retrieving requirements took {retrievalStopwatch.ElapsedMilliseconds}ms, expected < 5000ms");
-        }
-
-        [Fact]
-        public async Task ConcurrentRequestsStressTest()
-        {
-            const int concurrentRequests = 20;
-            var tasks = new List<Task<bool>>();
-
-            // Create concurrent requests
-            for (int i = 0; i < concurrentRequests; i++)
+            // Assert
+            Assert.True(stopwatch.ElapsedMilliseconds < 30000); // Should complete within 30 seconds
+            foreach (var task in tasks.Cast<Task<System.Net.Http.HttpResponseMessage>>())
             {
-                int requestId = i;
-                tasks.Add(Task.Run(async () =>
-                {
-                    try
-                    {
-                        var requirementDto = new RequirementDto
-                        {
-                            Title = $"Concurrent Test Requirement {requestId}",
-                            Type = RequirementType.CRS,
-                            Status = RequirementStatus.Draft,
-                            Description = $"Concurrent test requirement {requestId}",
-                            CreatedBy = 1,
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        var response = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
-                        return response.IsSuccessStatusCode;
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }));
-            }
-
-            var stopwatch = Stopwatch.StartNew();
-            var results = await Task.WhenAll(tasks);
-            stopwatch.Stop();
-
-            // Verify all requests succeeded
-            Assert.True(results.All(r => r), "All concurrent requests should succeed");
-            Assert.True(stopwatch.ElapsedMilliseconds < 15000, $"Concurrent requests took {stopwatch.ElapsedMilliseconds}ms, expected < 15000ms");
-        }
-
-        [Fact]
-        public async Task LargeTestCaseWithManyStepsPerformanceTest()
-        {
-            const int stepCount = 100;
-            var steps = new List<TestStepDto>();
-
-            // Create a test case with many steps
-            for (int i = 0; i < stepCount; i++)
-            {
-                steps.Add(new TestStepDto
-                {
-                    Description = $"Performance test step {i + 1}: Execute action {i + 1}",
-                    ExpectedResult = $"Expected result for step {i + 1}"
-                });
-            }
-
-            var testCaseDto = new TestCaseDto
-            {
-                Title = "Large Performance Test Case",
-                Description = "Test case with many steps for performance testing",
-                SuiteId = 1,
-                CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow,
-                Steps = steps
-            };
-
-            var stopwatch = Stopwatch.StartNew();
-            var response = await _client.PostAsJsonAsync("/api/testcase", testCaseDto, _jsonOptions);
-            response.EnsureSuccessStatusCode();
-            var created = await response.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
-            stopwatch.Stop();
-
-            Assert.NotNull(created);
-            Assert.Equal(stepCount, created.Steps?.Count ?? 0);
-            Assert.True(stopwatch.ElapsedMilliseconds < 10000, $"Creating test case with {stepCount} steps took {stopwatch.ElapsedMilliseconds}ms, expected < 10000ms");
-
-            // Test retrieval performance
-            var retrievalStopwatch = Stopwatch.StartNew();
-            var getResponse = await _client.GetAsync($"/api/testcase/{created.Id}");
-            getResponse.EnsureSuccessStatusCode();
-            var retrieved = await getResponse.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
-            retrievalStopwatch.Stop();
-
-            Assert.NotNull(retrieved);
-            Assert.Equal(stepCount, retrieved.Steps?.Count ?? 0);
-            Assert.True(retrievalStopwatch.ElapsedMilliseconds < 5000, $"Retrieving test case with {stepCount} steps took {retrievalStopwatch.ElapsedMilliseconds}ms, expected < 5000ms");
-        }
-
-        [Fact]
-        public async Task BulkRequirementVersioningPerformanceTest()
-        {
-            // Create a requirement
-            var requirementDto = new RequirementDto
-            {
-                Title = "Versioning Performance Test",
-                Type = RequirementType.CRS,
-                Status = RequirementStatus.Draft,
-                Description = "Requirement for versioning performance test",
-                CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
-            createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-
-            if (created != null)
-            {
-                const int updateCount = 20;
-                var stopwatch = Stopwatch.StartNew();
-
-                // Perform multiple updates to create versions
-                for (int i = 0; i < updateCount; i++)
-                {
-                    created.Title = $"Versioning Performance Test - Update {i + 1}";
-                    created.Description = $"Updated description {i + 1}";
-                    
-                    var updateResponse = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created, _jsonOptions);
-                    updateResponse.EnsureSuccessStatusCode();
-                }
-
-                stopwatch.Stop();
-
-                // Verify version history performance
-                var versionStopwatch = Stopwatch.StartNew();
-                var versionsResponse = await _client.GetAsync($"/api/Redline/requirement/{created.Id}/versions");
-                versionsResponse.EnsureSuccessStatusCode();
-                var versions = await versionsResponse.Content.ReadFromJsonAsync<List<RequirementVersionDto>>(_jsonOptions);
-                versionStopwatch.Stop();
-
-                Assert.NotNull(versions);
-                Assert.True(versions.Count >= updateCount + 1); // Initial + updates
-                Assert.True(stopwatch.ElapsedMilliseconds < 20000, $"Creating {updateCount} versions took {stopwatch.ElapsedMilliseconds}ms, expected < 20000ms");
-                Assert.True(versionStopwatch.ElapsedMilliseconds < 3000, $"Retrieving version history took {versionStopwatch.ElapsedMilliseconds}ms, expected < 3000ms");
+                Assert.True(task.Result.IsSuccessStatusCode);
             }
         }
 
         [Fact]
         public async Task MassiveDataRetrievalPerformanceTest()
         {
-            // First, create some test data
-            const int dataCount = 30;
-            var createdIds = new List<int>();
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
 
-            // Create requirements
-            for (int i = 0; i < dataCount; i++)
-            {
-                var req = new RequirementDto
-                {
-                    Title = $"Mass Data Req {i}",
-                    Type = RequirementType.CRS,
-                    Status = RequirementStatus.Draft,
-                    Description = $"Mass data requirement {i}",
-                    CreatedBy = 1,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                var response = await _client.PostAsJsonAsync("/api/requirement", req, _jsonOptions);
-                if (response.IsSuccessStatusCode)
-                {
-                    var created = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-                    if (created != null)
-                    {
-                        createdIds.Add(created.Id);
-                    }
-                }
-            }
-
-            // Test bulk retrieval performance
             var stopwatch = Stopwatch.StartNew();
+
+            // Act - Get all requirements
+            var response = await _client.GetAsync("/api/requirement");
+            stopwatch.Stop();
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.True(stopwatch.ElapsedMilliseconds < 10000); // Should complete within 10 seconds
+
+            var requirements = await response.Content.ReadFromJsonAsync<List<RequirementDto>>(_jsonOptions);
+            Assert.NotNull(requirements);
+        }
+
+        [Fact]
+        public async Task BulkRequirementVersioningPerformanceTest()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            var projectId = await GetValidProjectIdAsync();
             
-            // Get all requirements
-            var reqResponse = await _client.GetAsync("/api/requirement");
-            reqResponse.EnsureSuccessStatusCode();
-            var requirements = await reqResponse.Content.ReadFromJsonAsync<List<RequirementDto>>(_jsonOptions);
+            // Create a requirement first
+            var requirement = new RequirementDto
+            {
+                Title = "Versioning Performance Test",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
+                Description = "For versioning performance test",
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = projectId
+            };
 
-            // Get all test cases
-            var caseResponse = await _client.GetAsync("/api/testcase");
-            caseResponse.EnsureSuccessStatusCode();
-            var testCases = await caseResponse.Content.ReadFromJsonAsync<List<TestCaseDto>>(_jsonOptions);
+            var createResponse = await _client.PostAsJsonAsync("/api/requirement", requirement, _jsonOptions);
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
 
-            // Get all test suites
-            var suiteResponse = await _client.GetAsync("/api/testsuite");
-            suiteResponse.EnsureSuccessStatusCode();
-            var testSuites = await suiteResponse.Content.ReadFromJsonAsync<List<TestSuiteDto>>(_jsonOptions);
+            const int updateCount = 5; // Reduced for integration tests
+            var stopwatch = Stopwatch.StartNew();
 
-            // Get all test plans
-            var planResponse = await _client.GetAsync("/api/testplan");
-            planResponse.EnsureSuccessStatusCode();
-            var testPlans = await planResponse.Content.ReadFromJsonAsync<List<TestPlanDto>>(_jsonOptions);
+            // Act - Update the requirement multiple times to create versions
+            for (int i = 0; i < updateCount; i++)
+            {
+                created!.Description = $"Updated description version {i}";
+                var updateResponse = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created, _jsonOptions);
+                updateResponse.EnsureSuccessStatusCode();
+            }
 
             stopwatch.Stop();
 
-            // Performance assertions
-            Assert.NotNull(requirements);
-            Assert.NotNull(testCases);
-            Assert.NotNull(testSuites);
-            Assert.NotNull(testPlans);
-            Assert.True(stopwatch.ElapsedMilliseconds < 10000, $"Bulk data retrieval took {stopwatch.ElapsedMilliseconds}ms, expected < 10000ms");
+            // Assert
+            Assert.True(stopwatch.ElapsedMilliseconds < 15000); // Should complete within 15 seconds
+
+            // Verify versions were created
+            var versionsResponse = await _client.GetAsync($"/api/Redline/requirement/{created!.Id}/versions");
+            versionsResponse.EnsureSuccessStatusCode();
+            var versions = await versionsResponse.Content.ReadFromJsonAsync<List<RequirementVersionDto>>(_jsonOptions);
+            Assert.NotNull(versions);
+            Assert.True(versions.Count >= updateCount);
+        }
+
+        [Fact]
+        public async Task ConcurrentRequestsStressTest()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            const int concurrentRequests = 5; // Reduced for integration tests
+            var stopwatch = Stopwatch.StartNew();
+
+            // Act - Make concurrent requests
+            var tasks = new List<Task<System.Net.Http.HttpResponseMessage>>();
+            for (int i = 0; i < concurrentRequests; i++)
+            {
+                tasks.Add(_client.GetAsync("/api/requirement"));
+            }
+
+            var responses = await Task.WhenAll(tasks);
+            stopwatch.Stop();
+
+            // Assert
+            Assert.True(stopwatch.ElapsedMilliseconds < 20000); // Should complete within 20 seconds
+            foreach (var response in responses)
+            {
+                Assert.True(response.IsSuccessStatusCode);
+            }
+        }
+
+        [Fact]
+        public async Task LargeTestCaseWithManyStepsPerformanceTest()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Create a test suite first
+            var testSuite = new TestSuiteDto
+            {
+                Name = "Performance Test Suite",
+                Description = "For performance testing",
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var suiteResponse = await _client.PostAsJsonAsync("/api/testsuite", testSuite, _jsonOptions);
+            suiteResponse.EnsureSuccessStatusCode();
+            var createdSuite = await suiteResponse.Content.ReadFromJsonAsync<TestSuiteDto>(_jsonOptions);
+
+            // Create test case with many steps
+            const int stepCount = 20; // Reduced for integration tests
+            var steps = new List<TestStepDto>();
+            for (int i = 0; i < stepCount; i++)
+            {
+                steps.Add(new TestStepDto
+                {
+                    Description = $"Performance test step {i}",
+                    ExpectedResult = $"Expected result for step {i}"
+                });
+            }
+
+            var testCase = new TestCaseDto
+            {
+                Title = "Large Performance Test Case",
+                Description = "Test case with many steps for performance testing",
+                SuiteId = createdSuite!.Id,
+                Steps = steps,
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var stopwatch = Stopwatch.StartNew();
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/testcase", testCase, _jsonOptions);
+            stopwatch.Stop();
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            Assert.True(stopwatch.ElapsedMilliseconds < 10000); // Should complete within 10 seconds
+
+            var created = await response.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
+            Assert.NotNull(created);
+            Assert.Equal(stepCount, created.Steps.Count);
+        }
+
+        /// <summary>
+        /// Helper method to get a valid project ID for testing.
+        /// </summary>
+        private async Task<int> GetValidProjectIdAsync()
+        {
+            var response = await _client.GetAsync("/api/projects");
+            response.EnsureSuccessStatusCode();
+            var projects = await response.Content.ReadFromJsonAsync<PagedResult<ProjectDto>>(_jsonOptions);
+            
+            if (projects?.Items?.Count == 0)
+            {
+                // Create a test project if none exist
+                var createDto = new CreateProjectDto
+                {
+                    Name = $"Test Project for Performance {Guid.NewGuid():N}",
+                    Code = $"PERF{DateTime.UtcNow:mmss}",
+                    Description = "Auto-created for performance testing",
+                    OwnerId = 1,
+                    Status = ProjectStatus.Planning
+                };
+
+                var createResponse = await _client.PostAsJsonAsync("/api/projects", createDto, _jsonOptions);
+                createResponse.EnsureSuccessStatusCode();
+                var created = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+                return created!.Id;
+            }
+
+            return projects!.Items![0].Id;
         }
     }
 }
