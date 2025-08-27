@@ -4,6 +4,7 @@ using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 
 namespace backend.ApiTests
