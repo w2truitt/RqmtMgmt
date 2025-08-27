@@ -102,22 +102,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new requirement by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The requirement data to create.</param>
+        /// <param name="requirement">The requirement data to create.</param>
         /// <returns>The created requirement with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
+        public async Task<RequirementDto?> CreateAsync(RequirementDto requirement)
         {
-            var resp = await _http.PostAsJsonAsync("/api/Requirement", dto, _jsonOptions);
+            var resp = await _http.PostAsJsonAsync("/api/Requirement", requirement, _jsonOptions);
             return await resp.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
         }
 
         /// <summary>
         /// Updates an existing requirement by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The requirement data to update.</param>
+        /// <param name="requirement">The requirement data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(RequirementDto dto)
+        public async Task<bool> UpdateAsync(RequirementDto requirement)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/Requirement/{dto.Id}", dto, _jsonOptions);
+            var resp = await _http.PutAsJsonAsync($"/api/Requirement/{requirement.Id}", requirement, _jsonOptions);
             return resp.IsSuccessStatusCode;
         }
 

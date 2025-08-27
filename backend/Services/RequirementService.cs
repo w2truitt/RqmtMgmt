@@ -265,22 +265,22 @@ namespace backend.Services
         /// <summary>
         /// Creates a new requirement with validation and initial versioning.
         /// </summary>
-        /// <param name="dto">The requirement data to create.</param>
+        /// <param name="requirement">The requirement data to create.</param>
         /// <returns>The created requirement DTO if successful; otherwise, null.</returns>
-        public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
+        public async Task<RequirementDto?> CreateAsync(RequirementDto requirement)
         {
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            if (string.IsNullOrWhiteSpace(requirement.Title))
                 return null;
             
-            if (dto.CreatedBy <= 0)
+            if (requirement.CreatedBy <= 0)
                 return null;
             
             // Check for circular reference if ParentId is provided
-            if (dto.ParentId.HasValue && await WouldCreateCircularReference(dto.Id, dto.ParentId.Value))
+            if (requirement.ParentId.HasValue && await WouldCreateCircularReference(requirement.Id, requirement.ParentId.Value))
                 return null;
 
-            var entity = DtoToEntity(dto);
+            var entity = DtoToEntity(requirement);
             _context.Requirements.Add(entity);
             await _context.SaveChangesAsync();
 
@@ -311,23 +311,23 @@ namespace backend.Services
         /// <summary>
         /// Updates an existing requirement with validation, versioning, and circular reference checking.
         /// </summary>
-        /// <param name="dto">The requirement data to update.</param>
+        /// <param name="requirement">The requirement data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(RequirementDto dto)
+        public async Task<bool> UpdateAsync(RequirementDto requirement)
         {
-            var entity = await _context.Requirements.FindAsync(dto.Id);
+            var entity = await _context.Requirements.FindAsync(requirement.Id);
             if (entity == null)
                 return false;
 
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            if (string.IsNullOrWhiteSpace(requirement.Title))
                 return false;
             
-            if (dto.CreatedBy <= 0)
+            if (requirement.CreatedBy <= 0)
                 return false;
             
             // Check for circular reference if ParentId is provided
-            if (dto.ParentId.HasValue && await WouldCreateCircularReference(dto.Id, dto.ParentId.Value))
+            if (requirement.ParentId.HasValue && await WouldCreateCircularReference(requirement.Id, requirement.ParentId.Value))
                 return false;
 
             // Save current state as new version BEFORE updating
@@ -341,17 +341,17 @@ namespace backend.Services
                 Description = entity.Description,
                 ParentId = entity.ParentId,
                 Status = entity.Status,
-                ModifiedBy = dto.CreatedBy, // Use the user making the update
+                ModifiedBy = requirement.CreatedBy, // Use the user making the update
                 ModifiedAt = DateTime.UtcNow
             };
             _context.RequirementVersions.Add(version);
 
             // Update entity from DTO (don't change CreatedBy and CreatedAt)
-            entity.Type = dto.Type;
-            entity.Title = dto.Title;
-            entity.Description = dto.Description;
-            entity.ParentId = dto.ParentId;
-            entity.Status = dto.Status;
+            entity.Type = requirement.Type;
+            entity.Title = requirement.Title;
+            entity.Description = requirement.Description;
+            entity.ParentId = requirement.ParentId;
+            entity.Status = requirement.Status;
             entity.Version = nextVersion;
             entity.UpdatedAt = DateTime.UtcNow;
 

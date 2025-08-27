@@ -48,11 +48,11 @@ namespace backend.Services
         /// <summary>
         /// Creates a new test plan with the provided data and enum type conversion.
         /// </summary>
-        /// <param name="dto">The test plan data to create.</param>
+        /// <param name="testPlan">The test plan data to create.</param>
         /// <returns>The created test plan DTO if successful; otherwise, null.</returns>
-        public async Task<TestPlanDto?> CreateAsync(TestPlanDto dto)
+        public async Task<TestPlanDto?> CreateAsync(TestPlanDto testPlan)
         {
-            var entity = FromDto(dto);
+            var entity = FromDto(testPlan);
             _context.TestPlans.Add(entity);
             await _context.SaveChangesAsync();
             return ToDto(entity);
@@ -61,19 +61,19 @@ namespace backend.Services
         /// <summary>
         /// Updates an existing test plan with new data including type conversion.
         /// </summary>
-        /// <param name="dto">The test plan data to update.</param>
+        /// <param name="testPlan">The test plan data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestPlanDto dto)
+        public async Task<bool> UpdateAsync(TestPlanDto testPlan)
         {
-            var tracked = await _context.TestPlans.FindAsync(dto.Id);
+            var tracked = await _context.TestPlans.FindAsync(testPlan.Id);
             if (tracked == null) return false;
             
-            tracked.Name = dto.Name;
+            tracked.Name = testPlan.Name;
             // Safe enum parsing with fallback to current value
-            tracked.Type = Enum.TryParse<TestPlanType>(dto.Type, out var t) ? t : tracked.Type;
-            tracked.Description = dto.Description;
-            tracked.CreatedBy = dto.CreatedBy;
-            tracked.CreatedAt = dto.CreatedAt;
+            tracked.Type = Enum.TryParse<TestPlanType>(testPlan.Type, out var t) ? t : tracked.Type;
+            tracked.Description = testPlan.Description;
+            tracked.CreatedBy = testPlan.CreatedBy;
+            tracked.CreatedAt = testPlan.CreatedAt;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -115,15 +115,15 @@ namespace backend.Services
         /// </summary>
         /// <param name="dto">The test plan DTO to convert.</param>
         /// <returns>A TestPlan entity with all properties mapped and type converted from string.</returns>
-        private static TestPlan FromDto(TestPlanDto dto) => new TestPlan
+        private static TestPlan FromDto(TestPlanDto testPlan) => new TestPlan
         {
-            Id = dto.Id,
-            Name = dto.Name,
-            Type = Enum.TryParse<TestPlanType>(dto.Type, out var t) ? t : TestPlanType.UserValidation,
-            Description = dto.Description,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt,
-            ProjectId = dto.ProjectId
+            Id = testPlan.Id,
+            Name = testPlan.Name,
+            Type = Enum.TryParse<TestPlanType>(testPlan.Type, out var t) ? t : TestPlanType.UserValidation,
+            Description = testPlan.Description,
+            CreatedBy = testPlan.CreatedBy,
+            CreatedAt = testPlan.CreatedAt,
+            ProjectId = testPlan.ProjectId
         };
     }
 }

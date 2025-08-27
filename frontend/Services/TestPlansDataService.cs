@@ -38,22 +38,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new test plan by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The test plan data to create, including type specification.</param>
+        /// <param name="testPlan">The test plan data to create, including type specification.</param>
         /// <returns>The created test plan with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<TestPlanDto?> CreateAsync(TestPlanDto dto)
+        public async Task<TestPlanDto?> CreateAsync(TestPlanDto testPlan)
         {
-            var resp = await _http.PostAsJsonAsync("/api/TestPlan", dto);
+            var resp = await _http.PostAsJsonAsync("/api/TestPlan", testPlan);
             return await resp.Content.ReadFromJsonAsync<TestPlanDto>();
         }
 
         /// <summary>
         /// Updates an existing test plan by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The test plan data to update, including type changes.</param>
+        /// <param name="testPlan">The test plan data to update, including type changes.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestPlanDto dto)
+        public async Task<bool> UpdateAsync(TestPlanDto testPlan)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/TestPlan/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/TestPlan/{testPlan.Id}", testPlan);
             return resp.IsSuccessStatusCode;
         }
 

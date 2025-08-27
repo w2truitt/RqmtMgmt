@@ -48,13 +48,13 @@ namespace backend.Services
         /// <summary>
         /// Creates a new test suite with the provided data.
         /// </summary>
-        /// <param name="dto">The test suite data to create.</param>
+        /// <param name="testSuite">The test suite data to create.</param>
         /// <returns>The created test suite DTO if successful; otherwise, null.</returns>
-        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto dto)
+        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite)
         {
-            var entity = FromDto(dto);
-            entity.CreatedBy = dto.CreatedBy;
-            entity.CreatedAt = dto.CreatedAt;
+            var entity = FromDto(testSuite);
+            entity.CreatedBy = testSuite.CreatedBy;
+            entity.CreatedAt = testSuite.CreatedAt;
             _context.TestSuites.Add(entity);
             await _context.SaveChangesAsync();
             
@@ -70,17 +70,17 @@ namespace backend.Services
         /// <summary>
         /// Updates an existing test suite with new data.
         /// </summary>
-        /// <param name="dto">The test suite data to update.</param>
+        /// <param name="testSuite">The test suite data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestSuiteDto dto)
+        public async Task<bool> UpdateAsync(TestSuiteDto testSuite)
         {
-            var tracked = await _context.TestSuites.FindAsync(dto.Id);
+            var tracked = await _context.TestSuites.FindAsync(testSuite.Id);
             if (tracked == null) return false;
             
-            tracked.Name = dto.Name;
-            tracked.Description = dto.Description;
-            tracked.CreatedBy = dto.CreatedBy;
-            tracked.CreatedAt = dto.CreatedAt;
+            tracked.Name = testSuite.Name;
+            tracked.Description = testSuite.Description;
+            tracked.CreatedBy = testSuite.CreatedBy;
+            tracked.CreatedAt = testSuite.CreatedAt;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -121,14 +121,14 @@ namespace backend.Services
         /// </summary>
         /// <param name="dto">The test suite DTO to convert.</param>
         /// <returns>A TestSuite entity with all properties mapped.</returns>
-        private static TestSuite FromDto(TestSuiteDto dto) => new TestSuite
+        private static TestSuite FromDto(TestSuiteDto testSuite) => new TestSuite
         {
-            Id = dto.Id,
-            Name = dto.Name,
-            Description = dto.Description,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt,
-            ProjectId = dto.ProjectId
+            Id = testSuite.Id,
+            Name = testSuite.Name,
+            Description = testSuite.Description,
+            CreatedBy = testSuite.CreatedBy,
+            CreatedAt = testSuite.CreatedAt,
+            ProjectId = testSuite.ProjectId
         };
     }
 }

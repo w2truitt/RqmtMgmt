@@ -90,6 +90,9 @@ namespace backend.ApiTests
             var resp = await _client.DeleteAsync("/api/requirementtestcaselink?requirementId=9999999&testCaseId=9999999");
             // The service doesn't return NotFound, it just succeeds silently
             resp.EnsureSuccessStatusCode();
+
+            // Explicitly assert the expected behavior for SonarQube compliance
+            Assert.True(resp.IsSuccessStatusCode, "Service should succeed silently for non-existent links");
         }
 
         [Fact]

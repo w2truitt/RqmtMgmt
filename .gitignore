@@ -35,6 +35,7 @@ certs/
 keys/
 Migrations/
 publish/
+.sonarqube/
 
 # Misc
 *.swp
@@ -49,3 +50,6 @@ swagger.json
 backend/NuGet.Config
 frontend/NuGet.Config
 *.jwk
+coverage.iml
+coverage.xml
+mcp.json

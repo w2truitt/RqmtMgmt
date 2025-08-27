@@ -38,22 +38,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new test suite by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The test suite data to create.</param>
+        /// <param name="testSuite">The test suite data to create.</param>
         /// <returns>The created test suite with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto dto)
+        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite)
         {
-            var resp = await _http.PostAsJsonAsync("/api/TestSuite", dto);
+            var resp = await _http.PostAsJsonAsync("/api/TestSuite", testSuite);
             return await resp.Content.ReadFromJsonAsync<TestSuiteDto>();
         }
 
         /// <summary>
         /// Updates an existing test suite by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The test suite data to update.</param>
+        /// <param name="testSuite">The test suite data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestSuiteDto dto)
+        public async Task<bool> UpdateAsync(TestSuiteDto testSuite)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/TestSuite/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/TestSuite/{testSuite.Id}", testSuite);
             return resp.IsSuccessStatusCode;
         }
 

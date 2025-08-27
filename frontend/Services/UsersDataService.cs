@@ -38,22 +38,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new user by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The user data to create.</param>
+        /// <param name="user">The user data to create.</param>
         /// <returns>The created user with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<UserDto?> CreateAsync(UserDto dto)
+        public async Task<UserDto?> CreateAsync(UserDto user)
         {
-            var resp = await _http.PostAsJsonAsync("/api/User", dto);
+            var resp = await _http.PostAsJsonAsync("/api/User", user);
             return await resp.Content.ReadFromJsonAsync<UserDto>();
         }
 
         /// <summary>
         /// Updates an existing user by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The user data to update.</param>
+        /// <param name="user">The user data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(UserDto dto)
+        public async Task<bool> UpdateAsync(UserDto user)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/User/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/User/{user.Id}", user);
             return resp.IsSuccessStatusCode;
         }
 

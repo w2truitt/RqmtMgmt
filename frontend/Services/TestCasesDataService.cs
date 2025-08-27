@@ -38,22 +38,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new test case by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The test case data to create, including test steps.</param>
+        /// <param name="testCase">The test case data to create, including test steps.</param>
         /// <returns>The created test case with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<TestCaseDto?> CreateAsync(TestCaseDto dto)
+        public async Task<TestCaseDto?> CreateAsync(TestCaseDto testCase)
         {
-            var resp = await _http.PostAsJsonAsync("/api/TestCase", dto);
+            var resp = await _http.PostAsJsonAsync("/api/TestCase", testCase);
             return await resp.Content.ReadFromJsonAsync<TestCaseDto>();
         }
 
         /// <summary>
         /// Updates an existing test case by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The test case data to update, including test steps.</param>
+        /// <param name="testCase">The test case data to update, including test steps.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestCaseDto dto)
+        public async Task<bool> UpdateAsync(TestCaseDto testCase)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/TestCase/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/TestCase/{testCase.Id}", testCase);
             return resp.IsSuccessStatusCode;
         }
 
