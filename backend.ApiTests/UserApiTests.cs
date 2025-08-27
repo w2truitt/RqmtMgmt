@@ -19,9 +19,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanListUsers()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var response = await _client.GetAsync("/api/user");
             response.EnsureSuccessStatusCode();
             var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
@@ -32,9 +29,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetUserById()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             // Get all users and pick first
             var usersResp = await _client.GetAsync("/api/user");
             usersResp.EnsureSuccessStatusCode();
@@ -53,9 +47,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetNonExistentUserReturnsNotFound()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var resp = await _client.GetAsync("/api/user/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -63,9 +54,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanCreateAndDeleteUser()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var createDto = new UserDto
             {
                 UserName = $"apitestuser_{Guid.NewGuid().ToString().Substring(0, 8)}",
@@ -90,9 +78,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateUser()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             // Create
             var createDto = new UserDto
             {
@@ -119,9 +104,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateNonExistentUserReturnsNotFound()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var updateDto = new UserDto
             {
                 Id = 9999999,
@@ -136,9 +118,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteNonExistentUserReturnsNotFound()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var resp = await _client.DeleteAsync("/api/user/9999999");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -146,9 +125,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanAssignGetAndRemoveRoles()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             // Create user
             var createDto = new UserDto
             {
@@ -190,9 +166,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task AssignRolesToNonExistentUserReturnsNotFound()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var rolesToAssign = new List<string> { "GhostRole" };
             var resp = await _client.PostAsJsonAsync("/api/user/9999999/roles", rolesToAssign);
             Assert.False(resp.IsSuccessStatusCode);
@@ -201,9 +174,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task RemoveRoleFromNonExistentUserReturnsNotFound()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             var resp = await _client.DeleteAsync("/api/user/9999999/roles/NoRole");
             Assert.False(resp.IsSuccessStatusCode);
         }
@@ -211,9 +181,6 @@ namespace backend.ApiTests
         [Fact]
         public async Task RemoveNonExistentRoleReturnsNotFound()
         {
-            // Arrange
-            await SkipIfSystemNotAvailableAsync();
-
             // Create user
             var createDto = new UserDto
             {
