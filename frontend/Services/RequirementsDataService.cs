@@ -32,7 +32,17 @@ namespace frontend.Services
         /// </summary>
         /// <returns>A list of all requirements, or an empty list if the request fails.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
-            => await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement", _jsonOptions) ?? new();
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement", _jsonOptions) ?? new();
+            }
+            catch (HttpRequestException)
+            {
+                // Return empty list on HTTP errors
+                return new List<RequirementDto>();
+            }
+        }
 
         /// <summary>
         /// Retrieves all requirements for a specific project from the backend API.
@@ -97,7 +107,17 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the requirement.</param>
         /// <returns>The requirement if found; otherwise, null.</returns>
         public async Task<RequirementDto?> GetByIdAsync(int id)
-            => await _http.GetFromJsonAsync<RequirementDto>($"/api/Requirement/{id}", _jsonOptions);
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<RequirementDto>($"/api/Requirement/{id}", _jsonOptions);
+            }
+            catch (HttpRequestException)
+            {
+                // Return null on HTTP errors (like 404 Not Found)
+                return null;
+            }
+        }
 
         /// <summary>
         /// Creates a new requirement by sending a POST request to the backend API.
