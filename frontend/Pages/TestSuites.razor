@@ -246,53 +246,43 @@
     {
         try
         {
-            // Load project details first
-            var projectData = await ProjectService.GetProjectByIdAsync(ProjectId!.Value);
-            if (projectData != null)
-            {
-                this.project = projectData;
-                await ProjectContextService.SetCurrentProjectAsync(projectData);
-                
-                // Load test suites for this project
-                await LoadTestSuites();
-            }
-            else
-            {
-                errorMessage = "Failed to load project";
-                Navigation.NavigateTo("/projects");
-            }
+            await LoadProjectContext();
+            await LoadTestSuites();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading project: {ex.Message}";
-            Console.WriteLine($"Error loading project {ProjectId}: {ex}");
+            HandleProjectLoadError(ex);
         }
+    }
+
+    private async Task LoadProjectContext()
+    {
+        var projectData = await ProjectService.GetProjectByIdAsync(ProjectId!.Value);
+        if (projectData != null)
+        {
+            this.project = projectData;
+            await ProjectContextService.SetCurrentProjectAsync(projectData);
+        }
+        else
+        {
+            throw new InvalidOperationException("Failed to load project");
+        }
+    }
+
+    private void HandleProjectLoadError(Exception ex)
+    {
+        errorMessage = $"Error loading project: {ex.Message}";
+        Console.WriteLine($"Error loading project {ProjectId}: {ex}");
+        Navigation.NavigateTo("/projects");
     }
 
     private async Task LoadTestSuites()
     {
         try
         {
-            var request = new PaginationParameters
-            {
-                PageNumber = currentPage,
-                PageSize = pageSize,
-                SearchTerm = searchTerm,
-                SortBy = sortBy,
-                ProjectId = ProjectId // Filter by project if specified
-            };
-
-            PagedResult<TestSuiteDto>? result;
+            var request = CreatePaginationRequest();
+            var result = await FetchTestSuitesData(request);
             
-            if (ProjectId.HasValue)
-            {
-                result = await TestSuiteService.GetPagedByProjectIdAsync(ProjectId.Value, request);
-            }
-            else
-            {
-                result = await TestSuiteService.GetPagedAsync(request);
-            }
-
             if (result != null)
             {
                 pagedResult = result;
@@ -304,37 +294,62 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading test suites: {ex.Message}";
-            Console.WriteLine($"Error loading test suites: {ex}");
+            HandleTestSuitesLoadError(ex);
         }
     }
 
-    private async Task SearchTestSuites()
+    private PaginationParameters CreatePaginationRequest()
+    {
+        return new PaginationParameters
+        {
+            PageNumber = currentPage,
+            PageSize = pageSize,
+            SearchTerm = searchTerm,
+            SortBy = sortBy,
+            ProjectId = ProjectId
+        };
+    }
+
+    private async Task<PagedResult<TestSuiteDto>?> FetchTestSuitesData(PaginationParameters request)
+    {
+        return ProjectId.HasValue
+            ? await TestSuiteService.GetPagedByProjectIdAsync(ProjectId.Value, request)
+            : await TestSuiteService.GetPagedAsync(request);
+    }
+
+    private void HandleTestSuitesLoadError(Exception ex)
+    {
+        errorMessage = $"Error loading test suites: {ex.Message}";
+        Console.WriteLine($"Error loading test suites: {ex}");
+    }
+
+    private async Task PerformSearch()
     {
         currentPage = 1;
         await LoadTestSuites();
     }
+
+    private async Task SearchTestSuites() => await PerformSearch();
+    private async Task SortTestSuites() => await PerformSearch();
 
     private async Task ClearSearch()
     {
         searchTerm = string.Empty;
-        currentPage = 1;
-        await LoadTestSuites();
-    }
-
-    private async Task SortTestSuites()
-    {
-        // Delegate to SearchTestSuites
-        await SearchTestSuites();
+        await PerformSearch();
     }
 
     private async Task GoToPage(int page)
     {
-        if (page >= 1 && page <= (pagedResult?.TotalPages ?? 1))
+        if (IsValidPageNumber(page))
         {
             currentPage = page;
             await LoadTestSuites();
         }
+    }
+
+    private bool IsValidPageNumber(int page)
+    {
+        return page >= 1 && page <= (pagedResult?.TotalPages ?? 1);
     }
 
     private async Task OnSearchKeyPress(KeyboardEventArgs e)
@@ -347,47 +362,60 @@
 
     private void CreateNewTestSuite()
     {
-        if (ProjectId.HasValue)
-        {
-            Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/new");
-        }
-        else
-        {
-            Navigation.NavigateTo("/testsuites/new");
-        }
+        var route = GenerateCreateRoute();
+        Navigation.NavigateTo(route);
+    }
+
+    private string GenerateCreateRoute()
+    {
+        return ProjectId.HasValue 
+            ? $"/projects/{ProjectId}/testsuites/new"
+            : "/testsuites/new";
     }
 
     private void ViewTestCases(int testSuiteId)
     {
-        if (ProjectId.HasValue)
-        {
-            Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/{testSuiteId}/testcases");
-        }
-        else
-        {
-            Navigation.NavigateTo($"/testsuites/{testSuiteId}/testcases");
-        }
+        var route = GenerateTestCasesRoute(testSuiteId);
+        Navigation.NavigateTo(route);
+    }
+
+    private string GenerateTestCasesRoute(int testSuiteId)
+    {
+        return ProjectId.HasValue 
+            ? $"/projects/{ProjectId}/testsuites/{testSuiteId}/testcases"
+            : $"/testsuites/{testSuiteId}/testcases";
     }
 
     private void EditTestSuite(int testSuiteId)
     {
-        if (ProjectId.HasValue)
-        {
-            Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/{testSuiteId}/edit");
-        }
-        else
-        {
-            Navigation.NavigateTo($"/testsuites/{testSuiteId}/edit");
-        }
+        var route = GenerateEditRoute(testSuiteId);
+        Navigation.NavigateTo(route);
+    }
+
+    private string GenerateEditRoute(int testSuiteId)
+    {
+        return ProjectId.HasValue 
+            ? $"/projects/{ProjectId}/testsuites/{testSuiteId}/edit"
+            : $"/testsuites/{testSuiteId}/edit";
     }
 
     private void ConfirmDeleteTestSuite(TestSuiteDto testSuite)
     {
+        LogDeleteAction(testSuite);
         // TODO: Implement delete confirmation modal
+    }
+
+    private void LogDeleteAction(TestSuiteDto testSuite)
+    {
         Console.WriteLine($"Delete test suite {testSuite.Id}: {testSuite.Name}");
     }
 
     private string GetTestCaseCountBadgeClass(int count)
+    {
+        return GetCountBadgeClassByRange(count);
+    }
+
+    private string GetCountBadgeClassByRange(int count)
     {
         return count switch
         {
