@@ -40,51 +40,124 @@ namespace backend.Controllers
         [Authorize]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
-            // Log all available claims for debugging
-            var allClaims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
-            Console.WriteLine($"Available claims: {string.Join(", ", allClaims)}");
-            Console.WriteLine($"User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
-            Console.WriteLine($"User.Identity.Name: {User.Identity?.Name}");
+            LogUserAuthenticationInfo();
             
-            // Try multiple approaches to get the email claim
-            var email = User.FindFirst(ClaimTypes.Email)?.Value 
-                       ?? User.FindFirst("email")?.Value 
-                       ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
-            
+            var email = ExtractEmailFromClaims();
             if (string.IsNullOrEmpty(email))
             {
-                // If no email claim, try to get it from the 'sub' claim or name claim
-                var subjectId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
-                var userName = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("name")?.Value;
-                
-                Console.WriteLine($"No email claim found. SubjectId: {subjectId}, UserName: {userName}");
-                
-                return StatusCode(460, new { 
-                    error = "AUTHENTICATED_BUT_NO_EMAIL_CLAIM - User is authenticated but email claim is missing from JWT token (460)",
-                    availableClaims = allClaims,
-                    subjectId = subjectId,
-                    userName = userName,
-                    debugInfo = "This is a 460 custom status, not 401 Unauthorized - authentication worked, but email claim missing"
-                });
+                return HandleMissingEmailClaim();
             }
 
             Console.WriteLine($"Found email claim: {email}");
 
-            // Get the user by email
             var user = await _userService.GetByEmailAsync(email);
             if (user == null)
             {
-                Console.WriteLine($"User with email '{email}' not found in database");
-                return StatusCode(461, new { 
-                    error = $"AUTHENTICATED_BUT_USER_NOT_IN_DB - User with email '{email}' not found in the system (461)",
-                    email = email,
-                    availableClaims = allClaims,
-                    debugInfo = "This is a 461 custom status, not 401 Unauthorized - authentication worked, but user not in database"
-                });
+                return HandleUserNotFoundInDatabase(email);
             }
 
             Console.WriteLine($"Successfully found user: {user.Email}");
             return Ok(user);
+        }
+
+        private void LogUserAuthenticationInfo()
+        {
+            var allClaims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+            Console.WriteLine($"Available claims: {string.Join(", ", allClaims)}");
+            Console.WriteLine($"User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"User.Identity.Name: {User.Identity?.Name}");
+        }
+
+        private string? ExtractEmailFromClaims()
+        {
+            var emailClaimTypes = new[]
+            {
+                ClaimTypes.Email,
+                "email",
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+            };
+
+            return GetFirstClaimValue(emailClaimTypes);
+        }
+
+        private ActionResult<UserDto> HandleMissingEmailClaim()
+        {
+            var diagnosticInfo = ExtractDiagnosticInfo();
+            LogMissingEmailClaim(diagnosticInfo);
+
+            return StatusCode(460, CreateMissingEmailClaimResponse(diagnosticInfo));
+        }
+
+        private string? GetFirstClaimValue(string[] claimTypes)
+        {
+            foreach (var claimType in claimTypes)
+            {
+                var claim = User.FindFirst(claimType);
+                if (claim?.Value != null)
+                    return claim.Value;
+            }
+            return null;
+        }
+
+        private DiagnosticInfo ExtractDiagnosticInfo()
+        {
+            var subjectIdClaimTypes = new[] { ClaimTypes.NameIdentifier, "sub" };
+            var userNameClaimTypes = new[] { ClaimTypes.Name, "name" };
+
+            return new DiagnosticInfo
+            {
+                AllClaims = ExtractAllClaims(),
+                SubjectId = GetFirstClaimValue(subjectIdClaimTypes),
+                UserName = GetFirstClaimValue(userNameClaimTypes)
+            };
+        }
+
+        private void LogMissingEmailClaim(DiagnosticInfo diagnosticInfo)
+        {
+            Console.WriteLine($"No email claim found. SubjectId: {diagnosticInfo.SubjectId}, UserName: {diagnosticInfo.UserName}");
+        }
+
+        private object CreateMissingEmailClaimResponse(DiagnosticInfo diagnosticInfo)
+        {
+            return new
+            {
+                error = "AUTHENTICATED_BUT_NO_EMAIL_CLAIM - User is authenticated but email claim is missing from JWT token (460)",
+                availableClaims = diagnosticInfo.AllClaims,
+                subjectId = diagnosticInfo.SubjectId,
+                userName = diagnosticInfo.UserName,
+                debugInfo = "This is a 460 custom status, not 401 Unauthorized - authentication worked, but email claim missing"
+            };
+        }
+
+        private class DiagnosticInfo
+        {
+            public List<string> AllClaims { get; set; } = new();
+            public string? SubjectId { get; set; }
+            public string? UserName { get; set; }
+        }
+
+        private ActionResult<UserDto> HandleUserNotFoundInDatabase(string email)
+        {
+            var allClaims = ExtractAllClaims();
+            Console.WriteLine($"User with email '{email}' not found in database");
+            
+            return StatusCode(461, CreateUserNotFoundResponse(email, allClaims));
+        }
+
+        private List<string> ExtractAllClaims()
+        {
+            return User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+        }
+
+        private object CreateUserNotFoundResponse(string email, List<string> allClaims)
+        {
+            return new
+            {
+                error = $"AUTHENTICATED_BUT_USER_NOT_IN_DB - User with email '{email}' not found in the system (461)",
+                email = email,
+                availableClaims = allClaims,
+                debugInfo = "This is a 461 custom status, not 401 Unauthorized - authentication worked, but user not in database"
+            };
         }
 
         /// <summary>

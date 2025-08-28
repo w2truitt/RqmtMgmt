@@ -265,34 +265,55 @@ namespace backend.Configuration
         {
             return new JwtBearerEvents
             {
-                OnMessageReceived = context =>
-                {
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
-                    {
-                        var token = authHeader.FirstOrDefault()?.Split(" ").Last();
-                        logger.LogDebug("Authorization header found. Token present: {TokenPresent}", !string.IsNullOrEmpty(token));
-                    }
-                    else
-                    {
-                        logger.LogWarning("Authorization header is MISSING from the request.");
-                    }
-                    return Task.CompletedTask;
-                },
-                OnTokenValidated = context =>
-                {
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    var claims = context.Principal?.Claims?.Select(c => $"{c.Type}={c.Value}") ?? Array.Empty<string>();
-                    logger.LogDebug("Token validated successfully. Claims: {Claims}", string.Join(", ", claims));
-                    return Task.CompletedTask;
-                },
-                OnAuthenticationFailed = context =>
-                {
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(context.Exception, "JWT authentication failed: {Error}", context.Exception.Message);
-                    return Task.CompletedTask;
-                }
+                OnMessageReceived = context => HandleMessageReceived(context),
+                OnTokenValidated = context => HandleTokenValidated(context),
+                OnAuthenticationFailed = context => HandleAuthenticationFailed(context)
             };
+        }
+
+        private static Task HandleMessageReceived(MessageReceivedContext context)
+        {
+            var logger = GetLogger(context.HttpContext);
+            LogAuthorizationHeader(logger, context.Request.Headers);
+            return Task.CompletedTask;
+        }
+
+        private static Task HandleTokenValidated(TokenValidatedContext context)
+        {
+            var logger = GetLogger(context.HttpContext);
+            var claims = ExtractClaimsForLogging(context.Principal);
+            logger.LogDebug("Token validated successfully. Claims: {Claims}", string.Join(", ", claims));
+            return Task.CompletedTask;
+        }
+
+        private static Task HandleAuthenticationFailed(AuthenticationFailedContext context)
+        {
+            var logger = GetLogger(context.HttpContext);
+            logger.LogError(context.Exception, "JWT authentication failed: {Error}", context.Exception.Message);
+            return Task.CompletedTask;
+        }
+
+        private static ILogger<Program> GetLogger(HttpContext httpContext)
+        {
+            return httpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+        }
+
+        private static void LogAuthorizationHeader(ILogger<Program> logger, IHeaderDictionary headers)
+        {
+            if (headers.TryGetValue("Authorization", out var authHeader))
+            {
+                var token = authHeader.FirstOrDefault()?.Split(" ").Last();
+                logger.LogDebug("Authorization header found. Token present: {TokenPresent}", !string.IsNullOrEmpty(token));
+            }
+            else
+            {
+                logger.LogWarning("Authorization header is MISSING from the request.");
+            }
+        }
+
+        private static string[] ExtractClaimsForLogging(System.Security.Claims.ClaimsPrincipal? principal)
+        {
+            return principal?.Claims?.Select(c => $"{c.Type}={c.Value}").ToArray() ?? Array.Empty<string>();
         }
     }
 }

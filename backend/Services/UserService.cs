@@ -115,6 +115,18 @@ namespace backend.Services
             var tracked = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == user.Id);
             if (tracked == null) return false;
 
+            if (!await ValidateUserUpdateAsync(user))
+                return false;
+
+            UpdateUserProperties(tracked, user);
+            await UpdateUserRolesAsync(tracked, user);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<bool> ValidateUserUpdateAsync(UserDto user)
+        {
             // Validate email format using built-in email validation
             if (!IsValidEmail(user.Email))
                 return false;
@@ -128,30 +140,33 @@ namespace backend.Services
             if (string.IsNullOrWhiteSpace(user.UserName))
                 return false;
 
-            // Update basic user information
+            return true;
+        }
+
+        private static void UpdateUserProperties(User tracked, UserDto user)
+        {
             tracked.UserName = user.UserName;
             tracked.Email = user.Email;
+        }
 
+        private async Task UpdateUserRolesAsync(User tracked, UserDto user)
+        {
             // Update user roles if provided
-            if (user.Roles != null)
-            {
-                // Remove existing roles
-                var currentRoles = tracked.UserRoles.ToList();
-                _context.UserRoles.RemoveRange(currentRoles);
+            if (user.Roles == null) return;
 
-                // Add new roles
-                foreach (var roleName in user.Roles)
+            // Remove existing roles
+            var currentRoles = tracked.UserRoles.ToList();
+            _context.UserRoles.RemoveRange(currentRoles);
+
+            // Add new roles
+            foreach (var roleName in user.Roles)
+            {
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+                if (role != null)
                 {
-                    var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-                    if (role != null)
-                    {
-                        tracked.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
-                    }
+                    tracked.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
                 }
             }
-
-            await _context.SaveChangesAsync();
-            return true;
         }
 
         /// <summary>

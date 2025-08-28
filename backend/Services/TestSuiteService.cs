@@ -52,6 +52,13 @@ namespace backend.Services
         /// <returns>The created test suite DTO if successful; otherwise, null.</returns>
         public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite)
         {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(testSuite.Name))
+                return null;
+
+            if (testSuite.CreatedBy <= 0)
+                return null;
+
             var entity = FromDto(testSuite);
             entity.CreatedBy = testSuite.CreatedBy;
             entity.CreatedAt = testSuite.CreatedAt;
