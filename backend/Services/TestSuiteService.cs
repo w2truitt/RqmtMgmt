@@ -107,6 +107,105 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves test suites with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test suites and pagination metadata.</returns>
+        public async Task<PagedResult<TestSuiteDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.TestSuites
+                .Include(ts => ts.Project)
+                .Include(ts => ts.TestCases)
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(ts => ts.Name.Contains(parameters.SearchTerm) || 
+                                        (ts.Description != null && ts.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Apply project filter if specified
+            if (parameters.ProjectId.HasValue)
+            {
+                query = query.Where(ts => ts.ProjectId == parameters.ProjectId.Value);
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var suites = await query
+                .OrderBy(ts => ts.Name)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestSuiteDto>
+            {
+                Items = suites.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
+        /// Retrieves all test suites for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of test suites for the specified project.</returns>
+        public async Task<List<TestSuiteDto>> GetByProjectIdAsync(int projectId)
+        {
+            var suites = await _context.TestSuites
+                .Include(ts => ts.Project)
+                .Include(ts => ts.TestCases)
+                .Where(ts => ts.ProjectId == projectId)
+                .ToListAsync();
+
+            return suites.Select(ToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves test suites for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test suites for the project and pagination metadata.</returns>
+        public async Task<PagedResult<TestSuiteDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var query = _context.TestSuites
+                .Include(ts => ts.Project)
+                .Include(ts => ts.TestCases)
+                .Where(ts => ts.ProjectId == projectId);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(ts => ts.Name.Contains(parameters.SearchTerm) || 
+                                        (ts.Description != null && ts.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var suites = await query
+                .OrderBy(ts => ts.Name)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestSuiteDto>
+            {
+                Items = suites.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
         /// Converts a TestSuite entity to a TestSuiteDto for API responses.
         /// </summary>
         /// <param name="s">The test suite entity to convert.</param>

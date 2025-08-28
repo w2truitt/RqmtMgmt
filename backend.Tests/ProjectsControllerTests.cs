@@ -12,11 +12,21 @@ namespace backend.Tests
 {
     public class ProjectsControllerTests
     {
-        private static ProjectsController CreateController(Mock<IProjectService> projectService = null, Mock<IRequirementService> requirementService = null)
+        private static ProjectsController CreateController(
+            Mock<IProjectService> projectService = null, 
+            Mock<IRequirementService> requirementService = null,
+            Mock<ITestSuiteService> testSuiteService = null,
+            Mock<ITestPlanService> testPlanService = null)
         {
             var mockProjectService = projectService ?? new Mock<IProjectService>();
             var mockRequirementService = requirementService ?? new Mock<IRequirementService>();
-            return new ProjectsController(mockProjectService.Object, mockRequirementService.Object);
+            var mockTestSuiteService = testSuiteService ?? new Mock<ITestSuiteService>();
+            var mockTestPlanService = testPlanService ?? new Mock<ITestPlanService>();
+            return new ProjectsController(
+                mockProjectService.Object, 
+                mockRequirementService.Object,
+                mockTestSuiteService.Object,
+                mockTestPlanService.Object);
         }
 
         [Fact]

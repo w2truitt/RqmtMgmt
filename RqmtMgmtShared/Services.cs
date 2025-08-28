@@ -22,6 +22,9 @@ public interface IRequirementService
 public interface ITestCaseService
 {
     Task<List<TestCaseDto>> GetAllAsync();
+    Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId);
+    Task<PagedResult<TestCaseDto>> GetPagedByTestSuiteIdAsync(int testSuiteId, PaginationParameters parameters);
     Task<TestCaseDto?> GetByIdAsync(int id);
     Task<TestCaseDto?> CreateAsync(TestCaseDto testCase);
     Task<bool> UpdateAsync(TestCaseDto testCase);
@@ -34,6 +37,9 @@ public interface ITestCaseService
 public interface ITestSuiteService
 {
     Task<List<TestSuiteDto>> GetAllAsync();
+    Task<PagedResult<TestSuiteDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<TestSuiteDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<TestSuiteDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestSuiteDto?> GetByIdAsync(int id);
     Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite);
     Task<bool> UpdateAsync(TestSuiteDto testSuite);
@@ -46,6 +52,9 @@ public interface ITestSuiteService
 public interface ITestPlanService
 {
     Task<List<TestPlanDto>> GetAllAsync();
+    Task<PagedResult<TestPlanDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<TestPlanDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<TestPlanDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestPlanDto?> GetByIdAsync(int id);
     Task<TestPlanDto?> CreateAsync(TestPlanDto testPlan);
     Task<bool> UpdateAsync(TestPlanDto testPlan);
@@ -58,6 +67,7 @@ public interface ITestPlanService
 public interface IUserService
 {
     Task<List<UserDto>> GetAllAsync();
+    Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters);
     Task<UserDto?> GetByIdAsync(int id);
     Task<UserDto?> GetByEmailAsync(string email);
     Task<UserDto?> GetCurrentUserAsync();

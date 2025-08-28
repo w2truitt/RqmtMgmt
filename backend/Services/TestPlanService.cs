@@ -93,6 +93,102 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves test plans with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test plans and pagination metadata.</returns>
+        public async Task<PagedResult<TestPlanDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.TestPlans
+                .Include(tp => tp.Project)
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(tp => tp.Name.Contains(parameters.SearchTerm) || 
+                                        (tp.Description != null && tp.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Apply project filter if specified
+            if (parameters.ProjectId.HasValue)
+            {
+                query = query.Where(tp => tp.ProjectId == parameters.ProjectId.Value);
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var plans = await query
+                .OrderBy(tp => tp.Name)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestPlanDto>
+            {
+                Items = plans.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
+        /// Retrieves all test plans for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of test plans for the specified project.</returns>
+        public async Task<List<TestPlanDto>> GetByProjectIdAsync(int projectId)
+        {
+            var plans = await _context.TestPlans
+                .Include(tp => tp.Project)
+                .Where(tp => tp.ProjectId == projectId)
+                .ToListAsync();
+
+            return plans.Select(ToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves test plans for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test plans for the project and pagination metadata.</returns>
+        public async Task<PagedResult<TestPlanDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var query = _context.TestPlans
+                .Include(tp => tp.Project)
+                .Where(tp => tp.ProjectId == projectId);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(tp => tp.Name.Contains(parameters.SearchTerm) || 
+                                        (tp.Description != null && tp.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var plans = await query
+                .OrderBy(tp => tp.Name)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestPlanDto>
+            {
+                Items = plans.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
         /// Converts a TestPlan entity to a TestPlanDto for API responses.
         /// Converts the TestPlanType enum to string representation.
         /// </summary>

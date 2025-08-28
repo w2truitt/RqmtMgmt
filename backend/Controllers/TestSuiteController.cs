@@ -14,14 +14,19 @@ namespace backend.Controllers
     public class TestSuiteController : ControllerBase
     {
         private readonly RqmtMgmtShared.ITestSuiteService _testSuiteService;
+        private readonly RqmtMgmtShared.ITestCaseService _testCaseService;
 
         /// <summary>
-        /// Initializes a new instance of the TestSuiteController with the specified test suite service.
+        /// Initializes a new instance of the TestSuiteController with the specified services.
         /// </summary>
         /// <param name="testSuiteService">The service for test suite operations.</param>
-        public TestSuiteController(RqmtMgmtShared.ITestSuiteService testSuiteService)
+        /// <param name="testCaseService">The service for test case operations.</param>
+        public TestSuiteController(
+            RqmtMgmtShared.ITestSuiteService testSuiteService,
+            RqmtMgmtShared.ITestCaseService testCaseService)
         {
             _testSuiteService = testSuiteService;
+            _testCaseService = testCaseService;
         }
 
         /// <summary>
@@ -34,6 +39,93 @@ namespace backend.Controllers
         {
             var suites = await _testSuiteService.GetAllAsync();
             return Ok(suites);
+        }
+
+        /// <summary>
+        /// Retrieves test suites with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="page">The page number (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20).</param>
+        /// <param name="searchTerm">Optional search term to filter test suites.</param>
+        /// <param name="sortBy">Optional field to sort by.</param>
+        /// <param name="sortDescending">Whether to sort in descending order (default: false).</param>
+        /// <returns>A paginated result of test suites.</returns>
+        /// <response code="200">Returns the paginated list of test suites.</response>
+        [HttpGet("paged")]
+        public async Task<ActionResult<PagedResult<TestSuiteDto>>> GetPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            try
+            {
+                var parameters = new PaginationParameters
+                {
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending
+                };
+
+                var result = await _testSuiteService.GetPagedAsync(parameters);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Retrieves test cases for a specific test suite with pagination.
+        /// </summary>
+        /// <param name="id">The unique identifier of the test suite.</param>
+        /// <param name="page">The page number (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20).</param>
+        /// <param name="searchTerm">Optional search term to filter test cases.</param>
+        /// <param name="sortBy">Optional field to sort by.</param>
+        /// <param name="sortDescending">Whether to sort in descending order (default: false).</param>
+        /// <returns>A paginated result of test cases for the test suite.</returns>
+        /// <response code="200">Returns the paginated list of test cases.</response>
+        /// <response code="404">If the test suite is not found.</response>
+        [HttpGet("{id}/testcases")]
+        public async Task<ActionResult<PagedResult<TestCaseDto>>> GetTestCases(
+            int id,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            try
+            {
+                // Verify test suite exists
+                var suite = await _testSuiteService.GetByIdAsync(id);
+                if (suite == null)
+                {
+                    return NotFound($"Test suite with ID {id} not found.");
+                }
+
+                // Create pagination parameters with suite filtering
+                var parameters = new PaginationParameters
+                {
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending
+                };
+
+                var result = await _testCaseService.GetPagedByTestSuiteIdAsync(id, parameters);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>

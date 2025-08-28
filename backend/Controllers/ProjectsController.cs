@@ -12,11 +12,19 @@ namespace backend.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly IRequirementService _requirementService;
+        private readonly ITestSuiteService _testSuiteService;
+        private readonly ITestPlanService _testPlanService;
 
-        public ProjectsController(IProjectService projectService, IRequirementService requirementService)
+        public ProjectsController(
+            IProjectService projectService, 
+            IRequirementService requirementService,
+            ITestSuiteService testSuiteService,
+            ITestPlanService testPlanService)
         {
             _projectService = projectService;
             _requirementService = requirementService;
+            _testSuiteService = testSuiteService;
+            _testPlanService = testPlanService;
         }
 
         /// <summary>
@@ -307,23 +315,39 @@ namespace backend.Controllers
         /// Gets test suites for a specific project.
         /// </summary>
         [HttpGet("{id}/test-suites")]
-        public Task<ActionResult<PagedResult<TestSuiteDto>>> GetProjectTestSuites(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PagedResult<TestSuiteDto>>> GetProjectTestSuites(
+            int id, 
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
         {
             try
             {
-                // This would need to be implemented in a TestSuiteService with project filtering
-                // For now, return a placeholder
-                return Task.FromResult<ActionResult<PagedResult<TestSuiteDto>>>(Ok(new PagedResult<TestSuiteDto>
+                // Verify project exists
+                var project = await _projectService.GetProjectByIdAsync(id);
+                if (project == null)
                 {
-                    Items = new List<TestSuiteDto>(),
-                    TotalItems = 0,
+                    return NotFound($"Project with ID {id} not found.");
+                }
+
+                // Create pagination parameters with project filtering
+                var parameters = new PaginationParameters
+                {
                     PageNumber = page,
-                    PageSize = pageSize
-                }));
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending
+                };
+
+                var result = await _testSuiteService.GetPagedByProjectIdAsync(id, parameters);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return Task.FromResult<ActionResult<PagedResult<TestSuiteDto>>>(StatusCode(500, $"Internal server error: {ex.Message}"));
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
@@ -331,24 +355,72 @@ namespace backend.Controllers
         /// Gets test plans for a specific project.
         /// </summary>
         [HttpGet("{id}/test-plans")]
-        public Task<ActionResult<PagedResult<TestPlanDto>>> GetProjectTestPlans(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<ActionResult<PagedResult<TestPlanDto>>> GetProjectTestPlans(
+            int id, 
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
         {
             try
             {
-                // This would need to be implemented in a TestPlanService with project filtering
-                // For now, return a placeholder
-                return Task.FromResult<ActionResult<PagedResult<TestPlanDto>>>(Ok(new PagedResult<TestPlanDto>
+                // Verify project exists
+                var project = await _projectService.GetProjectByIdAsync(id);
+                if (project == null)
                 {
-                    Items = new List<TestPlanDto>(),
-                    TotalItems = 0,
+                    return NotFound($"Project with ID {id} not found.");
+                }
+
+                // Create pagination parameters with project filtering
+                var parameters = new PaginationParameters
+                {
                     PageNumber = page,
-                    PageSize = pageSize
-                }));
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending
+                };
+
+                var result = await _testPlanService.GetPagedByProjectIdAsync(id, parameters);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return Task.FromResult<ActionResult<PagedResult<TestPlanDto>>>(StatusCode(500, $"Internal server error: {ex.Message}"));
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Gets test suites for a specific project (alternative route for frontend compatibility).
+        /// </summary>
+        [HttpGet("{id}/testsuites")]
+        public async Task<ActionResult<PagedResult<TestSuiteDto>>> GetProjectTestSuitesAlt(
+            int id, 
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            // Delegate to the main implementation
+            return await GetProjectTestSuites(id, page, pageSize, searchTerm, sortBy, sortDescending);
+        }
+
+        /// <summary>
+        /// Gets test plans for a specific project (alternative route for frontend compatibility).
+        /// </summary>
+        [HttpGet("{id}/testplans")]
+        public async Task<ActionResult<PagedResult<TestPlanDto>>> GetProjectTestPlansAlt(
+            int id, 
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            // Delegate to the main implementation
+            return await GetProjectTestPlans(id, page, pageSize, searchTerm, sortBy, sortDescending);
         }
 
         /// <summary>

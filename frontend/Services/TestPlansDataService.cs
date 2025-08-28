@@ -68,5 +68,61 @@ namespace frontend.Services
             var resp = await _http.DeleteAsync($"/api/TestPlan/{id}");
             return resp.IsSuccessStatusCode;
         }
+
+        /// <summary>
+        /// Retrieves test plans with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test plans and pagination metadata.</returns>
+        public async Task<PagedResult<TestPlanDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<TestPlanDto>>($"/api/TestPlan{queryString}");
+            return result ?? new PagedResult<TestPlanDto>();
+        }
+
+        /// <summary>
+        /// Retrieves test plans for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of test plans for the project.</returns>
+        public async Task<List<TestPlanDto>> GetByProjectIdAsync(int projectId)
+        {
+            var result = await _http.GetFromJsonAsync<List<TestPlanDto>>($"/api/Projects/{projectId}/testplans");
+            return result ?? new List<TestPlanDto>();
+        }
+
+        /// <summary>
+        /// Retrieves test plans for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test plans for the project and pagination metadata.</returns>
+        public async Task<PagedResult<TestPlanDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<TestPlanDto>>($"/api/Projects/{projectId}/testplans{queryString}");
+            return result ?? new PagedResult<TestPlanDto>();
+        }
     }
 }

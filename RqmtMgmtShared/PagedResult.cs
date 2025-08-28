@@ -99,5 +99,10 @@ namespace RqmtMgmtShared
         /// Gets or sets the project ID to filter results by. When provided, only results for this project are returned.
         /// </summary>
         public int? ProjectId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the test suite ID to filter results by. When provided, only results for this test suite are returned.
+        /// </summary>
+        public int? SuiteId { get; set; }
     }
 }

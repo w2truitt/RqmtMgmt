@@ -243,6 +243,49 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves users with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing users and pagination metadata.</returns>
+        public async Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(u => u.UserName.Contains(parameters.SearchTerm) || 
+                                        u.Email.Contains(parameters.SearchTerm));
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply sorting
+            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToLower() switch
+            {
+                "username" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
+                "email" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+                "createdat" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+                _ => query.OrderBy(u => u.UserName)
+            } : query.OrderBy(u => u.UserName);
+
+            // Apply pagination
+            var users = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<UserDto>
+            {
+                Items = users.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
         /// Validates email format using .NET's built-in MailAddress validation.
         /// </summary>
         /// <param name="email">The email address to validate.</param>

@@ -130,5 +130,27 @@ namespace frontend.Services
         {
             await _http.DeleteAsync($"/api/User/{userId}/roles/{role}");
         }
+
+        /// <summary>
+        /// Retrieves users with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing users and pagination metadata.</returns>
+        public async Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<UserDto>>($"/api/User{queryString}");
+            return result ?? new PagedResult<UserDto>();
+        }
     }
 }
