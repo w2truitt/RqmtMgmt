@@ -158,11 +158,25 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
+            // Create a project first to satisfy foreign key constraint
+            var projectDto = new CreateProjectDto
+            {
+                Name = $"Performance Test Project {DateTime.Now.Ticks}",
+                Code = $"PTP{DateTime.Now.Ticks % 10000}",
+                Description = "Project for performance testing",
+                OwnerId = 1
+            };
+            var projectResponse = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            projectResponse.EnsureSuccessStatusCode();
+            var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
             // Create a test suite first
             var testSuite = new TestSuiteDto
             {
                 Name = "Performance Test Suite",
                 Description = "For performance testing",
+                ProjectId = project.Id,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };

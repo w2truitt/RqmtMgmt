@@ -541,21 +541,43 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
-            // First, get an existing project to work with
-            var projectsResponse = await _client.GetAsync("/api/projects");
-            projectsResponse.EnsureSuccessStatusCode();
-            var projectsResult = await projectsResponse.Content.ReadFromJsonAsync<PagedResult<ProjectDto>>(_jsonOptions);
-            
-            if (projectsResult?.Items?.Count == 0)
+            // Create a project to ensure we have one to work with
+            var createDto = new CreateProjectDto
             {
-                // Skip test if no projects exist
-                return;
+                Name = $"Requirements Test Project {DateTime.Now.Ticks}",
+                Code = $"RTP{DateTime.Now.Ticks % 10000}",
+                Description = "Project for requirements testing",
+                OwnerId = 1
+            };
+            var createResponse = await _client.PostAsJsonAsync("/api/projects", createDto, _jsonOptions);
+            createResponse.EnsureSuccessStatusCode();
+            var project = await createResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
+            // Create a requirement for the project to ensure we have data to test with
+            var requirementDto = new RequirementDto
+            {
+                Title = "Test Requirement for Search",
+                Type = RequirementType.CRS,
+                Status = RequirementStatus.Draft,
+                Description = "Test requirement for search and sort testing",
+                ProjectId = project.Id,
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
+            reqResponse.EnsureSuccessStatusCode();
+
+            // Test with search and sort parameters to verify backend functionality
+            var response = await _client.GetAsync($"/api/projects/{project.Id}/requirements?page=1&pageSize=20&searchTerm=test&sortBy=title&sortDescending=false");
+            
+            // If we get a 500 error, let's capture the error details
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"HTTP {response.StatusCode}: {errorContent}");
             }
-
-            var projectId = projectsResult!.Items.First().Id;
-
-            // Test with search and sort parameters
-            var response = await _client.GetAsync($"/api/projects/{projectId}/requirements?page=1&pageSize=20&searchTerm=test&sortBy=title&sortDescending=false");
+            
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<PagedResult<RequirementDto>>(_jsonOptions);
             

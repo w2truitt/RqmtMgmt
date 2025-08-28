@@ -106,8 +106,8 @@ namespace backend.Services
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var searchTermLower = searchTerm.ToLower();
-                query = query.Where(r => r.Title.Contains(searchTermLower, StringComparison.OrdinalIgnoreCase) || 
-                                        (r.Description != null && r.Description.Contains(searchTermLower, StringComparison.OrdinalIgnoreCase)));
+                query = query.Where(r => r.Title.ToLower().Contains(searchTermLower) || 
+                                        (r.Description != null && r.Description.ToLower().Contains(searchTermLower)));
             }
             return query;
         }
