@@ -30,6 +30,7 @@ backend/obj/
 frontend/dist/
 coveragereport/
 coverage-report/
+frontend-coverage-report/
 TestResults/
 certs/
 keys/
