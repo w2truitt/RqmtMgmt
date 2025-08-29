@@ -25,7 +25,16 @@ namespace frontend.Services
         /// </summary>
         /// <returns>A list of all users with their role information, or an empty list if the request fails.</returns>
         public async Task<List<UserDto>> GetAllAsync()
-            => await _http.GetFromJsonAsync<List<UserDto>>("/api/User") ?? new();
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<List<UserDto>>("/api/User") ?? new();
+            }
+            catch (HttpRequestException)
+            {
+                return new List<UserDto>();
+            }
+        }
 
         /// <summary>
         /// Retrieves a specific user by their ID from the backend API including role information.
@@ -33,7 +42,16 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the user.</param>
         /// <returns>The user if found; otherwise, null.</returns>
         public async Task<UserDto?> GetByIdAsync(int id)
-            => await _http.GetFromJsonAsync<UserDto>($"/api/User/{id}");
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<UserDto>($"/api/User/{id}");
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+        }
 
         /// <summary>
         /// Creates a new user by sending a POST request to the backend API.
@@ -42,8 +60,19 @@ namespace frontend.Services
         /// <returns>The created user with its assigned ID if successful; otherwise, null.</returns>
         public async Task<UserDto?> CreateAsync(UserDto user)
         {
-            var resp = await _http.PostAsJsonAsync("/api/User", user);
-            return await resp.Content.ReadFromJsonAsync<UserDto>();
+            try
+            {
+                var resp = await _http.PostAsJsonAsync("/api/User", user);
+                if (resp.IsSuccessStatusCode)
+                {
+                    return await resp.Content.ReadFromJsonAsync<UserDto>();
+                }
+                return null;
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -75,7 +104,14 @@ namespace frontend.Services
         /// <returns>A list of role names assigned to the user, or an empty list if the request fails.</returns>
         public async Task<List<string>> GetUserRolesAsync(int userId)
         {
-            return await _http.GetFromJsonAsync<List<string>>($"/api/User/{userId}/roles") ?? new();
+            try
+            {
+                return await _http.GetFromJsonAsync<List<string>>($"/api/User/{userId}/roles") ?? new();
+            }
+            catch (HttpRequestException)
+            {
+                return new List<string>();
+            }
         }
 
         /// <summary>
@@ -138,19 +174,26 @@ namespace frontend.Services
         /// <returns>A paginated result containing users and pagination metadata.</returns>
         public async Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters)
         {
-            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
-            
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
-            
-            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
-                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
-            
-            if (parameters.SortDescending)
-                queryString += "&sortDescending=true";
+            try
+            {
+                var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+                
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                    queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+                
+                if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                    queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+                
+                if (parameters.SortDescending)
+                    queryString += "&sortDescending=true";
 
-            var result = await _http.GetFromJsonAsync<PagedResult<UserDto>>($"/api/User{queryString}");
-            return result ?? new PagedResult<UserDto>();
+                var result = await _http.GetFromJsonAsync<PagedResult<UserDto>>($"/api/User{queryString}");
+                return result ?? new PagedResult<UserDto>();
+            }
+            catch (HttpRequestException)
+            {
+                return new PagedResult<UserDto>();
+            }
         }
     }
 }
