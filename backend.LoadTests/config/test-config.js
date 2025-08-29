@@ -5,7 +5,7 @@ export const config = {
   apiTimeout: __ENV.API_TIMEOUT || '30s',
   
   // Authentication Configuration
-  authEnabled: __ENV.AUTH_ENABLED === 'true' || false, // Disable auth by default for load testing
+  authEnabled: __ENV.AUTH_ENABLED === 'true', // Enable auth when explicitly set to 'true'
   
   // Performance Thresholds
   maxResponseTime: parseInt(__ENV.MAX_RESPONSE_TIME) || 100, // milliseconds
