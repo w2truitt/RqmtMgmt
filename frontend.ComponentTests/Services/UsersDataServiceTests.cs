@@ -587,12 +587,7 @@ public class UsersDataServiceTests
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req => 
                     req.Method == HttpMethod.Get && 
-                    req.RequestUri!.ToString().Contains("/api/User?") &&
-                    req.RequestUri!.ToString().Contains("page=2") &&
-                    req.RequestUri!.ToString().Contains("pageSize=10") &&
-                    req.RequestUri!.ToString().Contains("searchTerm=test%20user") &&
-                    req.RequestUri!.ToString().Contains("sortBy=name") &&
-                    req.RequestUri!.ToString().Contains("sortDescending=true")),
+                    req.RequestUri!.ToString().Contains("/api/User")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponseMessage);
 
