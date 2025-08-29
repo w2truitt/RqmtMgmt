@@ -202,8 +202,29 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
     {
         try
         {
-            // Use the browser's context which includes authentication cookies/tokens
-            var response = await Page.Context.APIRequest.GetAsync($"{BaseUrl}{endpoint}");
+            // Extract JWT token from browser session storage
+            var tokenInfo = await ExtractJwtTokenFromBrowserAsync();
+            if (tokenInfo == null || string.IsNullOrEmpty(tokenInfo.AccessToken))
+            {
+                _output.WriteLine("No access token found in browser session");
+                return new ApiCallResult
+                {
+                    StatusCode = 401,
+                    ResponseBody = "No access token available",
+                    IsSuccess = false
+                };
+            }
+
+            // Make API call with explicit Authorization header
+            var headers = new Dictionary<string, string>
+            {
+                ["Authorization"] = $"Bearer {tokenInfo.AccessToken}"
+            };
+            
+            var response = await Page.Context.APIRequest.GetAsync($"{BaseUrl}{endpoint}", new APIRequestContextOptions
+            {
+                Headers = headers
+            });
             var responseBody = await response.TextAsync();
             
             return new ApiCallResult
