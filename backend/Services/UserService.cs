@@ -31,7 +31,7 @@ namespace backend.Services
         /// <returns>A list of all users as DTOs with their role information.</returns>
         public async Task<List<UserDto>> GetAllAsync()
         {
-            var users = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToListAsync();
+            var users = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsNoTracking().ToListAsync();
             return users.Select(ToDto).ToList();
         }
 

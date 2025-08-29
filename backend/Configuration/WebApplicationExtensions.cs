@@ -37,6 +37,8 @@ namespace backend.Configuration
 
             // Use forwarded headers for proxy scenarios
             app.UseForwardedHeaders();
+            // Add response time logging for performance monitoring
+            app.UseMiddleware<backend.Middleware.ResponseTimeLoggingMiddleware>();
 
             // Only use HTTPS redirection in production
             if (!app.Environment.IsDevelopment())

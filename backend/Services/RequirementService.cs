@@ -30,7 +30,7 @@ namespace backend.Services
         /// <returns>A list of all requirements as DTOs.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
         {
-            var entities = await _context.Requirements.ToListAsync();
+            var entities = await _context.Requirements.AsNoTracking().ToListAsync();
             return entities.Select(EntityToDto).ToList();
         }
 

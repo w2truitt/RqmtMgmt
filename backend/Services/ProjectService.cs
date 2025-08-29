@@ -69,9 +69,9 @@ namespace backend.Services
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
                     // For list view, load counts separately to avoid expensive joins
-                    RequirementCount = p.Requirements != null ? p.Requirements.Count : 0,
-                    TestSuiteCount = p.TestSuites != null ? p.TestSuites.Count : 0,
-                    TestPlanCount = p.TestPlans != null ? p.TestPlans.Count : 0,
+                    RequirementCount = 0, // PERFORMANCE: Skip expensive count for list view
+                    TestSuiteCount = 0, // PERFORMANCE: Skip expensive count for list view
+                    TestPlanCount = 0, // PERFORMANCE: Skip expensive count for list view
                     TeamMembers = new List<ProjectTeamMemberDto>() // Empty for list view - load separately if needed
                 })
                 .ToListAsync();

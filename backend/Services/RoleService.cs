@@ -28,7 +28,7 @@ namespace backend.Services
         /// <returns>A list of all roles as DTOs.</returns>
         public async Task<List<RoleDto>> GetAllRolesAsync()
         {
-            return await _db.Roles.Select(r => new RoleDto { Id = r.Id, Name = r.Name }).ToListAsync();
+            return await _db.Roles.AsNoTracking().Select(r => new RoleDto { Id = r.Id, Name = r.Name }).ToListAsync();
         }
 
         /// <summary>
