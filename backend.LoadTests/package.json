@@ -1,0 +1,27 @@
+{
+  "name": "rqmtmgmt-load-tests",
+  "version": "1.0.0",
+  "description": "K6 Load Testing Suite for Requirements Management API",
+  "scripts": {
+    "smoke": "k6 run tests/smoke-test.js",
+    "baseline": "k6 run tests/baseline-test.js",
+    "stress": "k6 run tests/stress-test.js",
+    "spike": "k6 run tests/spike-test.js",
+    "endurance": "k6 run tests/endurance-test.js",
+    "projects": "k6 run tests/projects-focused-test.js",
+    "all": "npm run smoke && npm run baseline && npm run stress",
+    "install-k6": "echo 'Please install k6: https://k6.io/docs/get-started/installation/'"
+  },
+  "keywords": [
+    "k6",
+    "load-testing",
+    "performance",
+    "api-testing"
+  ],
+  "author": "Requirements Management Team",
+  "license": "MIT",
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
