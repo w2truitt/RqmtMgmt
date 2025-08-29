@@ -49,7 +49,7 @@ namespace backend.Services
         /// <summary>
         /// Retrieves a specific user by their email address including assigned roles.
         /// </summary>
-        /// <param name="email">The email address of the user.</param>
+        /// <param name="EMAIL">The email address of the user.</param>
         /// <returns>The user DTO if found; otherwise, null.</returns>
         public async Task<UserDto?> GetByEmailAsync(string email)
         {
@@ -262,11 +262,11 @@ namespace backend.Services
             var totalItems = await query.CountAsync();
 
             // Apply sorting
-            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToLower() switch
+            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToUpperInvariant() switch
             {
-                "username" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
-                "email" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
-                "createdat" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+                "USERNAME" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
+                "EMAIL" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+                "CREATEDAT" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
                 _ => query.OrderBy(u => u.UserName)
             } : query.OrderBy(u => u.UserName);
 
@@ -288,7 +288,7 @@ namespace backend.Services
         /// <summary>
         /// Validates email format using .NET's built-in MailAddress validation.
         /// </summary>
-        /// <param name="email">The email address to validate.</param>
+        /// <param name="EMAIL">The email address to validate.</param>
         /// <returns>True if the email format is valid; otherwise, false.</returns>
         private static bool IsValidEmail(string email)
         {

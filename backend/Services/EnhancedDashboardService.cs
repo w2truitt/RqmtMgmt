@@ -260,7 +260,7 @@ namespace backend.Services
                 .Select(trs => new RecentActivityDto
                 {
                     Id = trs.Id,
-                    Description = $"Test run '{trs.Name}' {trs.Status.ToString().ToLower()}",
+                    Description = $"Test run '{trs.Name}' {trs.Status.ToString().ToLowerInvariant()}",
                     EntityType = "TestRunSession",
                     EntityId = trs.Id,
                     Action = trs.Status.ToString(),

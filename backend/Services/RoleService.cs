@@ -44,7 +44,7 @@ namespace backend.Services
                 return null;
 
             // Check for existing role with case-insensitive comparison
-            var existing = await _db.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
+            var existing = await _db.Roles.FirstOrDefaultAsync(r => EF.Functions.Like(r.Name, roleName));
             if (existing != null)
             {
                 return new RoleDto { Id = existing.Id, Name = existing.Name };

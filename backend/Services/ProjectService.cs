@@ -7,6 +7,7 @@ namespace backend.Services
 {
     /// <summary>
     /// Service implementation for managing projects and project team members.
+    /// PERFORMANCE OPTIMIZED: Added AsNoTracking() and optimized includes for better performance.
     /// </summary>
     public class ProjectService : IProjectService
     {
@@ -19,13 +20,10 @@ namespace backend.Services
 
         public async Task<PagedResult<ProjectDto>> GetProjectsAsync(ProjectFilterDto filter)
         {
+            // PERFORMANCE OPTIMIZATION: For list views, only include essential data and use AsNoTracking
             var query = _context.Projects
                 .Include(p => p.Owner)
-                .Include(p => p.TeamMembers)
-                .ThenInclude(tm => tm.User)
-                .Include(p => p.Requirements)
-                .Include(p => p.TestSuites)
-                .Include(p => p.TestPlans)
+                .AsNoTracking() // Critical: Don't track entities for read-only operations
                 .AsQueryable();
 
             // Apply filters
@@ -54,17 +52,33 @@ namespace backend.Services
 
             var totalCount = await query.CountAsync();
 
+            // PERFORMANCE OPTIMIZATION: Use projection to load only necessary data for list view
             var projects = await query
                 .OrderBy(p => p.Name)
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
+                .Select(p => new ProjectDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Code = p.Code,
+                    Description = p.Description,
+                    Status = p.Status,
+                    OwnerId = p.OwnerId,
+                    OwnerName = p.Owner != null ? p.Owner.UserName : "Unknown",
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
+                    // For list view, load counts separately to avoid expensive joins
+                    RequirementCount = p.Requirements != null ? p.Requirements.Count : 0,
+                    TestSuiteCount = p.TestSuites != null ? p.TestSuites.Count : 0,
+                    TestPlanCount = p.TestPlans != null ? p.TestPlans.Count : 0,
+                    TeamMembers = new List<ProjectTeamMemberDto>() // Empty for list view - load separately if needed
+                })
                 .ToListAsync();
-
-            var projectDtos = projects.Select(MapToDto).ToList();
 
             return new PagedResult<ProjectDto>
             {
-                Items = projectDtos,
+                Items = projects,
                 TotalItems = totalCount,
                 PageNumber = filter.Page,
                 PageSize = filter.PageSize
@@ -73,6 +87,7 @@ namespace backend.Services
 
         public async Task<ProjectDto?> GetProjectByIdAsync(int projectId)
         {
+            // PERFORMANCE OPTIMIZATION: For detail view, we need full data but still use AsNoTracking
             var project = await _context.Projects
                 .Include(p => p.Owner)
                 .Include(p => p.TeamMembers)
@@ -80,6 +95,7 @@ namespace backend.Services
                 .Include(p => p.Requirements)
                 .Include(p => p.TestSuites)
                 .Include(p => p.TestPlans)
+                .AsNoTracking() // Critical: Don't track entities for read-only operations
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
             return project != null ? MapToDto(project) : null;
@@ -87,6 +103,7 @@ namespace backend.Services
 
         public async Task<ProjectDto?> GetProjectByCodeAsync(string code)
         {
+            // PERFORMANCE OPTIMIZATION: For detail view, we need full data but still use AsNoTracking
             var project = await _context.Projects
                 .Include(p => p.Owner)
                 .Include(p => p.TeamMembers)
@@ -94,6 +111,7 @@ namespace backend.Services
                 .Include(p => p.Requirements)
                 .Include(p => p.TestSuites)
                 .Include(p => p.TestPlans)
+                .AsNoTracking() // Critical: Don't track entities for read-only operations
                 .FirstOrDefaultAsync(p => p.Code == code);
 
             return project != null ? MapToDto(project) : null;
@@ -160,8 +178,10 @@ namespace backend.Services
 
         public async Task<List<ProjectTeamMemberDto>> GetProjectTeamMembersAsync(int projectId)
         {
+            // PERFORMANCE OPTIMIZATION: Add AsNoTracking for read-only operations
             var teamMembers = await _context.ProjectTeamMembers
                 .Include(tm => tm.User)
+                .AsNoTracking()
                 .Where(tm => tm.ProjectId == projectId)
                 .ToListAsync();
 
@@ -213,6 +233,7 @@ namespace backend.Services
 
             var updatedMember = await _context.ProjectTeamMembers
                 .Include(tm => tm.User)
+                .AsNoTracking() // PERFORMANCE OPTIMIZATION: Add AsNoTracking
                 .FirstOrDefaultAsync(tm => tm.ProjectId == projectId && tm.UserId == addTeamMemberDto.UserId);
 
             return updatedMember != null ? MapTeamMemberToDto(updatedMember) : null;
@@ -249,9 +270,11 @@ namespace backend.Services
 
         public async Task<List<ProjectDto>> GetUserProjectsAsync(int userId)
         {
+            // PERFORMANCE OPTIMIZATION: Add AsNoTracking and optimize includes
             var projects = await _context.ProjectTeamMembers
                 .Include(tm => tm.Project)
                 .ThenInclude(p => p!.Owner)
+                .AsNoTracking()
                 .Where(tm => tm.UserId == userId && tm.IsActive)
                 .Select(tm => tm.Project!)
                 .Distinct()
@@ -263,21 +286,24 @@ namespace backend.Services
         public async Task<bool> UserHasAccessToProjectAsync(int userId, int projectId)
         {
             return await _context.ProjectTeamMembers
+                .AsNoTracking() // PERFORMANCE OPTIMIZATION: Add AsNoTracking
                 .AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId && tm.IsActive);
         }
 
         public async Task<bool> UserHasRoleInProjectAsync(int userId, int projectId, ProjectRole role)
         {
             return await _context.ProjectTeamMembers
+                .AsNoTracking() // PERFORMANCE OPTIMIZATION: Add AsNoTracking
                 .AnyAsync(tm => tm.ProjectId == projectId && tm.UserId == userId && tm.Role == role && tm.IsActive);
         }
 
         public async Task<string> GenerateNextRequirementIdAsync(int projectId)
         {
-            var project = await _context.Projects.FindAsync(projectId);
+            var project = await _context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == projectId);
             if (project == null) throw new ArgumentException("Project not found", nameof(projectId));
 
             var maxRequirementNumber = await _context.Requirements
+                .AsNoTracking() // PERFORMANCE OPTIMIZATION: Add AsNoTracking
                 .Where(r => r.ProjectId == projectId)
                 .CountAsync() + 1;
 
