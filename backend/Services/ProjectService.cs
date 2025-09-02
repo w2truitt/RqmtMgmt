@@ -363,7 +363,7 @@ namespace backend.Services
 
         public async Task<string> GenerateNextRequirementIdAsync(int projectId)
         {
-            var project = await _context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == projectId);
+            var project = await _context.Projects.FindAsync(projectId);
             if (project == null) throw new ArgumentException("Project not found", nameof(projectId));
 
             var maxRequirementNumber = await _context.Requirements
