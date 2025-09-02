@@ -49,7 +49,7 @@ namespace backend.Services
         /// <summary>
         /// Retrieves a specific user by their email address including assigned roles.
         /// </summary>
-        /// <param name="EMAIL">The email address of the user.</param>
+        /// <param name="email">The email address of the user.</param>
         /// <returns>The user DTO if found; otherwise, null.</returns>
         public async Task<UserDto?> GetByEmailAsync(string email)
         {
