@@ -1,79 +1,111 @@
 # E2E Test Troubleshooting Progress Report
 
-## ✅ **Problem Solved: ProjectsPageTests Timeout Issue**
+## 🔍 **Root Cause Identified: Identity Server Configuration Issue**
 
-### Root Cause Identified
-The `Projects_HasExpectedPageElements_AuthenticatedUser` test was failing because the `ProjectsPage` page object was using incorrect selectors that didn't match the actual page structure.
+### Frontend Component Tests ✅ COMPLETED
+- **Status**: All 176 tests passing (100% pass rate)
+- **Committed**: Changes committed to git (commit 72724b8)
 
-### Issues Fixed
-1. **Incorrect Selectors in ProjectsPage.cs:**
-   - `[data-testid='create-project-button']` → `button:has-text('Add Project')`
-   - `[data-testid='search-input']` → `input[placeholder='Search projects...']`
-   - `[data-testid='projects-table'], .projects-container` → `table`
+### E2E Tests 🚨 CRITICAL AUTHENTICATION ISSUE FOUND
 
-2. **Incorrect Selectors in ProjectsPageTests.cs:**
-   - Updated test assertions to use correct selectors
-   - Fixed search input value validation
+#### Authentication Diagnostic Results (Group 1: 5/5 tests run)
+**All 5 diagnostic tests FAILED - revealing the core issue:**
 
-3. **Timeout Issues:**
-   - Increased timeout from 10 seconds to 30 seconds for table loading
-   - Fixed `GetProjectCountAsync()` to use `tbody tr` instead of `[data-testid='project-row']`
+1. **DiagnoseHomepageRedirectBehavior** ❌
+   - Homepage loads directly without authentication redirect
+   - Should redirect unauthenticated users to login page
 
-### Test Results
+2. **DiagnoseProjectsPageRedirectBehavior** ❌  
+   - Projects page loads directly without authentication redirect
+   - Protected page accessible without authentication
 
-#### ✅ Individual ProjectsPageTests (All Working)
-- `Projects_NavigatesSuccessfully_AuthenticatedUser` - **PASSED** (29s)
-- `Projects_LoadsWithoutErrors_AuthenticatedUser` - **PASSED** (58s)
-- `Projects_HasExpectedPageElements_AuthenticatedUser` - **PASSED** (46s)
-- `Projects_CanSearchProjects_AuthenticatedUser` - **PASSED** (46s)
+3. **DiagnoseIdentityServerEndpoint** ❌
+   - **CRITICAL**: Authorization endpoint redirects to `/home/error`
+   - Identity Server is returning errors instead of login page
+   - Discovery endpoint works, but authorization fails
 
-#### ✅ Other Page Tests (All Working)
-- **DashboardPageTests**: All 5 tests **PASSED**
-- **UsersPageTests**: All 9 tests **PASSED**
+4. **InspectLoginFormStructure** ❌
+   - No login form ever appears
+   - Users never get redirected to authentication
 
-#### ⚠️ Concurrent Execution Issues
-When running ProjectsPageTests as part of the basic-navigation segment (with other tests), some tests timeout due to:
-- Resource contention between parallel test execution
-- Session management conflicts
-- API performance degradation under load
+5. **TestCompleteLoginFlow** ❌
+   - No redirect to login page occurs
+   - Authentication flow completely bypassed
 
-## 📊 Current Status
+## 🎯 **Core Problem Identified**
 
-### Working Components
-- ✅ Authentication flow
-- ✅ Page navigation  
-- ✅ Dashboard page functionality
-- ✅ Users page functionality
-- ✅ Projects page basic functionality (when run individually)
-- ✅ Search functionality
-- ✅ Page element visibility checks
+**Identity Server Authorization Endpoint Error:**
+```
+Authorization final URL: https://rqmtmgmt.local/home/error?errorId=CfDJ8JnZIsn4PHxHt43v2sv2OB8Q...
+```
 
-### Issues Remaining
-- ⚠️ Performance degradation during concurrent test execution
-- ⚠️ Some ProjectsPageTests fail when run in parallel with other tests
-- ⚠️ API response times can exceed 10+ seconds under load
+The Identity Server is configured and running, but when the frontend tries to authenticate users, the authorization endpoint returns an error instead of showing the login page.
 
-## 🚀 Next Steps
+## 🔧 **Technical Analysis**
 
-### Immediate Actions
-1. **Optimize API Performance**: Investigate why projects API takes 10+ seconds to respond
-2. **Improve Test Isolation**: Ensure tests don't interfere with each other
-3. **Resource Management**: Implement better cleanup between tests
+### What's Working ✅
+- Docker services are running (identityserver, frontend, backend, nginx, db)
+- Discovery endpoint accessible: `/.well-known/openid-configuration`
+- Frontend has correct `[Authorize]` attributes on pages
+- Authentication infrastructure is properly configured in `Program.cs`
+- `AuthorizeRouteView` and `RedirectToLogin` components are set up correctly
 
-### Test Strategy
-1. **Run tests individually** for now to avoid timeout issues
-2. **Investigate backend performance** - API calls taking too long
-3. **Consider test parallelization limits** - may need to reduce concurrent execution
+### What's Broken ❌
+- **Identity Server authorization endpoint** returning errors
+- **No login page ever displays** to users
+- **Authentication bypass** - protected pages load without authentication
+- **OIDC flow not completing** due to Identity Server errors
 
-### Scripts Available
-- `./scripts/run-problematic-test.sh` - Test specific problematic test ✅
-- `./scripts/run-projects-page-tests-individual.sh` - Run ProjectsPageTests individually ✅  
-- `./scripts/run-e2e-tests-segmented.sh` - Run test segments with better error handling ✅
+## 📋 **Immediate Action Plan**
 
-## 🎯 Success Metrics
-- **Fixed**: Main timeout issue that was exiting the shell
-- **Fixed**: Incorrect page selectors causing test failures
-- **Improved**: Test execution time and reliability
-- **Enhanced**: Error handling and reporting
+### Priority 1: Fix Identity Server Authorization
+1. **Investigate Identity Server Error**
+   - Check Identity Server logs for the specific error
+   - Verify client configuration in Identity Server
+   - Ensure redirect URIs match frontend configuration
 
-The E2E test infrastructure is now much more robust and the main blocking issue has been resolved!
+2. **Validate OIDC Configuration**
+   - Frontend: `https://rqmtmgmt.local/authentication/login-callback`
+   - Identity Server client settings must match
+
+3. **Test Authorization Endpoint Manually**
+   - Verify the authorization URL works in browser
+   - Should show login form, not error page
+
+### Priority 2: Validate Authentication Flow
+1. **Test Login Redirect**
+   - Unauthenticated access should redirect to login
+   - Login should redirect back to requested page
+
+2. **Verify Token Exchange**
+   - Ensure tokens are properly issued and validated
+   - Check API authentication with tokens
+
+### Priority 3: Resume E2E Testing
+Once authentication is fixed:
+1. **Re-run Group 1 (Authentication Diagnostics)** - should all pass
+2. **Run Group 3 (SmokeTests)** - should pass with working auth
+3. **Continue with systematic group testing**
+
+## 🚧 **Next Steps**
+
+1. **Investigate Identity Server Error** (immediate)
+   - Check Identity Server logs in docker container
+   - Verify client configuration matches frontend settings
+   - Fix authorization endpoint error
+
+2. **Test Authentication Manually** (validation)
+   - Browse to `https://rqmtmgmt.local/projects` 
+   - Should redirect to login, not load page directly
+
+3. **Re-run Diagnostics** (confirmation)
+   - All 5 authentication diagnostic tests should pass
+   - Authentication flow should work end-to-end
+
+## 📊 **Current Status**
+- **E2E Tests**: 0 passing (blocked by authentication)
+- **Root Cause**: Identity Server authorization endpoint error
+- **Impact**: All protected pages accessible without authentication
+- **Priority**: CRITICAL - security issue, all E2E tests blocked
+
+**🔥 IMMEDIATE ACTION REQUIRED: Fix Identity Server authorization endpoint error**
