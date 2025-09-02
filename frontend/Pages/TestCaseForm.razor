@@ -59,6 +59,7 @@
     [Parameter] public EventCallback OnSaved { get; set; }
     [Parameter] public EventCallback OnCancelled { get; set; }
     [Parameter] public TestCaseDto? EditModel { get; set; }
+    [Parameter] public int? SuiteId { get; set; }
 
     TestCaseDto formModel = new() { Title = string.Empty };
     List<TestStepDto> Steps = new();
@@ -67,6 +68,14 @@
     protected override async Task OnInitializedAsync()
     {
         testSuites = await TestSuiteService.GetAllAsync();
+        
+            // Initialize form model with SuiteId if provided
+            formModel = new TestCaseDto 
+            { 
+                Title = string.Empty,
+                SuiteId = SuiteId
+            };
+        
         if (EditModel != null)
         {
             formModel = new TestCaseDto
