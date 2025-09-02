@@ -65,7 +65,7 @@ public static class Config
                 
                 AllowedGrantTypes = GrantTypes.Code,
                 RequireClientSecret = false,
-                RequirePkce = false, // Temporarily disable PKCE to test authentication flow
+                RequirePkce = true, // Restore PKCE requirement for security
 
                 RedirectUris =
                 {
