@@ -36,6 +36,7 @@ public class Program
         app.ConfigureMiddlewarePipeline()
            .ConfigureEndpoints();
 
+
         await app.RunAsync();
     }
 }

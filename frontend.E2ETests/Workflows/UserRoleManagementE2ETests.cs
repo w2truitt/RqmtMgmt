@@ -57,6 +57,7 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
         
         // Check that page contains user-related text
         var bodyText = await Page.TextContentAsync("body");
+
         Assert.True(bodyText?.Contains("user", StringComparison.OrdinalIgnoreCase) == true, "Page should contain user-related text");
     }
     
@@ -102,6 +103,7 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
         
         // Verify this is not a critical error page (be more specific about error detection)
         var bodyText = await Page.TextContentAsync("body");
+
         Assert.False(bodyText?.Contains("error occurred", StringComparison.OrdinalIgnoreCase) == true, "Page should not show 'error occurred' messages");
         Assert.False(bodyText?.Contains("something went wrong", StringComparison.OrdinalIgnoreCase) == true, "Page should not show 'something went wrong' messages");
         Assert.False(bodyText?.Contains("404", StringComparison.OrdinalIgnoreCase) == true, "Page should not be a 404 error");
