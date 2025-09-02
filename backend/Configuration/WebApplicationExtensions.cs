@@ -37,6 +37,8 @@ namespace backend.Configuration
 
             // Use forwarded headers for proxy scenarios
             app.UseForwardedHeaders();
+            // Add response time logging for performance monitoring
+            app.UseMiddleware<backend.Middleware.ResponseTimeLoggingMiddleware>();
 
             // Only use HTTPS redirection in production
             if (!app.Environment.IsDevelopment())
@@ -69,7 +71,18 @@ namespace backend.Configuration
         /// <returns>The configured web application for method chaining.</returns>
         public static WebApplication ConfigureEndpoints(this WebApplication app)
         {
-            app.MapControllers().RequireAuthorization();
+            // Check if authentication should be disabled for load testing
+            var disableAuth = app.Configuration.GetValue<bool>("LoadTesting:DisableAuthentication");
+            
+            if (disableAuth)
+            {
+                app.MapControllers(); // No authentication required
+                Console.WriteLine("⚠️  WARNING: Authentication is DISABLED for load testing");
+            }
+            else
+            {
+                app.MapControllers().RequireAuthorization();
+            }
             
             // Health check endpoint for Docker container monitoring
             app.MapGet("/health", async (RqmtMgmtDbContext context) =>

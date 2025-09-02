@@ -28,7 +28,7 @@ namespace backend.Services
         /// <returns>A list of all roles as DTOs.</returns>
         public async Task<List<RoleDto>> GetAllRolesAsync()
         {
-            return await _db.Roles.Select(r => new RoleDto { Id = r.Id, Name = r.Name }).ToListAsync();
+            return await _db.Roles.AsNoTracking().Select(r => new RoleDto { Id = r.Id, Name = r.Name }).ToListAsync();
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace backend.Services
                 return null;
 
             // Check for existing role with case-insensitive comparison
-            var existing = await _db.Roles.FirstOrDefaultAsync(r => r.Name.ToLower() == roleName.ToLower());
+            var existing = await _db.Roles.FirstOrDefaultAsync(r => EF.Functions.Like(r.Name, roleName));
             if (existing != null)
             {
                 return new RoleDto { Id = existing.Id, Name = existing.Name };

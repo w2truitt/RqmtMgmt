@@ -25,6 +25,7 @@ public interface ITestCaseService
     Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters);
     Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId);
     Task<PagedResult<TestCaseDto>> GetPagedByTestSuiteIdAsync(int testSuiteId, PaginationParameters parameters);
+        Task<PagedResult<TestCaseDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestCaseDto?> GetByIdAsync(int id);
     Task<TestCaseDto?> CreateAsync(TestCaseDto testCase);
     Task<bool> UpdateAsync(TestCaseDto testCase);
@@ -101,19 +102,15 @@ public interface IRequirementTestCaseLinkService
 }
 
 /// <summary>
-/// Service interface for dashboard operations
+/// Consolidated service interface for dashboard operations with comprehensive statistics.
+/// ARCHITECTURAL FIX: Merged IDashboardService and IEnhancedDashboardService to eliminate redundancy.
 /// </summary>
 public interface IDashboardService
 {
+    // Legacy methods (maintained for backward compatibility)
     Task<DashboardStatisticsDto> GetStatisticsAsync();
-    Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5);
-}
-
-/// <summary>
-/// Enhanced service interface for dashboard operations with new statistics
-/// </summary>
-public interface IEnhancedDashboardService
-{
+    
+    // Enhanced methods (comprehensive dashboard statistics)
     Task<DashboardStatsDto> GetDashboardStatsAsync();
     Task<RequirementStatsDto> GetRequirementStatsAsync();
     Task<TestManagementStatsDto> GetTestManagementStatsAsync();
@@ -122,7 +119,8 @@ public interface IEnhancedDashboardService
 }
 
 /// <summary>
-/// Service interface for test run session management operations
+/// Service interface for test run session management operations.
+/// ARCHITECTURAL FIX: Moved from frontend project to shared library for consistency.
 /// </summary>
 public interface ITestRunSessionService
 {
@@ -138,7 +136,8 @@ public interface ITestRunSessionService
 }
 
 /// <summary>
-/// Service interface for test execution and results tracking
+/// Service interface for test execution and results tracking.
+/// ARCHITECTURAL FIX: Moved from frontend project to shared library for consistency.
 /// </summary>
 public interface ITestExecutionService
 {
@@ -149,7 +148,8 @@ public interface ITestExecutionService
     Task<List<TestStepExecutionDto>> GetStepExecutionsForCaseAsync(int testCaseExecutionId);
     Task<TestExecutionStatsDto> GetExecutionStatsAsync();
     Task<TestExecutionStatsDto> GetExecutionStatsForSessionAsync(int testRunSessionId);
-}  
+}
+
 /// <summary>  
 /// Service interface for managing projects and project team members.  
 /// </summary>  
@@ -169,4 +169,4 @@ public interface IProjectService
     Task<bool> UserHasAccessToProjectAsync(int userId, int projectId);  
     Task<bool> UserHasRoleInProjectAsync(int userId, int projectId, ProjectRole role);  
     Task<string> GenerateNextRequirementIdAsync(int projectId);  
-} 
+}

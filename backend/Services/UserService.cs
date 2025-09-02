@@ -31,7 +31,7 @@ namespace backend.Services
         /// <returns>A list of all users as DTOs with their role information.</returns>
         public async Task<List<UserDto>> GetAllAsync()
         {
-            var users = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToListAsync();
+            var users = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsNoTracking().ToListAsync();
             return users.Select(ToDto).ToList();
         }
 
@@ -262,11 +262,11 @@ namespace backend.Services
             var totalItems = await query.CountAsync();
 
             // Apply sorting
-            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToLower() switch
+            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToUpperInvariant() switch
             {
-                "username" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
-                "email" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
-                "createdat" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+                "USERNAME" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
+                "EMAIL" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+                "CREATEDAT" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
                 _ => query.OrderBy(u => u.UserName)
             } : query.OrderBy(u => u.UserName);
 
@@ -288,7 +288,7 @@ namespace backend.Services
         /// <summary>
         /// Validates email format using .NET's built-in MailAddress validation.
         /// </summary>
-        /// <param name="email">The email address to validate.</param>
+        /// <param name="EMAIL">The email address to validate.</param>
         /// <returns>True if the email format is valid; otherwise, false.</returns>
         private static bool IsValidEmail(string email)
         {

@@ -6,18 +6,16 @@ namespace frontend.Services
     /// <summary>
     /// Frontend data service for user management operations and role assignments.
     /// Provides HTTP client-based implementation of IUserService for communicating with the backend API.
+    /// Now inherits from BaseDataService to eliminate code duplication and ensure consistency.
     /// </summary>
-    public class UsersDataService : IUserService
+    public class UsersDataService : BaseDataService, IUserService
     {
-        private readonly HttpClient _http;
-
         /// <summary>
         /// Initializes a new instance of the UsersDataService with the specified HTTP client.
         /// </summary>
         /// <param name="http">The HTTP client for making API requests.</param>
-        public UsersDataService(HttpClient http)
+        public UsersDataService(HttpClient http) : base(http)
         {
-            _http = http;
         }
 
         /// <summary>
@@ -25,16 +23,7 @@ namespace frontend.Services
         /// </summary>
         /// <returns>A list of all users with their role information, or an empty list if the request fails.</returns>
         public async Task<List<UserDto>> GetAllAsync()
-        {
-            try
-            {
-                return await _http.GetFromJsonAsync<List<UserDto>>("/api/User") ?? new();
-            }
-            catch (HttpRequestException)
-            {
-                return new List<UserDto>();
-            }
-        }
+            => await GetListAsync<UserDto>("/api/User");
 
         /// <summary>
         /// Retrieves a specific user by their ID from the backend API including role information.
@@ -42,16 +31,7 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the user.</param>
         /// <returns>The user if found; otherwise, null.</returns>
         public async Task<UserDto?> GetByIdAsync(int id)
-        {
-            try
-            {
-                return await _http.GetFromJsonAsync<UserDto>($"/api/User/{id}");
-            }
-            catch (HttpRequestException)
-            {
-                return null;
-            }
-        }
+            => await GetAsync<UserDto>($"/api/User/{id}");
 
         /// <summary>
         /// Creates a new user by sending a POST request to the backend API.
@@ -59,21 +39,7 @@ namespace frontend.Services
         /// <param name="user">The user data to create.</param>
         /// <returns>The created user with its assigned ID if successful; otherwise, null.</returns>
         public async Task<UserDto?> CreateAsync(UserDto user)
-        {
-            try
-            {
-                var resp = await _http.PostAsJsonAsync("/api/User", user);
-                if (resp.IsSuccessStatusCode)
-                {
-                    return await resp.Content.ReadFromJsonAsync<UserDto>();
-                }
-                return null;
-            }
-            catch (HttpRequestException)
-            {
-                return null;
-            }
-        }
+            => await PostAsync<UserDto, UserDto>("/api/User", user);
 
         /// <summary>
         /// Updates an existing user by sending a PUT request to the backend API.
@@ -81,10 +47,7 @@ namespace frontend.Services
         /// <param name="user">The user data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
         public async Task<bool> UpdateAsync(UserDto user)
-        {
-            var resp = await _http.PutAsJsonAsync($"/api/User/{user.Id}", user);
-            return resp.IsSuccessStatusCode;
-        }
+            => await PutAsync($"/api/User/{user.Id}", user);
 
         /// <summary>
         /// Deletes a user by sending a DELETE request to the backend API.
@@ -92,10 +55,7 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the user to delete.</param>
         /// <returns>True if the deletion was successful; otherwise, false.</returns>
         public async Task<bool> DeleteAsync(int id)
-        {
-            var resp = await _http.DeleteAsync($"/api/User/{id}");
-            return resp.IsSuccessStatusCode;
-        }
+            => await DeleteAsync($"/api/User/{id}");
 
         /// <summary>
         /// Retrieves all roles assigned to a specific user from the backend API.
@@ -103,19 +63,11 @@ namespace frontend.Services
         /// <param name="userId">The unique identifier of the user.</param>
         /// <returns>A list of role names assigned to the user, or an empty list if the request fails.</returns>
         public async Task<List<string>> GetUserRolesAsync(int userId)
-        {
-            try
-            {
-                return await _http.GetFromJsonAsync<List<string>>($"/api/User/{userId}/roles") ?? new();
-            }
-            catch (HttpRequestException)
-            {
-                return new List<string>();
-            }
-        }
+            => await GetListAsync<string>($"/api/User/{userId}/roles");
 
         /// <summary>
         /// Retrieves a specific user by their email address from the backend API including role information.
+        /// PERFORMANCE FIX: Now uses dedicated backend endpoint instead of client-side filtering.
         /// </summary>
         /// <param name="email">The email address of the user.</param>
         /// <returns>The user if found; otherwise, null.</returns>
@@ -124,8 +76,7 @@ namespace frontend.Services
             if (string.IsNullOrWhiteSpace(email))
                 return null;
 
-            var users = await GetAllAsync();
-            return users.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+            return await GetAsync<UserDto>($"/api/User/by-email?email={Uri.EscapeDataString(email)}");
         }
 
         /// <summary>
@@ -133,17 +84,7 @@ namespace frontend.Services
         /// </summary>
         /// <returns>The current user if authenticated and found; otherwise, null.</returns>
         public async Task<UserDto?> GetCurrentUserAsync()
-        {
-            try
-            {
-                return await _http.GetFromJsonAsync<UserDto>("/api/User/me");
-            }
-            catch (HttpRequestException)
-            {
-                // User not authenticated or not found
-                return null;
-            }
-        }
+            => await GetAsync<UserDto>("/api/User/me");
 
         /// <summary>
         /// Assigns a role to a user by sending a POST request to the backend API.
@@ -153,7 +94,7 @@ namespace frontend.Services
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task AssignRoleAsync(int userId, string role)
         {
-            await _http.PostAsJsonAsync($"/api/User/{userId}/roles", role);
+            await PostAsync($"/api/User/{userId}/roles", role);
         }
 
         /// <summary>
@@ -164,7 +105,7 @@ namespace frontend.Services
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task RemoveRoleAsync(int userId, string role)
         {
-            await _http.DeleteAsync($"/api/User/{userId}/roles/{role}");
+            await DeleteAsync($"/api/User/{userId}/roles/{role}");
         }
 
         /// <summary>
@@ -174,26 +115,18 @@ namespace frontend.Services
         /// <returns>A paginated result containing users and pagination metadata.</returns>
         public async Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters)
         {
-            try
+            var queryParams = new Dictionary<string, object?>
             {
-                var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
-                
-                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-                    queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
-                
-                if (!string.IsNullOrWhiteSpace(parameters.SortBy))
-                    queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
-                
-                if (parameters.SortDescending)
-                    queryString += "&sortDescending=true";
+                ["page"] = parameters.PageNumber,
+                ["pageSize"] = parameters.PageSize,
+                ["searchTerm"] = parameters.SearchTerm,
+                ["sortBy"] = parameters.SortBy,
+                ["sortDescending"] = parameters.SortDescending ? "true" : null
+            };
 
-                var result = await _http.GetFromJsonAsync<PagedResult<UserDto>>($"/api/User{queryString}");
-                return result ?? new PagedResult<UserDto>();
-            }
-            catch (HttpRequestException)
-            {
-                return new PagedResult<UserDto>();
-            }
+            var queryString = BuildQueryString(queryParams);
+            var result = await GetAsync<PagedResult<UserDto>>($"/api/User{queryString}");
+            return result ?? new PagedResult<UserDto>();
         }
     }
 }

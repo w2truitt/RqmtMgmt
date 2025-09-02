@@ -349,19 +349,14 @@ public class UsersDataServiceTests
         Assert.NotNull(result);
         Assert.Empty(result);
     }
-
     [Fact]
     public async Task GetByEmailAsync_ValidEmail_ReturnsUser()
     {
         // Arrange
         var targetEmail = "user1@test.com";
-        var users = new List<UserDto>
-        {
-            new() { Id = 1, UserName = "user1", Email = "user1@test.com" },
-            new() { Id = 2, UserName = "user2", Email = "user2@test.com" }
-        };
+        var user = new UserDto { Id = 1, UserName = "user1", Email = "user1@test.com" };
 
-        var jsonResponse = JsonSerializer.Serialize(users, _jsonOptions);
+        var jsonResponse = JsonSerializer.Serialize(user, _jsonOptions);
         var httpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(jsonResponse, Encoding.UTF8, "application/json")
@@ -389,16 +384,7 @@ public class UsersDataServiceTests
     {
         // Arrange
         var targetEmail = "notfound@test.com";
-        var users = new List<UserDto>
-        {
-            new() { Id = 1, UserName = "user1", Email = "user1@test.com" }
-        };
-
-        var jsonResponse = JsonSerializer.Serialize(users, _jsonOptions);
-        var httpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(jsonResponse, Encoding.UTF8, "application/json")
-        };
+        var httpResponseMessage = new HttpResponseMessage(HttpStatusCode.NotFound);
 
         _mockHttpMessageHandler
             .Protected()

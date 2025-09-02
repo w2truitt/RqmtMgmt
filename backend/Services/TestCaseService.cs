@@ -293,6 +293,47 @@ namespace backend.Services
             };
         }
 
+            /// <summary>
+            /// Retrieves test cases for a specific project with pagination, filtering, and sorting capabilities.
+            /// This includes test cases from all test suites belonging to the project, plus any unassigned test cases.
+            /// </summary>
+            /// <param name="projectId">The unique identifier of the project.</param>
+            /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+            /// <returns>A paginated result containing test cases for the project and pagination metadata.</returns>
+            public async Task<PagedResult<TestCaseDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+            {
+                var query = _context.TestCases
+                    .Include(tc => tc.Steps)
+                    .Include(tc => tc.Creator)
+                    .Include(tc => tc.Suite)
+                    .Where(tc => tc.Suite == null || tc.Suite.ProjectId == projectId);
+
+                // Apply search filter
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                {
+                    query = query.Where(tc => tc.Title.Contains(parameters.SearchTerm) || 
+                                            (tc.Description != null && tc.Description.Contains(parameters.SearchTerm)));
+                }
+
+                // Get total count for pagination metadata
+                var totalItems = await query.CountAsync();
+
+                // Apply pagination
+                var testCases = await query
+                    .OrderBy(tc => tc.Title)
+                    .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                    .Take(parameters.PageSize)
+                    .ToListAsync();
+
+                return new PagedResult<TestCaseDto>
+                {
+                    Items = testCases.Select(ToDto).ToList(),
+                    PageNumber = parameters.PageNumber,
+                    PageSize = parameters.PageSize,
+                        TotalItems = totalItems,
+                };
+            }
+
         /// <summary>
         /// Converts a TestCase entity to a TestCaseDto for API responses.
         /// Includes mapping of associated test steps and creator details.

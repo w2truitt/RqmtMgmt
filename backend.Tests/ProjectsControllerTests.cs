@@ -12,22 +12,25 @@ namespace backend.Tests
 {
     public class ProjectsControllerTests
     {
-        private static ProjectsController CreateController(
-            Mock<IProjectService> projectService = null, 
-            Mock<IRequirementService> requirementService = null,
-            Mock<ITestSuiteService> testSuiteService = null,
-            Mock<ITestPlanService> testPlanService = null)
-        {
-            var mockProjectService = projectService ?? new Mock<IProjectService>();
-            var mockRequirementService = requirementService ?? new Mock<IRequirementService>();
-            var mockTestSuiteService = testSuiteService ?? new Mock<ITestSuiteService>();
-            var mockTestPlanService = testPlanService ?? new Mock<ITestPlanService>();
-            return new ProjectsController(
-                mockProjectService.Object, 
-                mockRequirementService.Object,
-                mockTestSuiteService.Object,
-                mockTestPlanService.Object);
-        }
+            private static ProjectsController CreateController(
+                Mock<IProjectService> projectService = null,
+                Mock<IRequirementService> requirementService = null,
+                Mock<ITestSuiteService> testSuiteService = null,
+                Mock<ITestPlanService> testPlanService = null,
+                Mock<ITestCaseService> testCaseService = null)
+            {
+                var mockProjectService = projectService ?? new Mock<IProjectService>();
+                var mockRequirementService = requirementService ?? new Mock<IRequirementService>();
+                var mockTestSuiteService = testSuiteService ?? new Mock<ITestSuiteService>();
+                var mockTestPlanService = testPlanService ?? new Mock<ITestPlanService>();
+                var mockTestCaseService = testCaseService ?? new Mock<ITestCaseService>();
+                return new ProjectsController(
+                    mockProjectService.Object,
+                    mockRequirementService.Object,
+                    mockTestSuiteService.Object,
+                    mockTestPlanService.Object,
+                    mockTestCaseService.Object);
+            }
 
         [Fact]
         public async Task CreateProject_InvalidModelState_ReturnsBadRequest()

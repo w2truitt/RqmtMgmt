@@ -34,7 +34,6 @@ public abstract class ComponentTestBase : TestContext
         Services.AddSingleton(Mock.Of<IRoleService>());
         Services.AddSingleton(Mock.Of<IRequirementTestCaseLinkService>());
         Services.AddSingleton(Mock.Of<IDashboardService>());
-        Services.AddSingleton(Mock.Of<IEnhancedDashboardService>());
         Services.AddSingleton(Mock.Of<ITestRunSessionDataService>());
         Services.AddSingleton(Mock.Of<ITestExecutionDataService>());
         Services.AddSingleton(Mock.Of<IProjectService>());

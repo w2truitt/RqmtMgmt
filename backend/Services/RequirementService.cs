@@ -30,7 +30,7 @@ namespace backend.Services
         /// <returns>A list of all requirements as DTOs.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
         {
-            var entities = await _context.Requirements.ToListAsync();
+            var entities = await _context.Requirements.AsNoTracking().ToListAsync();
             return entities.Select(EntityToDto).ToList();
         }
 
@@ -105,8 +105,8 @@ namespace backend.Services
         {
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(r => r.Title.Contains(searchTerm) || 
-                                        (r.Description != null && r.Description.Contains(searchTerm)));
+                query = query.Where(r => EF.Functions.Like(r.Title, $"%{searchTerm}%") || 
+                                        (r.Description != null && EF.Functions.Like(r.Description, $"%{searchTerm}%")));
             }
             return query;
         }
@@ -119,16 +119,16 @@ namespace backend.Services
         /// <returns>The sorted query.</returns>
         private static IQueryable<Requirement> ApplySorting(IQueryable<Requirement> query, PaginationParameters parameters)
         {
-            var sortBy = parameters.SortBy?.ToLower();
+            var sortBy = parameters.SortBy?.ToUpperInvariant();
             var isDescending = parameters.SortDescending;
 
             return sortBy switch
             {
-                "title" => ApplyTitleSorting(query, isDescending),
-                "status" => ApplyStatusSorting(query, isDescending),
-                "type" => ApplyTypeSorting(query, isDescending),
-                "createdat" => ApplyCreatedAtSorting(query, isDescending),
-                "updatedat" => ApplyUpdatedAtSorting(query, isDescending),
+                "TITLE" => ApplyTitleSorting(query, isDescending),
+                "STATUS" => ApplyStatusSorting(query, isDescending),
+                "TYPE" => ApplyTypeSorting(query, isDescending),
+                "CREATEDAT" => ApplyCreatedAtSorting(query, isDescending),
+                "UPDATEDAT" => ApplyUpdatedAtSorting(query, isDescending),
                 _ => ApplyDefaultSorting(query, isDescending) // Default sort by ID
             };
         }

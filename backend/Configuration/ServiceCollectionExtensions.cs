@@ -211,7 +211,6 @@ namespace backend.Configuration
             services.AddScoped<RqmtMgmtShared.IRequirementTestCaseLinkService, RequirementTestCaseLinkService>();
             services.AddScoped<RqmtMgmtShared.IRoleService, RoleService>();
             services.AddScoped<RqmtMgmtShared.IDashboardService, DashboardService>();
-            services.AddScoped<RqmtMgmtShared.IEnhancedDashboardService, EnhancedDashboardService>();
             services.AddScoped<RqmtMgmtShared.ITestRunSessionService, TestRunSessionService>();
             services.AddScoped<RqmtMgmtShared.ITestExecutionService, TestExecutionService>();
             services.AddScoped<RqmtMgmtShared.IProjectService, ProjectService>();

@@ -260,9 +260,26 @@ namespace backend.Data
                 .HasIndex(r => r.CreatedAt)
                 .HasDatabaseName("IX_Requirements_CreatedAt");
 
+            // Project-based indexes for efficient counting and filtering
+            modelBuilder.Entity<Requirement>()
+                .HasIndex(r => new { r.ProjectId, r.Id })
+                .HasDatabaseName("IX_Requirements_ProjectId_Id");
+
+            modelBuilder.Entity<TestSuite>()
+                .HasIndex(ts => new { ts.ProjectId, ts.Id })
+                .HasDatabaseName("IX_TestSuites_ProjectId_Id");
+
+            modelBuilder.Entity<TestPlan>()
+                .HasIndex(tp => new { tp.ProjectId, tp.Id })
+                .HasDatabaseName("IX_TestPlans_ProjectId_Id");
+
             modelBuilder.Entity<TestCase>()
                 .HasIndex(tc => tc.CreatedAt)
                 .HasDatabaseName("IX_TestCases_CreatedAt");
+
+            modelBuilder.Entity<TestCase>()
+                .HasIndex(tc => new { tc.SuiteId, tc.Id })
+                .HasDatabaseName("IX_TestCases_SuiteId_Id");
 
             modelBuilder.Entity<TestRun>()
                 .HasIndex(tr => tr.RunAt)
@@ -271,6 +288,11 @@ namespace backend.Data
             modelBuilder.Entity<TestRun>()
                 .HasIndex(tr => tr.Result)
                 .HasDatabaseName("IX_TestRuns_Result");
+
+            // Test case performance index for efficient test run queries
+            modelBuilder.Entity<TestRun>()
+                .HasIndex(tr => new { tr.TestCaseId, tr.Id })
+                .HasDatabaseName("IX_TestRuns_TestCaseId_Id");
 
             // New performance indexes for test execution tracking
             modelBuilder.Entity<TestRunSession>()

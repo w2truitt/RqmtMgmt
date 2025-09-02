@@ -55,7 +55,7 @@ namespace backend.ApiTests
             {
                 // This might fail if dependencies don't exist, which is expected in isolated API tests
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Assert.Contains("failed", errorContent.ToLower());
+                Assert.Contains("error occurred", errorContent.ToLower());
                 return;
             }
 
@@ -109,7 +109,7 @@ namespace backend.ApiTests
             {
                 // This might fail if dependencies don't exist, which is expected in isolated API tests
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Assert.Contains("failed", errorContent.ToLower());
+                Assert.Contains("error occurred", errorContent.ToLower());
                 return;
             }
 

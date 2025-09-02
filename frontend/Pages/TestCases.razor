@@ -1,5 +1,7 @@
 @page "/testcases"
+@page "/projects/{ProjectId:int}/testcases"
 @page "/testsuites/{TestSuiteId:int}/testcases"
+@page "/projects/{ProjectId:int}/testsuites/{TestSuiteId:int}/testcases"
 @attribute [Authorize]
 @using RqmtMgmtShared
 @inject ITestCaseService TestCaseService
@@ -35,6 +37,10 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">
                 <i class="bi bi-list-check me-2"></i>Test Cases
+                    @if (ProjectId.HasValue)
+                    {
+                        <small class="text-muted">for Project @ProjectId</small>
+                    }
             </h1>
         </div>
     }
@@ -222,6 +228,7 @@
 
 @code {
     [Parameter] public int? TestSuiteId { get; set; }
+        [Parameter] public int? ProjectId { get; set; }
     
     private TestSuiteDto? testSuite;
     private PagedResult<TestCaseDto>? pagedResult;
@@ -237,6 +244,10 @@
         {
             await LoadTestSuiteAndTestCases();
         }
+            else if (ProjectId.HasValue)
+            {
+                await LoadTestCases();
+            }
         else
         {
             await LoadTestCases();
@@ -303,6 +314,10 @@
             {
                 result = await TestCaseService.GetPagedByTestSuiteIdAsync(TestSuiteId.Value, request);
             }
+                else if (ProjectId.HasValue)
+                {
+                    result = await TestCaseService.GetPagedByProjectIdAsync(ProjectId.Value, request);
+                }
             else
             {
                 result = await TestCaseService.GetPagedAsync(request);
@@ -366,6 +381,10 @@
         {
             Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/new");
         }
+            else if (ProjectId.HasValue)
+            {
+                Navigation.NavigateTo($"/projects/{ProjectId}/testcases/new");
+            }
         else
         {
             Navigation.NavigateTo("/testcases/new");
@@ -378,6 +397,10 @@
         {
             Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/{testCaseId}");
         }
+            else if (ProjectId.HasValue)
+            {
+                Navigation.NavigateTo($"/projects/{ProjectId}/testcases/{testCaseId}");
+            }
         else
         {
             Navigation.NavigateTo($"/testcases/{testCaseId}");
@@ -390,6 +413,10 @@
         {
             Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/{testCaseId}/edit");
         }
+            else if (ProjectId.HasValue)
+            {
+                Navigation.NavigateTo($"/projects/{ProjectId}/testcases/{testCaseId}/edit");
+            }
         else
         {
             Navigation.NavigateTo($"/testcases/{testCaseId}/edit");
