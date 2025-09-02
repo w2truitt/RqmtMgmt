@@ -399,7 +399,9 @@ public class UsersDataServiceTests
 
         // Assert
         Assert.Null(result);
-    }    [Theory]
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("   ")]
     public async Task GetByEmailAsync_InvalidEmail_ReturnsNull(string email)
