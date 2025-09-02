@@ -16,6 +16,14 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load environment variables from .env file if it exists
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+    set -a  # automatically export all variables
+    source "$SCRIPT_DIR/.env"
+    set +a  # disable automatic export
+fi
+
 TESTS_DIR="$SCRIPT_DIR/tests"
 RESULTS_DIR="$SCRIPT_DIR/results"
 

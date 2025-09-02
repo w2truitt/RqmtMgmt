@@ -68,10 +68,10 @@ namespace backend.Services
                     OwnerName = p.Owner != null ? p.Owner.UserName : "Unknown",
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt,
-                    // For list view, load counts separately to avoid expensive joins
-                    RequirementCount = 0, // PERFORMANCE: Skip expensive count for list view
-                    TestSuiteCount = 0, // PERFORMANCE: Skip expensive count for list view
-                    TestPlanCount = 0, // PERFORMANCE: Skip expensive count for list view
+                    // PERFORMANCE OPTIMIZED: Use efficient database COUNT queries with new composite indexes
+                    RequirementCount = _context.Requirements.Where(r => r.ProjectId == p.Id).Count(),
+                    TestSuiteCount = _context.TestSuites.Where(ts => ts.ProjectId == p.Id).Count(),
+                    TestPlanCount = _context.TestPlans.Where(tp => tp.ProjectId == p.Id).Count(),
                     TeamMembers = new List<ProjectTeamMemberDto>() // Empty for list view - load separately if needed
                 })
                 .ToListAsync();

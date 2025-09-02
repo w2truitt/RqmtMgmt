@@ -226,6 +226,27 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Retrieves a specific user by their email address including assigned roles.
+        /// </summary>
+        /// <param name="email">The email address of the user to find.</param>
+        /// <returns>The user if found, including their role information.</returns>
+        /// <response code="200">Returns the requested user.</response>
+        /// <response code="400">If the email parameter is missing or empty.</response>
+        /// <response code="404">If the user is not found.</response>
+        [HttpGet("by-email")]
+        public async Task<ActionResult<UserDto>> GetByEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest("Email parameter is required.");
+            }
+
+            var user = await _userService.GetByEmailAsync(email);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        /// <summary>
         /// Creates a new user in the system with validation for required fields.
         /// </summary>
         /// <param name="dto">The user data to create.</param>

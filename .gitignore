@@ -37,6 +37,8 @@ keys/
 Migrations/
 publish/
 .sonarqube/
+backend.LoadTests/load-test-results/
+backend.LoadTests/load-test-results/latest/
 
 # Misc
 *.swp
