@@ -1,6 +1,7 @@
 @page "/testcases"
 @page "/projects/{ProjectId:int}/testcases"
 @page "/testsuites/{TestSuiteId:int}/testcases"
+@page "/projects/{ProjectId:int}/testsuites/{TestSuiteId:int}/testcases"
 @attribute [Authorize]
 @using RqmtMgmtShared
 @inject ITestCaseService TestCaseService
