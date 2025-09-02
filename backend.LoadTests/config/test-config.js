@@ -25,8 +25,8 @@ export const config = {
     projects: '/api/Projects',
     projectsWithPaging: '/api/Projects?page=1&pageSize=10',
     projectById: '/api/Projects/1',
-    users: '/api/Users',
-    requirements: '/api/Requirements',
+    users: '/api/User',
+    requirements: '/api/Requirement',
     testCases: '/api/TestCases',
     testSuites: '/api/TestSuites',
     health: '/health'

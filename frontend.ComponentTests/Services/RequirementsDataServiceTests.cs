@@ -114,7 +114,7 @@ public class RequirementsDataServiceTests
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req => 
                     req.Method == HttpMethod.Get && 
-                    req.RequestUri!.ToString().Contains($"/api/Projects/{projectId}/requirements/all")),
+                    req.RequestUri!.ToString().Contains($"/api/Requirement/project/{projectId}")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponseMessage);
 
@@ -164,10 +164,10 @@ public class RequirementsDataServiceTests
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req => 
                     req.Method == HttpMethod.Get && 
-                    req.RequestUri!.ToString().Contains($"/api/Projects/{projectId}/requirements") &&
-                    req.RequestUri!.ToString().Contains("page=1") &&
-                    req.RequestUri!.ToString().Contains("pageSize=10") &&
-                    req.RequestUri!.ToString().Contains("searchTerm=test")),
+                    req.RequestUri!.ToString().Contains($"/api/Requirement/project/{projectId}/paged") &&
+                    req.RequestUri!.ToString().Contains("PageNumber=1") &&
+                    req.RequestUri!.ToString().Contains("PageSize=10") &&
+                    req.RequestUri!.ToString().Contains("SearchTerm=test")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(httpResponseMessage);
 
