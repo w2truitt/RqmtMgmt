@@ -13,18 +13,15 @@ namespace backend.Tests
     public class DashboardControllerTests
     {
         private readonly Mock<IDashboardService> _mockDashboardService;
-        private readonly Mock<IEnhancedDashboardService> _mockEnhancedDashboardService;
         private readonly Mock<ILogger<DashboardController>> _mockLogger;
         private readonly DashboardController _controller;
 
         public DashboardControllerTests()
         {
             _mockDashboardService = new Mock<IDashboardService>();
-            _mockEnhancedDashboardService = new Mock<IEnhancedDashboardService>();
             _mockLogger = new Mock<ILogger<DashboardController>>();
             _controller = new DashboardController(
                 _mockDashboardService.Object, 
-                _mockEnhancedDashboardService.Object, 
                 _mockLogger.Object);
         }
 
@@ -77,7 +74,8 @@ namespace backend.Tests
                 TestManagement = new TestManagementStatsDto { TotalTestCases = 20, TotalTestSuites = 5, TotalTestPlans = 3 },
                 TestExecution = new TestExecutionStatsDto { PassRate = 75.5 }
             };
-            _mockEnhancedDashboardService.Setup(s => s.GetDashboardStatsAsync()).ReturnsAsync(expectedStats);
+            _mockDashboardService.Setup(s => s.GetDashboardStatsAsync()).ReturnsAsync(expectedStats);
+            _mockDashboardService.Setup(s => s.GetDashboardStatsAsync()).ReturnsAsync(expectedStats);
 
             // Act
             var result = await _controller.GetEnhancedStatistics();
@@ -94,7 +92,7 @@ namespace backend.Tests
         public async Task GetEnhancedStatistics_ReturnsInternalServerError_WhenExceptionThrown()
         {
             // Arrange
-            _mockEnhancedDashboardService.Setup(s => s.GetDashboardStatsAsync()).ThrowsAsync(new Exception("Service error"));
+            _mockDashboardService.Setup(s => s.GetDashboardStatsAsync()).ThrowsAsync(new Exception("Service error"));
 
             // Act
             var result = await _controller.GetEnhancedStatistics();
@@ -119,7 +117,7 @@ namespace backend.Tests
                     { RequirementStatus.Verified, 5 }
                 }
             };
-            _mockEnhancedDashboardService.Setup(s => s.GetRequirementStatsAsync()).ReturnsAsync(expectedStats);
+            _mockDashboardService.Setup(s => s.GetRequirementStatsAsync()).ReturnsAsync(expectedStats);
 
             // Act
             var result = await _controller.GetRequirementStats();
@@ -135,7 +133,7 @@ namespace backend.Tests
         public async Task GetRequirementStats_ReturnsInternalServerError_WhenExceptionThrown()
         {
             // Arrange
-            _mockEnhancedDashboardService.Setup(s => s.GetRequirementStatsAsync()).ThrowsAsync(new Exception("Stats error"));
+            _mockDashboardService.Setup(s => s.GetRequirementStatsAsync()).ThrowsAsync(new Exception("Stats error"));
 
             // Act
             var result = await _controller.GetRequirementStats();
@@ -156,7 +154,7 @@ namespace backend.Tests
                 TotalTestPlans = 5,
                 TestCoveragePercentage = 80.0
             };
-            _mockEnhancedDashboardService.Setup(s => s.GetTestManagementStatsAsync()).ReturnsAsync(expectedStats);
+            _mockDashboardService.Setup(s => s.GetTestManagementStatsAsync()).ReturnsAsync(expectedStats);
 
             // Act
             var result = await _controller.GetTestManagementStats();
@@ -173,7 +171,7 @@ namespace backend.Tests
         public async Task GetTestManagementStats_ReturnsInternalServerError_WhenExceptionThrown()
         {
             // Arrange
-            _mockEnhancedDashboardService.Setup(s => s.GetTestManagementStatsAsync()).ThrowsAsync(new Exception("Management stats error"));
+            _mockDashboardService.Setup(s => s.GetTestManagementStatsAsync()).ThrowsAsync(new Exception("Management stats error"));
 
             // Act
             var result = await _controller.GetTestManagementStats();
@@ -195,7 +193,7 @@ namespace backend.Tests
                 NotRunExecutions = 5,
                 PassRate = 95.0
             };
-            _mockEnhancedDashboardService.Setup(s => s.GetTestExecutionStatsAsync()).ReturnsAsync(expectedStats);
+            _mockDashboardService.Setup(s => s.GetTestExecutionStatsAsync()).ReturnsAsync(expectedStats);
 
             // Act
             var result = await _controller.GetTestExecutionStats();
@@ -212,7 +210,7 @@ namespace backend.Tests
         public async Task GetTestExecutionStats_ReturnsInternalServerError_WhenExceptionThrown()
         {
             // Arrange
-            _mockEnhancedDashboardService.Setup(s => s.GetTestExecutionStatsAsync()).ThrowsAsync(new Exception("Execution stats error"));
+            _mockDashboardService.Setup(s => s.GetTestExecutionStatsAsync()).ThrowsAsync(new Exception("Execution stats error"));
 
             // Act
             var result = await _controller.GetTestExecutionStats();
@@ -231,7 +229,7 @@ namespace backend.Tests
                 new RecentActivityDto { Id = 1, Description = "Requirement created", EntityType = "Requirement", Action = "Created", UserId = 1, UserName = "testuser", CreatedAt = DateTime.UtcNow },
                 new RecentActivityDto { Id = 2, Description = "Test case updated", EntityType = "TestCase", Action = "Updated", UserId = 2, UserName = "testuser2", CreatedAt = DateTime.UtcNow.AddMinutes(-10) }
             };
-            _mockEnhancedDashboardService.Setup(s => s.GetRecentActivityAsync(5)).ReturnsAsync(expectedActivities);
+            _mockDashboardService.Setup(s => s.GetRecentActivityAsync(5)).ReturnsAsync(expectedActivities);
 
             // Act
             var result = await _controller.GetRecentActivity();
@@ -251,7 +249,7 @@ namespace backend.Tests
             {
                 new RecentActivityDto { Id = 1, Description = "Activity 1", EntityType = "Requirement", Action = "Created", UserId = 1, UserName = "user1", CreatedAt = DateTime.UtcNow }
             };
-            _mockEnhancedDashboardService.Setup(s => s.GetRecentActivityAsync(10)).ReturnsAsync(expectedActivities);
+            _mockDashboardService.Setup(s => s.GetRecentActivityAsync(10)).ReturnsAsync(expectedActivities);
 
             // Act
             var result = await _controller.GetRecentActivity(10);
@@ -302,7 +300,7 @@ namespace backend.Tests
         public async Task GetRecentActivity_ReturnsInternalServerError_WhenExceptionThrown()
         {
             // Arrange
-            _mockEnhancedDashboardService.Setup(s => s.GetRecentActivityAsync(It.IsAny<int>())).ThrowsAsync(new Exception("Activity error"));
+            _mockDashboardService.Setup(s => s.GetRecentActivityAsync(It.IsAny<int>())).ThrowsAsync(new Exception("Activity error"));
 
             // Act
             var result = await _controller.GetRecentActivity();
