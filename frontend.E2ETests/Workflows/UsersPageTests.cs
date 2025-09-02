@@ -2,17 +2,26 @@ using frontend.E2ETests.PageObjects;
 using frontend.E2ETests.TestData;
 using Microsoft.Playwright;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
 /// E2E tests for the Users page
 /// </summary>
-public class UsersPageTests : E2ETestBase
+public class UsersPageTests : AuthenticatedE2ETestBase
 {
+    public UsersPageTests(ITestOutputHelper output) : base(output)
+    {
+    }
+
     [Fact]
     public async Task Users_NavigatesSuccessfully()
     {
+        // Arrange - Login as admin to access users page
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -26,6 +35,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_LoadsWithoutErrors()
     {
+        // Arrange - Login as admin to access users page
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -44,6 +57,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_HasExpectedPageElements()
     {
+        // Arrange - Login as admin to access users page
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -52,7 +69,10 @@ public class UsersPageTests : E2ETestBase
         
         // Assert
         var title = await Page.TitleAsync();
-        // Page title may not be implemented yet, so just check it's not null`n        Assert.NotNull(title);`n        // TODO: Uncomment when page titles are implemented`n        // Assert.Contains("Users", title, StringComparison.OrdinalIgnoreCase);
+        // Page title may not be implemented yet, so just check it's not null
+        Assert.NotNull(title);
+        // TODO: Uncomment when page titles are implemented
+        // Assert.Contains("Users", title, StringComparison.OrdinalIgnoreCase);
         
         // TODO: Add more specific element checks when frontend is implemented
         /*
@@ -65,6 +85,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_CanCreateNewUser_WhenImplemented()
     {
+        // Arrange - Login as admin to create users
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var testId = CreateTestId();
         var usersPage = new UsersPage(Page, BaseUrl);
@@ -98,6 +122,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_CanSearchUsers_WhenImplemented()
     {
+        // Arrange - Login as admin to search users
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var testId = CreateTestId();
         var usersPage = new UsersPage(Page, BaseUrl);
@@ -123,6 +151,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_DisplaysUsersList_WhenDataExists()
     {
+        // Arrange - Login as admin to view users
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -150,6 +182,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_CanEditAndDeleteUsers_WhenImplemented()
     {
+        // Arrange - Login as admin to edit/delete users
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -183,6 +219,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_ValidatesRequiredFields_WhenImplemented()
     {
+        // Arrange - Login as admin to test validation
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -208,6 +248,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_ValidatesEmailFormat_WhenImplemented()
     {
+        // Arrange - Login as admin to test email validation
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var usersPage = new UsersPage(Page, BaseUrl);
         
@@ -231,6 +275,10 @@ public class UsersPageTests : E2ETestBase
     [Fact]
     public async Task Users_HandlesUserRoles_WhenImplemented()
     {
+        // Arrange - Login as admin to manage user roles
+        var loginSuccess = await LoginAsAdminAsync();
+        Assert.True(loginSuccess, "Failed to login as admin");
+        
         // Arrange
         var testId = CreateTestId();
         var usersPage = new UsersPage(Page, BaseUrl);

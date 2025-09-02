@@ -77,7 +77,7 @@ namespace RqmtMgmtShared
         public int PageSize 
         { 
             get => _pageSize; 
-            set => _pageSize = value < 1 ? 1 : value > 100 ? 100 : value; 
+            set { if (value < 1) _pageSize = 1; else if (value > 100) _pageSize = 100; else _pageSize = value; } 
         }
 
         /// <summary>
@@ -94,5 +94,15 @@ namespace RqmtMgmtShared
         /// Gets or sets whether to sort in descending order. Default is false (ascending).
         /// </summary>
         public bool SortDescending { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the project ID to filter results by. When provided, only results for this project are returned.
+        /// </summary>
+        public int? ProjectId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the test suite ID to filter results by. When provided, only results for this test suite are returned.
+        /// </summary>
+        public int? SuiteId { get; set; }
     }
 }

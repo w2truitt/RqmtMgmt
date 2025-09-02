@@ -71,7 +71,7 @@ namespace RqmtMgmtShared
         public DateTime CreatedAt { get; set; }
         public string TimeAgo => GetTimeAgo(CreatedAt);
 
-        private string GetTimeAgo(DateTime dateTime)
+        private static string GetTimeAgo(DateTime dateTime)
         {
             var timeSpan = DateTime.UtcNow - dateTime;
             

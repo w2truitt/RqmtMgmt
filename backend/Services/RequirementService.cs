@@ -30,12 +30,12 @@ namespace backend.Services
         /// <returns>A list of all requirements as DTOs.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
         {
-            var entities = await _context.Requirements.ToListAsync();
+            var entities = await _context.Requirements.AsNoTracking().ToListAsync();
             return entities.Select(EntityToDto).ToList();
         }
 
         /// <summary>
-        /// Retrieves a paginated list of requirements from the database with optional filtering and sorting.
+        /// Retrieves requirements with pagination, filtering, and sorting capabilities.
         /// </summary>
         /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
         /// <returns>A paginated result containing requirements and pagination metadata.</returns>
@@ -43,24 +43,192 @@ namespace backend.Services
         {
             var query = _context.Requirements.AsQueryable();
 
-            // Apply search filter if provided
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-            {
-                var searchTerm = parameters.SearchTerm.ToLower();
-                query = query.Where(r => r.Title.ToLower().Contains(searchTerm) || 
-                                        (r.Description != null && r.Description.ToLower().Contains(searchTerm)));
-            }
+            // Apply filters
+            query = ApplyFilters(query, parameters);
 
             // Apply sorting
-            query = parameters.SortBy?.ToLower() switch
+            query = ApplySorting(query, parameters);
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var entities = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<RequirementDto>
             {
-                "title" => parameters.SortDescending ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title),
-                "status" => parameters.SortDescending ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status),
-                "type" => parameters.SortDescending ? query.OrderByDescending(r => r.Type) : query.OrderBy(r => r.Type),
-                "createdat" => parameters.SortDescending ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt),
-                "updatedat" => parameters.SortDescending ? query.OrderByDescending(r => r.UpdatedAt) : query.OrderBy(r => r.UpdatedAt),
-                _ => parameters.SortDescending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id) // Default sort by ID
+                Items = entities.Select(EntityToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
             };
+        }
+
+        /// <summary>
+        /// Applies filtering conditions to the requirements query.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="parameters">The pagination parameters containing filter criteria.</param>
+        /// <returns>The filtered query.</returns>
+        private static IQueryable<Requirement> ApplyFilters(IQueryable<Requirement> query, PaginationParameters parameters)
+        {
+            query = ApplyProjectFilter(query, parameters.ProjectId);
+            query = ApplySearchFilter(query, parameters.SearchTerm);
+            return query;
+        }
+
+        /// <summary>
+        /// Applies project filtering to the requirements query.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="projectId">The project ID to filter by, if provided.</param>
+        /// <returns>The filtered query.</returns>
+        private static IQueryable<Requirement> ApplyProjectFilter(IQueryable<Requirement> query, int? projectId)
+        {
+            if (projectId.HasValue)
+            {
+                query = query.Where(r => r.ProjectId == projectId.Value);
+            }
+            return query;
+        }
+
+        /// <summary>
+        /// Applies search filtering to the requirements query.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="searchTerm">The search term to filter by, if provided.</param>
+        /// <returns>The filtered query.</returns>
+        private static IQueryable<Requirement> ApplySearchFilter(IQueryable<Requirement> query, string? searchTerm)
+        {
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(r => EF.Functions.Like(r.Title, $"%{searchTerm}%") || 
+                                        (r.Description != null && EF.Functions.Like(r.Description, $"%{searchTerm}%")));
+            }
+            return query;
+        }
+
+        /// <summary>
+        /// Applies sorting to the requirements query based on the specified parameters.
+        /// </summary>
+        /// <param name="query">The base query to sort.</param>
+        /// <param name="parameters">The pagination parameters containing sorting criteria.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplySorting(IQueryable<Requirement> query, PaginationParameters parameters)
+        {
+            var sortBy = parameters.SortBy?.ToUpperInvariant();
+            var isDescending = parameters.SortDescending;
+
+            return sortBy switch
+            {
+                "TITLE" => ApplyTitleSorting(query, isDescending),
+                "STATUS" => ApplyStatusSorting(query, isDescending),
+                "TYPE" => ApplyTypeSorting(query, isDescending),
+                "CREATEDAT" => ApplyCreatedAtSorting(query, isDescending),
+                "UPDATEDAT" => ApplyUpdatedAtSorting(query, isDescending),
+                _ => ApplyDefaultSorting(query, isDescending) // Default sort by ID
+            };
+        }
+
+        /// <summary>
+        /// Applies title-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyTitleSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title);
+        }
+
+        /// <summary>
+        /// Applies status-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyStatusSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Status) : query.OrderBy(r => r.Status);
+        }
+
+        /// <summary>
+        /// Applies type-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyTypeSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Type) : query.OrderBy(r => r.Type);
+        }
+
+        /// <summary>
+        /// Applies creation date-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyCreatedAtSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.CreatedAt) : query.OrderBy(r => r.CreatedAt);
+        }
+
+        /// <summary>
+        /// Applies update date-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyUpdatedAtSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.UpdatedAt) : query.OrderBy(r => r.UpdatedAt);
+        }
+
+        /// <summary>
+        /// Applies default ID-based sorting to the query.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="isDescending">Whether to sort in descending order.</param>
+        /// <returns>The sorted query.</returns>
+        private static IQueryable<Requirement> ApplyDefaultSorting(IQueryable<Requirement> query, bool isDescending)
+        {
+            return isDescending ? query.OrderByDescending(r => r.Id) : query.OrderBy(r => r.Id);
+        }
+
+        /// <summary>
+        /// Retrieves all requirements for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of requirements for the specified project.</returns>
+        public async Task<List<RequirementDto>> GetByProjectIdAsync(int projectId)
+        {
+            var entities = await _context.Requirements
+                .Where(r => r.ProjectId == projectId)
+                .ToListAsync();
+            return entities.Select(EntityToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves requirements for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing requirements for the specified project and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var query = _context.Requirements
+                .Where(r => r.ProjectId == projectId)
+                .AsQueryable();
+
+            // Apply search filter (project filter is already applied above)
+            query = ApplySearchFilter(query, parameters.SearchTerm);
+
+            // Apply sorting
+            query = ApplySorting(query, parameters);
 
             // Get total count for pagination metadata
             var totalItems = await query.CountAsync();
@@ -87,29 +255,31 @@ namespace backend.Services
         /// <returns>The requirement DTO if found; otherwise, null.</returns>
         public async Task<RequirementDto?> GetByIdAsync(int id)
         {
-            var entity = await _context.Requirements.FindAsync(id);
+            var entity = await _context.Requirements
+                .Include(r => r.Creator)
+                .FirstOrDefaultAsync(r => r.Id == id);
             return entity == null ? null : EntityToDto(entity);
         }
 
         /// <summary>
         /// Creates a new requirement with validation and initial versioning.
         /// </summary>
-        /// <param name="dto">The requirement data to create.</param>
+        /// <param name="requirement">The requirement data to create.</param>
         /// <returns>The created requirement DTO if successful; otherwise, null.</returns>
-        public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
+        public async Task<RequirementDto?> CreateAsync(RequirementDto requirement)
         {
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            if (string.IsNullOrWhiteSpace(requirement.Title))
                 return null;
             
-            if (dto.CreatedBy <= 0)
+            if (requirement.CreatedBy <= 0)
                 return null;
             
             // Check for circular reference if ParentId is provided
-            if (dto.ParentId.HasValue && await WouldCreateCircularReference(dto.Id, dto.ParentId.Value))
+            if (requirement.ParentId.HasValue && await WouldCreateCircularReference(requirement.Id, requirement.ParentId.Value))
                 return null;
 
-            var entity = DtoToEntity(dto);
+            var entity = DtoToEntity(requirement);
             _context.Requirements.Add(entity);
             await _context.SaveChangesAsync();
 
@@ -128,29 +298,35 @@ namespace backend.Services
             };
             _context.RequirementVersions.Add(version);
             await _context.SaveChangesAsync();
-            return EntityToDto(entity);
+            
+                // Reload the entity with Creator to ensure navigation property is populated
+                var createdEntity = await _context.Requirements
+                    .Include(r => r.Creator)
+                    .FirstOrDefaultAsync(r => r.Id == entity.Id);
+            
+                return createdEntity == null ? null : EntityToDto(createdEntity);
         }
 
         /// <summary>
         /// Updates an existing requirement with validation, versioning, and circular reference checking.
         /// </summary>
-        /// <param name="dto">The requirement data to update.</param>
+        /// <param name="requirement">The requirement data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(RequirementDto dto)
+        public async Task<bool> UpdateAsync(RequirementDto requirement)
         {
-            var entity = await _context.Requirements.FindAsync(dto.Id);
+            var entity = await _context.Requirements.FindAsync(requirement.Id);
             if (entity == null)
                 return false;
 
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            if (string.IsNullOrWhiteSpace(requirement.Title))
                 return false;
             
-            if (dto.CreatedBy <= 0)
+            if (requirement.CreatedBy <= 0)
                 return false;
             
             // Check for circular reference if ParentId is provided
-            if (dto.ParentId.HasValue && await WouldCreateCircularReference(dto.Id, dto.ParentId.Value))
+            if (requirement.ParentId.HasValue && await WouldCreateCircularReference(requirement.Id, requirement.ParentId.Value))
                 return false;
 
             // Save current state as new version BEFORE updating
@@ -164,17 +340,17 @@ namespace backend.Services
                 Description = entity.Description,
                 ParentId = entity.ParentId,
                 Status = entity.Status,
-                ModifiedBy = dto.CreatedBy, // Use the user making the update
+                ModifiedBy = requirement.CreatedBy, // Use the user making the update
                 ModifiedAt = DateTime.UtcNow
             };
             _context.RequirementVersions.Add(version);
 
             // Update entity from DTO (don't change CreatedBy and CreatedAt)
-            entity.Type = dto.Type;
-            entity.Title = dto.Title;
-            entity.Description = dto.Description;
-            entity.ParentId = dto.ParentId;
-            entity.Status = dto.Status;
+            entity.Type = requirement.Type;
+            entity.Title = requirement.Title;
+            entity.Description = requirement.Description;
+            entity.ParentId = requirement.ParentId;
+            entity.Status = requirement.Status;
             entity.Version = nextVersion;
             entity.UpdatedAt = DateTime.UtcNow;
 
@@ -252,8 +428,16 @@ namespace backend.Services
             Status = r.Status,
             Version = r.Version,
             CreatedBy = r.CreatedBy,
+            CreatedByUser = r.Creator != null ? new UserDto
+            {
+                Id = r.Creator.Id,
+                UserName = r.Creator.UserName,
+                Email = r.Creator.Email,
+                Roles = new List<string>()
+            } : null,
             CreatedAt = r.CreatedAt,
-            UpdatedAt = r.UpdatedAt
+            UpdatedAt = r.UpdatedAt,
+            ProjectId = r.ProjectId
         };
 
         /// <summary>
@@ -290,7 +474,8 @@ namespace backend.Services
             Version = d.Version,
             CreatedBy = d.CreatedBy,
             CreatedAt = d.CreatedAt,
-            UpdatedAt = d.UpdatedAt
+            UpdatedAt = d.UpdatedAt,
+            ProjectId = d.ProjectId
         };
     }
 }

@@ -38,22 +38,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new test suite by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The test suite data to create.</param>
+        /// <param name="testSuite">The test suite data to create.</param>
         /// <returns>The created test suite with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto dto)
+        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite)
         {
-            var resp = await _http.PostAsJsonAsync("/api/TestSuite", dto);
+            var resp = await _http.PostAsJsonAsync("/api/TestSuite", testSuite);
             return await resp.Content.ReadFromJsonAsync<TestSuiteDto>();
         }
 
         /// <summary>
         /// Updates an existing test suite by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The test suite data to update.</param>
+        /// <param name="testSuite">The test suite data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestSuiteDto dto)
+        public async Task<bool> UpdateAsync(TestSuiteDto testSuite)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/TestSuite/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/TestSuite/{testSuite.Id}", testSuite);
             return resp.IsSuccessStatusCode;
         }
 
@@ -67,6 +67,62 @@ namespace frontend.Services
         {
             var resp = await _http.DeleteAsync($"/api/TestSuite/{id}");
             return resp.IsSuccessStatusCode;
+        }
+
+        /// <summary>
+        /// Retrieves test suites with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test suites and pagination metadata.</returns>
+        public async Task<PagedResult<TestSuiteDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<TestSuiteDto>>($"/api/TestSuite{queryString}");
+            return result ?? new PagedResult<TestSuiteDto>();
+        }
+
+        /// <summary>
+        /// Retrieves test suites for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of test suites for the project.</returns>
+        public async Task<List<TestSuiteDto>> GetByProjectIdAsync(int projectId)
+        {
+            var result = await _http.GetFromJsonAsync<List<TestSuiteDto>>($"/api/Projects/{projectId}/testsuites");
+            return result ?? new List<TestSuiteDto>();
+        }
+
+        /// <summary>
+        /// Retrieves test suites for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test suites for the project and pagination metadata.</returns>
+        public async Task<PagedResult<TestSuiteDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<TestSuiteDto>>($"/api/Projects/{projectId}/testsuites{queryString}");
+            return result ?? new PagedResult<TestSuiteDto>();
         }
     }
 }

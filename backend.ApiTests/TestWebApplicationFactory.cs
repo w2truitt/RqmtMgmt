@@ -12,6 +12,14 @@ namespace backend.ApiTests
 {
     public class TestWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
     {
+        private static int _databaseCounter = 0;
+        private readonly string _databaseName;
+        
+        public TestWebApplicationFactory()
+        {
+            _databaseName = $"TestDatabase_{Interlocked.Increment(ref _databaseCounter)}_{Guid.NewGuid():N}";
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureServices(services =>
@@ -25,7 +33,7 @@ namespace backend.ApiTests
                 // Add in-memory database for testing
                 services.AddDbContext<RqmtMgmtDbContext>(options =>
                 {
-                    options.UseInMemoryDatabase("TestDatabase");
+                    options.UseInMemoryDatabase(_databaseName);
                     options.EnableSensitiveDataLogging();
                 });
 
@@ -55,19 +63,13 @@ namespace backend.ApiTests
 
         private static void SeedTestData(RqmtMgmtDbContext context)
         {
-            // Clear any existing data
-            context.Users.RemoveRange(context.Users);
-            context.Roles.RemoveRange(context.Roles);
-            context.Requirements.RemoveRange(context.Requirements);
-            context.TestCases.RemoveRange(context.TestCases);
-            context.TestSuites.RemoveRange(context.TestSuites);
-            context.TestPlans.RemoveRange(context.TestPlans);
-            context.SaveChanges();
+            // Since we're using a unique database per factory instance, no need to clear data
+            // Just ensure we don't have any tracked entities
+            context.ChangeTracker.Clear();
 
             // Add test users
             var testUser = new User
             {
-                Id = 1,
                 UserName = "testuser",
                 Email = "test@example.com"
             };
@@ -76,21 +78,22 @@ namespace backend.ApiTests
             // Add test roles
             var adminRole = new Role
             {
-                Id = 1,
                 Name = "Admin"
             };
             context.Roles.Add(adminRole);
 
+            // Save users and roles first to get their IDs
+            context.SaveChanges();
+
             // Add test requirement
             var testRequirement = new Requirement
             {
-                Id = 1,
                 Type = RequirementType.CRS,
                 Title = "Test Requirement",
                 Description = "Test Description",
                 Status = RequirementStatus.Draft,
                 Version = 1,
-                CreatedBy = 1,
+                CreatedBy = testUser.Id,
                 CreatedAt = DateTime.UtcNow
             };
             context.Requirements.Add(testRequirement);
@@ -98,22 +101,23 @@ namespace backend.ApiTests
             // Add test suite
             var testSuite = new TestSuite
             {
-                Id = 1,
                 Name = "Test Suite",
                 Description = "Test Suite Description",
-                CreatedBy = 1,
+                CreatedBy = testUser.Id,
                 CreatedAt = DateTime.UtcNow
             };
             context.TestSuites.Add(testSuite);
 
+            // Save requirements and suites to get their IDs
+            context.SaveChanges();
+
             // Add test case
             var testCase = new TestCase
             {
-                Id = 1,
                 Title = "Test Case",
                 Description = "Test Case Description",
-                SuiteId = 1,
-                CreatedBy = 1,
+                SuiteId = testSuite.Id,
+                CreatedBy = testUser.Id,
                 CreatedAt = DateTime.UtcNow
             };
             context.TestCases.Add(testCase);
@@ -121,16 +125,18 @@ namespace backend.ApiTests
             // Add test plan
             var testPlan = new TestPlan
             {
-                Id = 1,
                 Name = "Test Plan",
                 Description = "Test Plan Description",
                 Type = TestPlanType.UserValidation,
-                CreatedBy = 1,
+                CreatedBy = testUser.Id,
                 CreatedAt = DateTime.UtcNow
             };
             context.TestPlans.Add(testPlan);
 
             context.SaveChanges();
+            
+            // Clear the change tracker after seeding to prevent conflicts
+            context.ChangeTracker.Clear();
         }
     }
 }

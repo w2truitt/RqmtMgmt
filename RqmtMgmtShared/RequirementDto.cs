@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace RqmtMgmtShared
 {
@@ -20,6 +21,7 @@ namespace RqmtMgmtShared
         /// <summary>
         /// Gets or sets the title of the requirement. This field is required and cannot be null.
         /// </summary>
+        [Required(ErrorMessage = "Title is required")]
         public required string Title { get; set; }
 
         /// <summary>
@@ -48,6 +50,11 @@ namespace RqmtMgmtShared
         public int CreatedBy { get; set; }
 
         /// <summary>
+        /// Gets or sets the details of the user who created this requirement.
+        /// </summary>
+        public UserDto? CreatedByUser { get; set; }
+
+        /// <summary>
         /// Gets or sets the timestamp when the requirement was created.
         /// </summary>
         public DateTime CreatedAt { get; set; }
@@ -56,5 +63,25 @@ namespace RqmtMgmtShared
         /// Gets or sets the timestamp when the requirement was last updated. Null if never updated.
         /// </summary>
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the project this requirement belongs to.
+        /// </summary>
+        public int ProjectId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the project this requirement belongs to.
+        /// </summary>
+        public string ProjectName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the code of the project for generating structured requirement IDs.
+        /// </summary>
+        public string ProjectCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the full requirement identifier including project code (e.g., "MBA-REQ-001").
+        /// </summary>
+        public string FullRequirementId { get; set; } = string.Empty;
     }
 }

@@ -1,0 +1,28 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+WORKDIR /src
+
+# Copy shared library first
+COPY RqmtMgmtShared/ ./RqmtMgmtShared/
+
+# Copy identity server project
+COPY identityserver/ ./identityserver/
+
+# Restore dependencies
+RUN dotnet restore ./identityserver/identityserver.csproj
+
+# Build the application
+RUN dotnet build ./identityserver/identityserver.csproj -c Release -o /app/build
+
+# Publish the application
+RUN dotnet publish ./identityserver/identityserver.csproj -c Release -o /app/publish
+
+# Final stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT ["dotnet", "identityserver.dll"]

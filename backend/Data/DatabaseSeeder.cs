@@ -44,28 +44,44 @@ namespace backend.Data
                 await context.SaveChangesAsync();
             }
 
-            // Seed Admin User
+            // Seed Identity Server Users
             if (!await context.Users.AnyAsync())
             {
-                var adminUser = new User
+                var identityUsers = new[]
                 {
-                    UserName = "admin",
-                    Email = "admin@example.com",
-                    CreatedAt = DateTime.UtcNow
+                    new { UserName = "admin", Email = "admin@rqmtmgmt.local", RoleName = "Administrator" },
+                    new { UserName = "pm", Email = "pm@rqmtmgmt.local", RoleName = "Product Owner" },
+                    new { UserName = "dev", Email = "dev@rqmtmgmt.local", RoleName = "Engineer" },
+                    new { UserName = "tester", Email = "tester@rqmtmgmt.local", RoleName = "Quality Assurance" },
+                    new { UserName = "viewer", Email = "viewer@rqmtmgmt.local", RoleName = "Viewer" }
                 };
 
-                await context.Users.AddAsync(adminUser);
-                await context.SaveChangesAsync();
-
-                // Assign admin role
-                var adminRole = await context.Roles.FirstAsync(r => r.Name == "Administrator");
-                var userRole = new UserRole
+                foreach (var identityUser in identityUsers)
                 {
-                    UserId = adminUser.Id,
-                    RoleId = adminRole.Id
-                };
+                    var user = new User
+                    {
+                        UserName = identityUser.UserName,
+                        Email = identityUser.Email,
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-                await context.UserRoles.AddAsync(userRole);
+                    await context.Users.AddAsync(user);
+                    await context.SaveChangesAsync();
+
+                    // Assign role
+                    var role = await context.Roles.FirstOrDefaultAsync(r => r.Name == identityUser.RoleName);
+                    if (role != null)
+                    {
+                        var userRole = new UserRole
+                        {
+                            UserId = user.Id,
+                            RoleId = role.Id
+                        };
+
+                        await context.UserRoles.AddAsync(userRole);
+                    }
+                }
+                
                 await context.SaveChangesAsync();
             }
 
@@ -83,6 +99,20 @@ namespace backend.Data
         {
             var adminUser = await context.Users.FirstAsync();
 
+            // Create default project first (required for requirements and test suites)
+            var defaultProject = new Project
+            {
+                Name = "Legacy Requirements",
+                Code = "LEG",
+                Description = "Default project for existing requirements during project segmentation migration",
+                Status = ProjectStatus.Active,
+                OwnerId = adminUser.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await context.Projects.AddAsync(defaultProject);
+            await context.SaveChangesAsync();
+
             // Sample Requirements
             var customerReq = new Requirement
             {
@@ -92,7 +122,9 @@ namespace backend.Data
                 Status = RequirementStatus.Approved,
                 Version = 1,
                 CreatedBy = adminUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = defaultProject.Id,
+                ProjectCode = defaultProject.Code
             };
 
             var productReq = new Requirement
@@ -104,7 +136,9 @@ namespace backend.Data
                 Version = 1,
                 CreatedBy = adminUser.Id,
                 CreatedAt = DateTime.UtcNow,
-                Parent = customerReq
+                Parent = customerReq,
+                ProjectId = defaultProject.Id,
+                ProjectCode = defaultProject.Code
             };
 
             var softwareReq = new Requirement
@@ -116,7 +150,9 @@ namespace backend.Data
                 Version = 1,
                 CreatedBy = adminUser.Id,
                 CreatedAt = DateTime.UtcNow,
-                Parent = productReq
+                Parent = productReq,
+                ProjectId = defaultProject.Id,
+                ProjectCode = defaultProject.Code
             };
 
             await context.Requirements.AddRangeAsync(customerReq, productReq, softwareReq);
@@ -128,7 +164,8 @@ namespace backend.Data
                 Name = "Authentication Test Suite",
                 Description = "Tests for user authentication functionality",
                 CreatedBy = adminUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = defaultProject.Id
             };
 
             await context.TestSuites.AddAsync(testSuite);
@@ -189,7 +226,8 @@ namespace backend.Data
                 Description = "Test plan for authentication features",
                 Type = TestPlanType.UserValidation,
                 CreatedBy = adminUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = defaultProject.Id
             };
 
             await context.TestPlans.AddAsync(testPlan);

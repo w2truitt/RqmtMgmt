@@ -12,19 +12,16 @@ namespace backend.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
-        private readonly IEnhancedDashboardService _enhancedDashboardService;
         private readonly ILogger<DashboardController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the DashboardController with the specified services.
         /// </summary>
         /// <param name="dashboardService">The basic dashboard service for statistics.</param>
-        /// <param name="enhancedDashboardService">The enhanced dashboard service with advanced metrics.</param>
         /// <param name="logger">The logger for tracking dashboard operations.</param>
-        public DashboardController(IDashboardService dashboardService, IEnhancedDashboardService enhancedDashboardService, ILogger<DashboardController> logger)
+        public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
         {
             _dashboardService = dashboardService;
-            _enhancedDashboardService = enhancedDashboardService;
             _logger = logger;
         }
 
@@ -64,7 +61,7 @@ namespace backend.Controllers
             try
             {
                 _logger.LogInformation("Getting enhanced dashboard statistics");
-                var statistics = await _enhancedDashboardService.GetDashboardStatsAsync();
+                var statistics = await _dashboardService.GetDashboardStatsAsync();
                 _logger.LogInformation("Successfully retrieved enhanced dashboard statistics: {@Statistics}", statistics);
                 return Ok(statistics);
             }
@@ -87,7 +84,7 @@ namespace backend.Controllers
             try
             {
                 _logger.LogInformation("Getting requirement statistics");
-                var stats = await _enhancedDashboardService.GetRequirementStatsAsync();
+                var stats = await _dashboardService.GetRequirementStatsAsync();
                 _logger.LogInformation("Successfully retrieved requirement statistics");
                 return Ok(stats);
             }
@@ -110,7 +107,7 @@ namespace backend.Controllers
             try
             {
                 _logger.LogInformation("Getting test management statistics");
-                var stats = await _enhancedDashboardService.GetTestManagementStatsAsync();
+                var stats = await _dashboardService.GetTestManagementStatsAsync();
                 _logger.LogInformation("Successfully retrieved test management statistics");
                 return Ok(stats);
             }
@@ -133,7 +130,7 @@ namespace backend.Controllers
             try
             {
                 _logger.LogInformation("Getting test execution statistics");
-                var stats = await _enhancedDashboardService.GetTestExecutionStatsAsync();
+                var stats = await _dashboardService.GetTestExecutionStatsAsync();
                 _logger.LogInformation("Successfully retrieved test execution statistics");
                 return Ok(stats);
             }
@@ -166,7 +163,7 @@ namespace backend.Controllers
                     return BadRequest(new { message = "Count must be between 1 and 50." });
                 }
 
-                var activities = await _enhancedDashboardService.GetRecentActivityAsync(count);
+                var activities = await _dashboardService.GetRecentActivityAsync(count);
                 _logger.LogInformation("Successfully retrieved {Count} recent activities", activities.Count);
                 return Ok(activities);
             }

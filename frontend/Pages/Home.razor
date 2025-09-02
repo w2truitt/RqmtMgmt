@@ -1,5 +1,6 @@
 @page "/"
-@inject IEnhancedDashboardService EnhancedDashboardService
+@attribute [Authorize]
+@inject IDashboardService EnhancedDashboardService
 @using RqmtMgmtShared
 
 <PageTitle>Dashboard</PageTitle>

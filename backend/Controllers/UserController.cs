@@ -2,9 +2,11 @@ using RqmtMgmtShared;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace backend.Controllers
 {
@@ -28,6 +30,137 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Retrieves the current authenticated user's information including their assigned roles.
+        /// </summary>
+        /// <returns>The current user's information if authenticated and found in the system.</returns>
+        /// <response code="200">Returns the current user's information.</response>
+        /// <response code="460">If the user is authenticated but email claim is missing from token.</response>
+        /// <response code="461">If the authenticated user is not found in the system.</response>
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        {
+            LogUserAuthenticationInfo();
+            
+            var email = ExtractEmailFromClaims();
+            if (string.IsNullOrEmpty(email))
+            {
+                return HandleMissingEmailClaim();
+            }
+
+            Console.WriteLine($"Found email claim: {email}");
+
+            var user = await _userService.GetByEmailAsync(email);
+            if (user == null)
+            {
+                return HandleUserNotFoundInDatabase(email);
+            }
+
+            Console.WriteLine($"Successfully found user: {user.Email}");
+            return Ok(user);
+        }
+
+        private void LogUserAuthenticationInfo()
+        {
+            var allClaims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+            Console.WriteLine($"Available claims: {string.Join(", ", allClaims)}");
+            Console.WriteLine($"User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+            Console.WriteLine($"User.Identity.Name: {User.Identity?.Name}");
+        }
+
+        private string? ExtractEmailFromClaims()
+        {
+            var emailClaimTypes = new[]
+            {
+                ClaimTypes.Email,
+                "email",
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+            };
+
+            return GetFirstClaimValue(emailClaimTypes);
+        }
+
+        private ActionResult<UserDto> HandleMissingEmailClaim()
+        {
+            var diagnosticInfo = ExtractDiagnosticInfo();
+            LogMissingEmailClaim(diagnosticInfo);
+
+            return StatusCode(460, CreateMissingEmailClaimResponse(diagnosticInfo));
+        }
+
+        private string? GetFirstClaimValue(string[] claimTypes)
+        {
+            foreach (var claimType in claimTypes)
+            {
+                var claim = User.FindFirst(claimType);
+                if (claim?.Value != null)
+                    return claim.Value;
+            }
+            return null;
+        }
+
+        private DiagnosticInfo ExtractDiagnosticInfo()
+        {
+            var subjectIdClaimTypes = new[] { ClaimTypes.NameIdentifier, "sub" };
+            var userNameClaimTypes = new[] { ClaimTypes.Name, "name" };
+
+            return new DiagnosticInfo
+            {
+                AllClaims = ExtractAllClaims(),
+                SubjectId = GetFirstClaimValue(subjectIdClaimTypes),
+                UserName = GetFirstClaimValue(userNameClaimTypes)
+            };
+        }
+
+        private void LogMissingEmailClaim(DiagnosticInfo diagnosticInfo)
+        {
+            Console.WriteLine($"No email claim found. SubjectId: {diagnosticInfo.SubjectId}, UserName: {diagnosticInfo.UserName}");
+        }
+
+        private object CreateMissingEmailClaimResponse(DiagnosticInfo diagnosticInfo)
+        {
+            return new
+            {
+                error = "AUTHENTICATED_BUT_NO_EMAIL_CLAIM - User is authenticated but email claim is missing from JWT token (460)",
+                availableClaims = diagnosticInfo.AllClaims,
+                subjectId = diagnosticInfo.SubjectId,
+                userName = diagnosticInfo.UserName,
+                debugInfo = "This is a 460 custom status, not 401 Unauthorized - authentication worked, but email claim missing"
+            };
+        }
+
+        private class DiagnosticInfo
+        {
+            public List<string> AllClaims { get; set; } = new();
+            public string? SubjectId { get; set; }
+            public string? UserName { get; set; }
+        }
+
+        private ActionResult<UserDto> HandleUserNotFoundInDatabase(string email)
+        {
+            var allClaims = ExtractAllClaims();
+            Console.WriteLine($"User with email '{email}' not found in database");
+            
+            return StatusCode(461, CreateUserNotFoundResponse(email, allClaims));
+        }
+
+        private List<string> ExtractAllClaims()
+        {
+            return User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+        }
+
+        private object CreateUserNotFoundResponse(string email, List<string> allClaims)
+        {
+            return new
+            {
+                error = $"AUTHENTICATED_BUT_USER_NOT_IN_DB - User with email '{email}' not found in the system (461)",
+                email = email,
+                availableClaims = allClaims,
+                debugInfo = "This is a 461 custom status, not 401 Unauthorized - authentication worked, but user not in database"
+            };
+        }
+
+        /// <summary>
         /// Retrieves all users from the system including their assigned roles.
         /// </summary>
         /// <returns>A list of all users with their role information.</returns>
@@ -37,6 +170,44 @@ namespace backend.Controllers
         {
             var users = await _userService.GetAllAsync();
             return Ok(users);
+        }
+
+        /// <summary>
+        /// Retrieves users with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="page">The page number (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20).</param>
+        /// <param name="searchTerm">Optional search term to filter users by name or email.</param>
+        /// <param name="sortBy">Optional field to sort by (username, email, createdat).</param>
+        /// <param name="sortDescending">Whether to sort in descending order (default: false).</param>
+        /// <returns>A paginated result of users.</returns>
+        /// <response code="200">Returns the paginated list of users.</response>
+        [HttpGet("paged")]
+        public async Task<ActionResult<PagedResult<UserDto>>> GetPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            try
+            {
+                var parameters = new PaginationParameters
+                {
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending
+                };
+
+                var result = await _userService.GetPagedAsync(parameters);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -50,6 +221,27 @@ namespace backend.Controllers
         public async Task<ActionResult<UserDto>> GetById(int id)
         {
             var user = await _userService.GetByIdAsync(id);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        /// <summary>
+        /// Retrieves a specific user by their email address including assigned roles.
+        /// </summary>
+        /// <param name="email">The email address of the user to find.</param>
+        /// <returns>The user if found, including their role information.</returns>
+        /// <response code="200">Returns the requested user.</response>
+        /// <response code="400">If the email parameter is missing or empty.</response>
+        /// <response code="404">If the user is not found.</response>
+        [HttpGet("by-email")]
+        public async Task<ActionResult<UserDto>> GetByEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest("Email parameter is required.");
+            }
+
+            var user = await _userService.GetByEmailAsync(email);
             if (user == null) return NotFound();
             return Ok(user);
         }

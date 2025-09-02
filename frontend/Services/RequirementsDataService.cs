@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using RqmtMgmtShared;
 
 namespace frontend.Services
@@ -6,18 +7,16 @@ namespace frontend.Services
     /// <summary>
     /// Frontend data service for requirements management operations.
     /// Provides HTTP client-based implementation of IRequirementService for communicating with the backend API.
+    /// Now inherits from BaseDataService to eliminate code duplication and ensure consistency.
     /// </summary>
-    public class RequirementsDataService : IRequirementService
+    public class RequirementsDataService : BaseDataService, IRequirementService
     {
-        private readonly HttpClient _http;
-
         /// <summary>
         /// Initializes a new instance of the RequirementsDataService with the specified HTTP client.
         /// </summary>
         /// <param name="http">The HTTP client for making API requests.</param>
-        public RequirementsDataService(HttpClient http)
+        public RequirementsDataService(HttpClient http) : base(http)
         {
-            _http = http;
         }
 
         /// <summary>
@@ -25,29 +24,15 @@ namespace frontend.Services
         /// </summary>
         /// <returns>A list of all requirements, or an empty list if the request fails.</returns>
         public async Task<List<RequirementDto>> GetAllAsync()
-            => await _http.GetFromJsonAsync<List<RequirementDto>>("/api/Requirement") ?? new();
+            => await GetListAsync<RequirementDto>("/api/Requirement");
 
         /// <summary>
-        /// Retrieves a paginated list of requirements from the backend API.
+        /// Retrieves all requirements for a specific project from the backend API.
         /// </summary>
-        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
-        /// <returns>A paginated result containing requirements and pagination metadata.</returns>
-        public async Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters)
-        {
-            var queryString = $"?pageNumber={parameters.PageNumber}&pageSize={parameters.PageSize}";
-            
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
-            
-            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
-                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
-            
-            if (parameters.SortDescending)
-                queryString += "&sortDescending=true";
-
-            var result = await _http.GetFromJsonAsync<PagedResult<RequirementDto>>($"/api/Requirement/paged{queryString}");
-            return result ?? new PagedResult<RequirementDto>();
-        }
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of requirements for the specified project, or an empty list if the request fails.</returns>
+        public async Task<List<RequirementDto>> GetByProjectIdAsync(int projectId)
+            => await GetListAsync<RequirementDto>($"/api/Requirement/project/{projectId}");
 
         /// <summary>
         /// Retrieves a specific requirement by its ID from the backend API.
@@ -55,29 +40,23 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the requirement.</param>
         /// <returns>The requirement if found; otherwise, null.</returns>
         public async Task<RequirementDto?> GetByIdAsync(int id)
-            => await _http.GetFromJsonAsync<RequirementDto>($"/api/Requirement/{id}");
+            => await GetAsync<RequirementDto>($"/api/Requirement/{id}");
 
         /// <summary>
         /// Creates a new requirement by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The requirement data to create.</param>
+        /// <param name="requirement">The requirement data to create.</param>
         /// <returns>The created requirement with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<RequirementDto?> CreateAsync(RequirementDto dto)
-        {
-            var resp = await _http.PostAsJsonAsync("/api/Requirement", dto);
-            return await resp.Content.ReadFromJsonAsync<RequirementDto>();
-        }
+        public async Task<RequirementDto?> CreateAsync(RequirementDto requirement)
+            => await PostAsync<RequirementDto, RequirementDto>("/api/Requirement", requirement);
 
         /// <summary>
         /// Updates an existing requirement by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The requirement data to update.</param>
+        /// <param name="requirement">The requirement data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(RequirementDto dto)
-        {
-            var resp = await _http.PutAsJsonAsync($"/api/Requirement/{dto.Id}", dto);
-            return resp.IsSuccessStatusCode;
-        }
+        public async Task<bool> UpdateAsync(RequirementDto requirement)
+            => await PutAsync($"/api/Requirement/{requirement.Id}", requirement);
 
         /// <summary>
         /// Deletes a requirement by sending a DELETE request to the backend API.
@@ -85,17 +64,58 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the requirement to delete.</param>
         /// <returns>True if the deletion was successful; otherwise, false.</returns>
         public async Task<bool> DeleteAsync(int id)
+            => await DeleteAsync($"/api/Requirement/{id}");
+
+        /// <summary>
+        /// Retrieves requirements with pagination from the backend API.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, and search criteria.</param>
+        /// <returns>A paginated result containing requirements and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters)
         {
-            var resp = await _http.DeleteAsync($"/api/Requirement/{id}");
-            return resp.IsSuccessStatusCode;
+            var queryParams = new Dictionary<string, object?>
+            {
+                ["PageNumber"] = parameters.PageNumber,
+                ["PageSize"] = parameters.PageSize,
+                ["SearchTerm"] = parameters.SearchTerm,
+                ["SortBy"] = parameters.SortBy,
+                ["SortDescending"] = parameters.SortDescending ? "true" : null,
+                ["ProjectId"] = parameters.ProjectId
+            };
+
+            var queryString = BuildQueryString(queryParams);
+            var result = await GetAsync<PagedResult<RequirementDto>>($"/api/Requirement/paged{queryString}");
+            return result ?? new PagedResult<RequirementDto>();
         }
 
         /// <summary>
-        /// Retrieves the version history for a specific requirement from the backend API.
+        /// Retrieves requirements for a specific project with pagination from the backend API.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, and search criteria.</param>
+        /// <returns>A paginated result containing requirements for the project and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var queryParams = new Dictionary<string, object?>
+            {
+                ["PageNumber"] = parameters.PageNumber,
+                ["PageSize"] = parameters.PageSize,
+                ["SearchTerm"] = parameters.SearchTerm,
+                ["SortBy"] = parameters.SortBy,
+                ["SortDescending"] = parameters.SortDescending ? "true" : null
+            };
+
+            var queryString = BuildQueryString(queryParams);
+            var result = await GetAsync<PagedResult<RequirementDto>>($"/api/Requirement/project/{projectId}/paged{queryString}");
+            return result ?? new PagedResult<RequirementDto>();
+        }
+
+        /// <summary>
+        /// Retrieves all versions of a specific requirement from the backend API.
         /// </summary>
         /// <param name="requirementId">The unique identifier of the requirement.</param>
         /// <returns>A list of requirement versions, or an empty list if the request fails.</returns>
         public async Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId)
-            => await _http.GetFromJsonAsync<List<RequirementVersionDto>>($"/api/Redline/requirement/{requirementId}/versions") ?? new();
+            => await GetListAsync<RequirementVersionDto>($"/api/Requirement/{requirementId}/versions");
     }
 }

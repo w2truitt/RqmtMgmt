@@ -4,6 +4,10 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using RqmtMgmtShared;
 using frontend.Services;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using frontend.ComponentTests.TestHelpers;
+using Bunit.TestDoubles;
 
 namespace frontend.ComponentTests;
 
@@ -12,8 +16,15 @@ namespace frontend.ComponentTests;
 /// </summary>
 public abstract class ComponentTestBase : TestContext
 {
+    protected TestAuthStateProvider TestAuthStateProvider { get; private set; }
+
     protected ComponentTestBase()
     {
+        // Set up JavaScript interop for localStorage and other common JS calls
+        JSInterop.Setup<string>("localStorage.getItem", _ => true).SetResult(string.Empty);
+        JSInterop.Setup<object>("localStorage.setItem", _ => true);
+        JSInterop.Setup<object>("localStorage.removeItem", _ => true);
+
         // Register interface-based mock services only
         Services.AddSingleton(Mock.Of<IRequirementService>());
         Services.AddSingleton(Mock.Of<ITestCaseService>());
@@ -23,9 +34,10 @@ public abstract class ComponentTestBase : TestContext
         Services.AddSingleton(Mock.Of<IRoleService>());
         Services.AddSingleton(Mock.Of<IRequirementTestCaseLinkService>());
         Services.AddSingleton(Mock.Of<IDashboardService>());
-        Services.AddSingleton(Mock.Of<IEnhancedDashboardService>());
         Services.AddSingleton(Mock.Of<ITestRunSessionDataService>());
         Services.AddSingleton(Mock.Of<ITestExecutionDataService>());
+        Services.AddSingleton(Mock.Of<IProjectService>());
+        Services.AddSingleton(Mock.Of<IProjectContextService>());
 
         // Add Blazor testing services
         Services.AddOptions();
@@ -33,6 +45,13 @@ public abstract class ComponentTestBase : TestContext
 
         // Add authorization services for testing
         Services.AddAuthorizationCore();
+        
+        // Add authentication services for testing
+        TestAuthStateProvider = new TestAuthStateProvider();
+        Services.AddSingleton<AuthenticationStateProvider>(TestAuthStateProvider);
+        
+        // Add CascadingAuthenticationState support
+        Services.AddCascadingAuthenticationState();
     }
     
     /// <summary>

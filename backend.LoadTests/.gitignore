@@ -1,0 +1,23 @@
+# K6 Load Testing Results
+results/
+
+# Node modules (if using npm)
+node_modules/
+
+# Environment files with secrets
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+*.log

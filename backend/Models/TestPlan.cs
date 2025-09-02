@@ -1,12 +1,11 @@
 using System.Collections.Generic;
-
 using RqmtMgmtShared;
+
 namespace backend.Models
 {
     /// <summary>
     /// Represents a test plan document grouping test cases for validation or verification.
     /// </summary>
-    using RqmtMgmtShared;
     public class TestPlan
     {
         /// <summary>
@@ -40,9 +39,19 @@ namespace backend.Models
         public DateTime CreatedAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the project this test plan belongs to.
+        /// </summary>
+        public int ProjectId { get; set; }
+
+        /// <summary>
         /// Gets or sets the navigation property to the creator user.
         /// </summary>
         public User? Creator { get; set; }
+
+        /// <summary>
+        /// Gets or sets the navigation property to the project.
+        /// </summary>
+        public Project? Project { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of links to test cases.

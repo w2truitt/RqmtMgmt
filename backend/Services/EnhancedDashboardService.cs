@@ -7,8 +7,9 @@ namespace backend.Services
     /// <summary>
     /// Enhanced dashboard service implementation with optimized statistics queries and comprehensive metrics.
     /// Provides advanced dashboard analytics with performance-optimized database queries and detailed breakdowns.
+    /// ARCHITECTURAL FIX: Updated to implement consolidated IDashboardService interface.
     /// </summary>
-    public class EnhancedDashboardService : IEnhancedDashboardService
+    public class EnhancedDashboardService : IDashboardService
     {
         private readonly RqmtMgmtDbContext _context;
 
@@ -19,6 +20,41 @@ namespace backend.Services
         public EnhancedDashboardService(RqmtMgmtDbContext context)
         {
             _context = context;
+        }
+
+        /// <summary>
+        /// Retrieves basic dashboard statistics including requirement, test case, test suite, and test plan counts.
+        /// LEGACY METHOD: Maintained for backward compatibility.
+        /// </summary>
+        /// <returns>Dashboard statistics with counts and status breakdowns.</returns>
+        public async Task<DashboardStatisticsDto> GetStatisticsAsync()
+        {
+            // For enhanced service, delegate to the enhanced method and map to legacy format
+            var enhancedStats = await GetDashboardStatsAsync();
+
+            var legacyStats = new DashboardStatisticsDto();
+
+            // Map from enhanced format to legacy format
+            legacyStats.Requirements.Total = enhancedStats.Requirements.TotalRequirements;
+            legacyStats.Requirements.Approved = enhancedStats.Requirements.ApprovedRequirements;
+            legacyStats.Requirements.Draft = enhancedStats.Requirements.DraftRequirements;
+            legacyStats.Requirements.Implemented = enhancedStats.Requirements.ImplementedRequirements;
+            legacyStats.Requirements.Verified = enhancedStats.Requirements.VerifiedRequirements;
+
+            legacyStats.TestSuites.Total = enhancedStats.TestManagement.TotalTestSuites;
+            legacyStats.TestSuites.Active = enhancedStats.TestManagement.TotalTestSuites; // All considered active for now
+            legacyStats.TestSuites.Completed = 0; // Placeholder
+
+            legacyStats.TestCases.Total = enhancedStats.TestManagement.TotalTestCases;
+            legacyStats.TestCases.Passed = enhancedStats.TestExecution.PassedExecutions;
+            legacyStats.TestCases.Failed = enhancedStats.TestExecution.FailedExecutions;
+            legacyStats.TestCases.NotRun = enhancedStats.TestExecution.NotRunExecutions;
+
+            legacyStats.TestPlans.Total = enhancedStats.TestManagement.TotalTestPlans;
+            legacyStats.TestPlans.ExecutionProgress = (int)enhancedStats.TestExecution.PassRate;
+            legacyStats.TestPlans.CoveragePercentage = (int)enhancedStats.TestManagement.TestCoveragePercentage;
+
+            return legacyStats;
         }
 
         /// <summary>
@@ -260,7 +296,7 @@ namespace backend.Services
                 .Select(trs => new RecentActivityDto
                 {
                     Id = trs.Id,
-                    Description = $"Test run '{trs.Name}' {trs.Status.ToString().ToLower()}",
+                    Description = $"Test run '{trs.Name}' {trs.Status.ToString().ToLowerInvariant()}",
                     EntityType = "TestRunSession",
                     EntityId = trs.Id,
                     Action = trs.Status.ToString(),

@@ -25,8 +25,9 @@ namespace backend.Tests
         public async Task CreateAsync_AddsTestSuite()
         {
             using var db = GetDbContext(nameof(CreateAsync_AddsTestSuite));
+            var (user, project) = await TestDataHelper.SetupBasicTestDataAsync(db);
             var service = new TestSuiteService(db);
-            var testSuite = new TestSuiteDto { Name = "Test Suite", Description = "Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var testSuite = new TestSuiteDto { Name = "Test Suite", Description = "Description", CreatedBy = user.Id, CreatedAt = DateTime.UtcNow, ProjectId = project.Id };
             
             var result = await service.CreateAsync(testSuite);
             

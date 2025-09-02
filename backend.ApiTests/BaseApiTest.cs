@@ -6,12 +6,12 @@ using backend;
 
 namespace backend.ApiTests
 {
-    public abstract class BaseApiTest : IClassFixture<WebApplicationFactory<Program>>
+    public abstract class BaseApiTest : IClassFixture<TestWebApplicationFactory<Program>>
     {
         protected readonly HttpClient _client;
         protected readonly JsonSerializerOptions _jsonOptions;
 
-        protected BaseApiTest(WebApplicationFactory<Program> factory)
+        protected BaseApiTest(TestWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
             _jsonOptions = new JsonSerializerOptions

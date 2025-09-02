@@ -22,9 +22,13 @@ public class TestPlansTests : ComponentTestBase
         // Act
         var component = RenderComponent<TestPlans>();
         
+        // Wait for async initialization to complete
+        component.WaitForState(() => component.Markup.Contains("Test Plans"));
+        
         // Assert
         Assert.Contains("Test Plans", component.Markup);
-        Assert.Contains("<h3>Test Plans</h3>", component.Markup);
+        // The actual markup uses h1 with h3 class, not h3 element
+        Assert.Contains("Test Plans", component.Find("h1").TextContent);
     }
     
     [Fact]
@@ -45,22 +49,31 @@ public class TestPlansTests : ComponentTestBase
     [Fact]
     public void TestPlans_RendersTable_WithCorrectHeaders()
     {
-        // Arrange
-        SetupMockServices();
+        // Arrange - need some test data for table to render
+        var testPlans = new List<TestPlanDto>
+        {
+            new TestPlanDto { Id = 1, Name = "Test Plan", Type = "UserValidation", CreatedAt = DateTime.Now }
+        };
+        SetupMockServices(testPlans);
         
         // Act
         var component = RenderComponent<TestPlans>();
+        
+        // Wait for async initialization and table rendering
+        component.WaitForState(() => component.FindAll("table.table").Count > 0, TimeSpan.FromSeconds(5));
         
         // Assert
         var table = component.Find("table.table");
         Assert.NotNull(table);
         
         var headers = table.QuerySelectorAll("th");
-        Assert.Equal(4, headers.Length);
+        Assert.Equal(6, headers.Length); // Updated to match actual table structure
         Assert.Equal("ID", headers[0].TextContent);
         Assert.Equal("Name", headers[1].TextContent);
-        Assert.Equal("Type", headers[2].TextContent);
-        Assert.Equal("Actions", headers[3].TextContent);
+        Assert.Equal("Description", headers[2].TextContent);
+        Assert.Equal("Type", headers[3].TextContent);
+        Assert.Equal("Created", headers[4].TextContent);
+        Assert.Equal("Actions", headers[5].TextContent);
     }
     
     [Fact]
@@ -78,21 +91,26 @@ public class TestPlansTests : ComponentTestBase
         // Act
         var component = RenderComponent<TestPlans>();
         
+        // Wait for async data loading and rendering
+        component.WaitForState(() => component.FindAll("tbody tr").Count == 2, TimeSpan.FromSeconds(5));
+        
         // Assert
         var rows = component.FindAll("tbody tr");
         Assert.Equal(2, rows.Count);
         
         // Check first row
         var firstRowCells = rows[0].QuerySelectorAll("td");
-        Assert.Equal("1", firstRowCells[0].TextContent);
-        Assert.Contains("Test Plan 1", firstRowCells[1].TextContent);
-        Assert.Contains("UserValidation", firstRowCells[2].TextContent);
+        Assert.Contains("1", firstRowCells[0].TextContent); // ID column
+        Assert.Contains("Test Plan 1", firstRowCells[1].TextContent); // Name column  
+        Assert.Contains("No description", firstRowCells[2].TextContent); // Description column (empty)
+        Assert.Contains("User Validation", firstRowCells[3].TextContent); // Type column (display name)
         
         // Check second row
         var secondRowCells = rows[1].QuerySelectorAll("td");
-        Assert.Equal("2", secondRowCells[0].TextContent);
-        Assert.Contains("Test Plan 2", secondRowCells[1].TextContent);
-        Assert.Contains("SoftwareVerification", secondRowCells[2].TextContent);
+        Assert.Contains("2", secondRowCells[0].TextContent); // ID column
+        Assert.Contains("Test Plan 2", secondRowCells[1].TextContent); // Name column
+        Assert.Contains("No description", secondRowCells[2].TextContent); // Description column (empty)
+        Assert.Contains("Software Verification", secondRowCells[3].TextContent); // Type column (display name)
     }
     
     [Fact]
@@ -109,12 +127,17 @@ public class TestPlansTests : ComponentTestBase
         // Act
         var component = RenderComponent<TestPlans>();
         
+        // Wait for async data loading to complete
+        component.WaitForState(() => component.FindAll("tbody tr").Count > 0, TimeSpan.FromSeconds(5));
+        
         // Assert
         var actionButtons = component.FindAll("tbody tr td button");
-        Assert.Equal(2, actionButtons.Count);
+        Assert.Equal(3, actionButtons.Count); // View, Edit, Delete buttons
         
-        Assert.Contains("Edit", actionButtons[0].TextContent);
-        Assert.Contains("Delete", actionButtons[1].TextContent);
+        // Check for the icons since buttons only contain icons
+        Assert.True(actionButtons.Any(b => b.QuerySelector("i.bi-eye") != null), "Should have View button with eye icon");
+        Assert.True(actionButtons.Any(b => b.QuerySelector("i.bi-pencil") != null), "Should have Edit button with pencil icon");
+        Assert.True(actionButtons.Any(b => b.QuerySelector("i.bi-trash") != null), "Should have Delete button with trash icon");
     }
     
     [Fact]
@@ -138,9 +161,15 @@ public class TestPlansTests : ComponentTestBase
         SetupMockServices();
         var component = RenderComponent<TestPlans>();
         
+        // Wait for component to load
+        component.WaitForState(() => component.FindAll("button.btn-success").Count > 0, TimeSpan.FromSeconds(5));
+        
         // Act
         var addButton = component.Find("button.btn-success");
         addButton.Click();
+        
+        // Wait for modal to appear
+        component.WaitForState(() => component.FindAll(".modal.show").Count > 0, TimeSpan.FromSeconds(5));
         
         // Assert
         var modal = component.Find(".modal.show");
@@ -171,9 +200,15 @@ public class TestPlansTests : ComponentTestBase
         SetupMockServices(mockTestPlans);
         var component = RenderComponent<TestPlans>();
         
+        // Wait for data to load
+        component.WaitForState(() => component.FindAll("tbody tr").Count > 0, TimeSpan.FromSeconds(5));
+        
         // Act
-        var editButton = component.FindAll("button").First(b => b.TextContent.Contains("Edit"));
+        var editButton = component.FindAll("button").First(b => b.QuerySelector("i.bi-pencil") != null);
         editButton.Click();
+        
+        // Wait for modal to appear
+        component.WaitForState(() => component.FindAll(".modal.show").Count > 0, TimeSpan.FromSeconds(5));
         
         // Assert
         var modal = component.Find(".modal.show");
@@ -187,27 +222,6 @@ public class TestPlansTests : ComponentTestBase
     }
     
     [Fact]
-    public void TestPlans_HidesForm_WhenCancelButtonClicked()
-    {
-        // Arrange
-        SetupMockServices();
-        var component = RenderComponent<TestPlans>();
-        
-        // Show form first
-        var addButton = component.Find("button.btn-success");
-        addButton.Click();
-        Assert.NotNull(component.Find(".modal.show"));
-        
-        // Act
-        var cancelButton = component.FindAll("button").First(b => b.TextContent.Contains("Cancel"));
-        cancelButton.Click();
-        
-        // Assert
-        var modals = component.FindAll(".modal.show");
-        Assert.Empty(modals);
-    }
-    
-    [Fact]
     public async Task TestPlans_CallsDeleteService_WhenDeleteButtonClicked()
     {
         // Arrange
@@ -217,21 +231,68 @@ public class TestPlansTests : ComponentTestBase
         };
         
         var mockTestPlanService = GetMockService<ITestPlanService>();
-        mockTestPlanService.Setup(s => s.GetAllAsync()).ReturnsAsync(mockTestPlans);
+        mockTestPlanService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(new PagedResult<TestPlanDto>
+        {
+            Items = mockTestPlans,
+            PageNumber = 1,
+            PageSize = 10,
+            TotalItems = mockTestPlans.Count
+        });
         mockTestPlanService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
         
         var component = RenderComponent<TestPlans>();
         
+        // Wait for data to load
+        component.WaitForState(() => component.FindAll("tbody tr").Count > 0, TimeSpan.FromSeconds(5));
+        
         // Act
-        var deleteButton = component.FindAll("button").First(b => b.TextContent.Contains("Delete"));
+        // Step 1: Click the initial Delete button to show the confirmation modal
+        var deleteButton = component.Find("button[data-testid='delete-testplan']");
         deleteButton.Click();
+        
+        // Wait for delete modal to appear
+        component.WaitForState(() => component.FindAll(".modal.show").Count > 0, TimeSpan.FromSeconds(5));
+        
+        // Step 2: Click the confirm delete button in the modal
+        var confirmDeleteButton = component.FindAll("button").First(b => b.TextContent.Contains("Delete Test Plan"));
+        confirmDeleteButton.Click();
         
         // Wait for async operation
         await Task.Delay(100);
         
         // Assert
         mockTestPlanService.Verify(s => s.DeleteAsync(1), Times.Once);
-        mockTestPlanService.Verify(s => s.GetAllAsync(), Times.AtLeast(2)); // Initial load + after delete
+        mockTestPlanService.Verify(s => s.GetPagedAsync(It.IsAny<PaginationParameters>()), Times.AtLeast(2)); // Initial load + after delete
+    }
+    
+    [Fact]
+    public void TestPlans_HidesForm_WhenCancelButtonClicked()
+    {
+        // Arrange
+        SetupMockServices();
+        var component = RenderComponent<TestPlans>();
+        
+        // Wait for component to load
+        component.WaitForState(() => component.FindAll("button.btn-success").Count > 0, TimeSpan.FromSeconds(5));
+        
+        // Show form first
+        var addButton = component.Find("button.btn-success");
+        addButton.Click();
+        
+        // Wait for modal to appear
+        component.WaitForState(() => component.FindAll(".modal.show").Count > 0, TimeSpan.FromSeconds(5));
+        Assert.NotNull(component.Find(".modal.show"));
+        
+        // Act
+        var cancelButton = component.FindAll("button").First(b => b.TextContent.Contains("Cancel"));
+        cancelButton.Click();
+        
+        // Wait for modal to disappear
+        component.WaitForState(() => component.FindAll(".modal.show").Count == 0, TimeSpan.FromSeconds(5));
+        
+        // Assert
+        var modals = component.FindAll(".modal.show");
+        Assert.Empty(modals);
     }
     
     [Fact]
@@ -239,14 +300,26 @@ public class TestPlansTests : ComponentTestBase
     {
         // Arrange
         var mockTestPlanService = GetMockService<ITestPlanService>();
-        mockTestPlanService.Setup(s => s.GetAllAsync()).ReturnsAsync(new List<TestPlanDto>());
+        mockTestPlanService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(new PagedResult<TestPlanDto>
+        {
+            Items = new List<TestPlanDto>(),
+            PageNumber = 1,
+            PageSize = 10,
+            TotalItems = 0
+        });
         mockTestPlanService.Setup(s => s.CreateAsync(It.IsAny<TestPlanDto>())).ReturnsAsync(new TestPlanDto { Id = 999, Name = "Test", Type = "Test" });
         
         var component = RenderComponent<TestPlans>();
         
+        // Wait for component to load
+        component.WaitForState(() => component.FindAll("button.btn-success").Count > 0, TimeSpan.FromSeconds(5));
+        
         // Show add form
         var addButton = component.Find("button.btn-success");
         addButton.Click();
+        
+        // Wait for modal to appear
+        component.WaitForState(() => component.FindAll(".modal.show").Count > 0, TimeSpan.FromSeconds(5));
         
         // Fill in required fields
         var nameInput = component.Find(".modal input.form-control") as AngleSharp.Html.Dom.IHtmlInputElement;
@@ -262,7 +335,7 @@ public class TestPlansTests : ComponentTestBase
         
         // Assert
         mockTestPlanService.Verify(s => s.CreateAsync(It.IsAny<TestPlanDto>()), Times.Once);
-        mockTestPlanService.Verify(s => s.GetAllAsync(), Times.AtLeast(2)); // Initial load + after save
+        mockTestPlanService.Verify(s => s.GetPagedAsync(It.IsAny<PaginationParameters>()), Times.AtLeast(2)); // Initial load + after save
     }
     
     [Fact]
@@ -275,14 +348,26 @@ public class TestPlansTests : ComponentTestBase
         };
         
         var mockTestPlanService = GetMockService<ITestPlanService>();
-        mockTestPlanService.Setup(s => s.GetAllAsync()).ReturnsAsync(mockTestPlans);
+        mockTestPlanService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(new PagedResult<TestPlanDto>
+        {
+            Items = mockTestPlans,
+            PageNumber = 1,
+            PageSize = 10,
+            TotalItems = mockTestPlans.Count
+        });
         mockTestPlanService.Setup(s => s.UpdateAsync(It.IsAny<TestPlanDto>())).ReturnsAsync(true);
         
         var component = RenderComponent<TestPlans>();
         
+        // Wait for data to load
+        component.WaitForState(() => component.FindAll("tbody tr").Count > 0, TimeSpan.FromSeconds(5));
+        
         // Show edit form
-        var editButton = component.FindAll("button").First(b => b.TextContent.Contains("Edit"));
+        var editButton = component.Find("button[data-testid='edit-testplan']");
         editButton.Click();
+        
+        // Wait for modal to appear
+        component.WaitForState(() => component.FindAll(".modal.show").Count > 0, TimeSpan.FromSeconds(5));
         
         // Act
         var saveButton = component.FindAll("button").First(b => b.TextContent.Contains("Save"));
@@ -293,14 +378,25 @@ public class TestPlansTests : ComponentTestBase
         
         // Assert
         mockTestPlanService.Verify(s => s.UpdateAsync(It.IsAny<TestPlanDto>()), Times.Once);
-        mockTestPlanService.Verify(s => s.GetAllAsync(), Times.AtLeast(2)); // Initial load + after save
+        mockTestPlanService.Verify(s => s.GetPagedAsync(It.IsAny<PaginationParameters>()), Times.AtLeast(2)); // Initial load + after save
     }
     
     private void SetupMockServices(List<TestPlanDto>? testPlans = null)
     {
         testPlans ??= new List<TestPlanDto>();
         
+        // Create a proper PagedResult for the component
+        var pagedResult = new PagedResult<TestPlanDto>
+        {
+            Items = testPlans,
+            PageNumber = 1,
+            PageSize = 10,
+            TotalItems = testPlans.Count
+        };
+        
         var mockTestPlanService = GetMockService<ITestPlanService>();
+        mockTestPlanService.Setup(s => s.GetPagedAsync(It.IsAny<PaginationParameters>())).ReturnsAsync(pagedResult);
+        mockTestPlanService.Setup(s => s.GetPagedByProjectIdAsync(It.IsAny<int>(), It.IsAny<PaginationParameters>())).ReturnsAsync(pagedResult);
         mockTestPlanService.Setup(s => s.GetAllAsync()).ReturnsAsync(testPlans);
         mockTestPlanService.Setup(s => s.CreateAsync(It.IsAny<TestPlanDto>())).ReturnsAsync(new TestPlanDto { Name = "Test", Type = "Test" });
         mockTestPlanService.Setup(s => s.UpdateAsync(It.IsAny<TestPlanDto>())).ReturnsAsync(true);

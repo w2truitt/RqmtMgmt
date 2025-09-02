@@ -1,8 +1,6 @@
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Microsoft.AspNetCore.Mvc.Testing;
-using backend;
 using RqmtMgmtShared;
 using System;
 using System.Collections.Generic;
@@ -11,15 +9,15 @@ using System.Text.Json;
 
 namespace backend.ApiTests
 {
-    public class TestRunSessionApiTests : BaseApiTest
+    [Collection("Integration Tests")]
+    public class TestRunSessionApiTests : BaseIntegrationTest
     {
-        public TestRunSessionApiTests(WebApplicationFactory<Program> factory) : base(factory)
-        {
-        }
-
         [Fact]
         public async Task CanGetAllTestRunSessions()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/testrunSession");
             response.EnsureSuccessStatusCode();
             var sessions = await response.Content.ReadFromJsonAsync<List<TestRunSessionDto>>(_jsonOptions);
@@ -31,6 +29,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetTestRunSessionById()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int sessionId = 1;
             var response = await _client.GetAsync($"/api/testrunSession/{sessionId}");
             
@@ -50,6 +51,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task GetTestRunSessionByIdReturnsNotFoundForInvalidId()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int invalidId = 99999;
             var response = await _client.GetAsync($"/api/testrunSession/{invalidId}");
             
@@ -59,6 +63,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanCreateTestRunSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var newSession = new TestRunSessionDto
             {
                 Name = "API Test Session",
@@ -93,6 +100,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CreateTestRunSessionRejectsInvalidData()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var invalidSession = new TestRunSessionDto
             {
                 // Missing required fields like Name
@@ -107,6 +117,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanUpdateTestRunSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var session = new TestRunSessionDto
             {
                 Id = 1,
@@ -140,6 +153,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateTestRunSessionRejectsIdMismatch()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var session = new TestRunSessionDto
             {
                 Id = 2, // Different from URL
@@ -157,6 +173,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task UpdateTestRunSessionRejectsInvalidData()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var invalidSession = new TestRunSessionDto
             {
                 Id = 1,
@@ -172,6 +191,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanDeleteTestRunSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int sessionId = 1;
             var response = await _client.DeleteAsync($"/api/testrunSession/{sessionId}");
             
@@ -193,6 +215,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task DeleteTestRunSessionReturnsNotFoundForInvalidId()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int invalidId = 99999;
             var response = await _client.DeleteAsync($"/api/testrunSession/{invalidId}");
             
@@ -202,6 +227,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanStartTestRunSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var sessionToStart = new TestRunSessionDto
             {
                 Name = "API Test Session to Start",
@@ -234,6 +262,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task StartTestRunSessionRejectsInvalidData()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var invalidSession = new TestRunSessionDto
             {
                 // Missing required fields
@@ -248,6 +279,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanCompleteTestRunSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int sessionId = 1;
             var response = await _client.PostAsync($"/api/testrunSession/{sessionId}/complete", null);
             
@@ -269,6 +303,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CompleteTestRunSessionReturnsNotFoundForInvalidId()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int invalidId = 99999;
             var response = await _client.PostAsync($"/api/testrunSession/{invalidId}/complete", null);
             
@@ -278,6 +315,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanAbortTestRunSession()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int sessionId = 1;
             var response = await _client.PostAsync($"/api/testrunSession/{sessionId}/abort", null);
             
@@ -299,6 +339,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task AbortTestRunSessionReturnsNotFoundForInvalidId()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             int invalidId = 99999;
             var response = await _client.PostAsync($"/api/testrunSession/{invalidId}/abort", null);
             
@@ -308,6 +351,9 @@ namespace backend.ApiTests
         [Fact]
         public async Task CanGetActiveSessions()
         {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
             var response = await _client.GetAsync("/api/testrunSession/active");
             response.EnsureSuccessStatusCode();
             var activeSessions = await response.Content.ReadFromJsonAsync<List<TestRunSessionDto>>(_jsonOptions);

@@ -7,6 +7,8 @@ public interface IRequirementService
 {
     Task<List<RequirementDto>> GetAllAsync();
     Task<PagedResult<RequirementDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<RequirementDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<RequirementDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<RequirementDto?> GetByIdAsync(int id);
     Task<RequirementDto?> CreateAsync(RequirementDto requirement);
     Task<bool> UpdateAsync(RequirementDto requirement);
@@ -20,6 +22,10 @@ public interface IRequirementService
 public interface ITestCaseService
 {
     Task<List<TestCaseDto>> GetAllAsync();
+    Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId);
+    Task<PagedResult<TestCaseDto>> GetPagedByTestSuiteIdAsync(int testSuiteId, PaginationParameters parameters);
+        Task<PagedResult<TestCaseDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestCaseDto?> GetByIdAsync(int id);
     Task<TestCaseDto?> CreateAsync(TestCaseDto testCase);
     Task<bool> UpdateAsync(TestCaseDto testCase);
@@ -32,6 +38,9 @@ public interface ITestCaseService
 public interface ITestSuiteService
 {
     Task<List<TestSuiteDto>> GetAllAsync();
+    Task<PagedResult<TestSuiteDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<TestSuiteDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<TestSuiteDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestSuiteDto?> GetByIdAsync(int id);
     Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite);
     Task<bool> UpdateAsync(TestSuiteDto testSuite);
@@ -44,6 +53,9 @@ public interface ITestSuiteService
 public interface ITestPlanService
 {
     Task<List<TestPlanDto>> GetAllAsync();
+    Task<PagedResult<TestPlanDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<TestPlanDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<TestPlanDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestPlanDto?> GetByIdAsync(int id);
     Task<TestPlanDto?> CreateAsync(TestPlanDto testPlan);
     Task<bool> UpdateAsync(TestPlanDto testPlan);
@@ -56,7 +68,10 @@ public interface ITestPlanService
 public interface IUserService
 {
     Task<List<UserDto>> GetAllAsync();
+    Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters);
     Task<UserDto?> GetByIdAsync(int id);
+    Task<UserDto?> GetByEmailAsync(string email);
+    Task<UserDto?> GetCurrentUserAsync();
     Task<UserDto?> CreateAsync(UserDto user);
     Task<bool> UpdateAsync(UserDto user);
     Task<bool> DeleteAsync(int id);
@@ -87,19 +102,15 @@ public interface IRequirementTestCaseLinkService
 }
 
 /// <summary>
-/// Service interface for dashboard operations
+/// Consolidated service interface for dashboard operations with comprehensive statistics.
+/// ARCHITECTURAL FIX: Merged IDashboardService and IEnhancedDashboardService to eliminate redundancy.
 /// </summary>
 public interface IDashboardService
 {
+    // Legacy methods (maintained for backward compatibility)
     Task<DashboardStatisticsDto> GetStatisticsAsync();
-    Task<List<RecentActivityDto>> GetRecentActivityAsync(int count = 5);
-}
-
-/// <summary>
-/// Enhanced service interface for dashboard operations with new statistics
-/// </summary>
-public interface IEnhancedDashboardService
-{
+    
+    // Enhanced methods (comprehensive dashboard statistics)
     Task<DashboardStatsDto> GetDashboardStatsAsync();
     Task<RequirementStatsDto> GetRequirementStatsAsync();
     Task<TestManagementStatsDto> GetTestManagementStatsAsync();
@@ -108,7 +119,8 @@ public interface IEnhancedDashboardService
 }
 
 /// <summary>
-/// Service interface for test run session management operations
+/// Service interface for test run session management operations.
+/// ARCHITECTURAL FIX: Moved from frontend project to shared library for consistency.
 /// </summary>
 public interface ITestRunSessionService
 {
@@ -124,7 +136,8 @@ public interface ITestRunSessionService
 }
 
 /// <summary>
-/// Service interface for test execution and results tracking
+/// Service interface for test execution and results tracking.
+/// ARCHITECTURAL FIX: Moved from frontend project to shared library for consistency.
 /// </summary>
 public interface ITestExecutionService
 {
@@ -135,4 +148,25 @@ public interface ITestExecutionService
     Task<List<TestStepExecutionDto>> GetStepExecutionsForCaseAsync(int testCaseExecutionId);
     Task<TestExecutionStatsDto> GetExecutionStatsAsync();
     Task<TestExecutionStatsDto> GetExecutionStatsForSessionAsync(int testRunSessionId);
+}
+
+/// <summary>  
+/// Service interface for managing projects and project team members.  
+/// </summary>  
+public interface IProjectService  
+{  
+    Task<PagedResult<ProjectDto>> GetProjectsAsync(ProjectFilterDto filter);  
+    Task<ProjectDto?> GetProjectByIdAsync(int projectId);  
+    Task<ProjectDto?> GetProjectByCodeAsync(string code);  
+    Task<ProjectDto> CreateProjectAsync(CreateProjectDto createProjectDto);  
+    Task<ProjectDto?> UpdateProjectAsync(int projectId, UpdateProjectDto updateProjectDto);  
+    Task<bool> DeleteProjectAsync(int projectId);  
+    Task<List<ProjectTeamMemberDto>> GetProjectTeamMembersAsync(int projectId);  
+    Task<ProjectTeamMemberDto?> AddTeamMemberAsync(int projectId, AddProjectTeamMemberDto addTeamMemberDto);  
+    Task<ProjectTeamMemberDto?> UpdateTeamMemberAsync(int projectId, int userId, UpdateProjectTeamMemberDto updateTeamMemberDto);  
+    Task<bool> RemoveTeamMemberAsync(int projectId, int userId);  
+    Task<List<ProjectDto>> GetUserProjectsAsync(int userId);  
+    Task<bool> UserHasAccessToProjectAsync(int userId, int projectId);  
+    Task<bool> UserHasRoleInProjectAsync(int userId, int projectId, ProjectRole role);  
+    Task<string> GenerateNextRequirementIdAsync(int projectId);  
 }

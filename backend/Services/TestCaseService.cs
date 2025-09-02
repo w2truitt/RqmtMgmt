@@ -25,96 +25,156 @@ namespace backend.Services
         }
 
         /// <summary>
-        /// Retrieves all test cases from the database including their associated test steps.
+        /// Retrieves all test cases from the database including their associated test steps and creator details.
         /// </summary>
-        /// <returns>A list of all test cases as DTOs with their test steps.</returns>
+        /// <returns>A list of all test cases as DTOs with their test steps and creator information.</returns>
         public async Task<List<TestCaseDto>> GetAllAsync()
         {
-            var testCases = await _context.TestCases.Include(tc => tc.Steps).ToListAsync();
+            var testCases = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .ToListAsync();
             return testCases.Select(ToDto).ToList();
         }
 
         /// <summary>
-        /// Retrieves a specific test case by its ID including associated test steps.
+        /// Retrieves a specific test case by its ID including associated test steps and creator details.
         /// </summary>
         /// <param name="id">The unique identifier of the test case.</param>
         /// <returns>The test case DTO if found; otherwise, null.</returns>
         public async Task<TestCaseDto?> GetByIdAsync(int id)
         {
-            var testCase = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == id);
+            var testCase = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .FirstOrDefaultAsync(tc => tc.Id == id);
             return testCase == null ? null : ToDto(testCase);
         }
 
         /// <summary>
         /// Creates a new test case with validation for required fields and test steps.
         /// </summary>
-        /// <param name="dto">The test case data to create.</param>
+        /// <param name="testCase">The test case data to create.</param>
         /// <returns>The created test case DTO if successful; otherwise, null.</returns>
-        public async Task<TestCaseDto?> CreateAsync(TestCaseDto dto)
+        public async Task<TestCaseDto?> CreateAsync(TestCaseDto testCase)
         {
             // Validate required fields
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            if (string.IsNullOrWhiteSpace(testCase.Title))
                 return null;
 
-            if (dto.CreatedBy <= 0)
+            if (testCase.CreatedBy <= 0)
                 return null;
 
             // Validate steps - ensure all steps have required fields
-            if (dto.Steps != null)
+            if (testCase.Steps != null)
             {
-                foreach (var step in dto.Steps)
+                foreach (var step in testCase.Steps)
                 {
                     if (string.IsNullOrWhiteSpace(step.Description) || string.IsNullOrWhiteSpace(step.ExpectedResult))
                         return null;
                 }
             }
 
-            var entity = FromDto(dto);
-            entity.CreatedBy = dto.CreatedBy;
-            entity.CreatedAt = dto.CreatedAt;
+            var entity = FromDto(testCase);
+            entity.CreatedBy = testCase.CreatedBy;
+            entity.CreatedAt = testCase.CreatedAt;
             _context.TestCases.Add(entity);
             await _context.SaveChangesAsync();
-            return ToDto(entity);
+            
+            // Reload with creator details
+            var createdTestCase = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .FirstOrDefaultAsync(tc => tc.Id == entity.Id);
+            
+            return createdTestCase == null ? null : ToDto(createdTestCase);
         }
 
         /// <summary>
         /// Updates an existing test case with validation and replaces all associated test steps.
         /// </summary>
-        /// <param name="dto">The test case data to update.</param>
+        /// <param name="testCase">The test case data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestCaseDto dto)
+        public async Task<bool> UpdateAsync(TestCaseDto testCase)
         {
-            var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == dto.Id);
+            var tracked = await _context.TestCases.Include(tc => tc.Steps).FirstOrDefaultAsync(tc => tc.Id == testCase.Id);
             if (tracked == null) return false;
 
-            // Validate required fields
-            if (string.IsNullOrWhiteSpace(dto.Title))
+            // Validate the DTO before proceeding
+            if (!IsValidTestCaseDto(testCase))
                 return false;
 
-            if (dto.CreatedBy <= 0)
-                return false;
+            // Update the entity properties
+            UpdateTestCaseProperties(tracked, testCase);
 
-            // Validate steps - ensure all steps have required fields
-            if (dto.Steps != null)
-            {
-                foreach (var step in dto.Steps)
-                {
-                    if (string.IsNullOrWhiteSpace(step.Description) || string.IsNullOrWhiteSpace(step.ExpectedResult))
-                        return false;
-                }
-            }
+            // Replace the test steps
+            ReplaceTestSteps(tracked, testCase.Steps);
 
-            tracked.Title = dto.Title;
-            tracked.Description = dto.Description;
-            tracked.SuiteId = dto.SuiteId;
-            // Replace steps (remove existing and add new ones)
-            tracked.Steps.Clear();
-            foreach (var s in dto.Steps ?? Enumerable.Empty<TestStepDto>())
-            {
-                tracked.Steps.Add(new TestStep { Description = s.Description, ExpectedResult = s.ExpectedResult });
-            }
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        /// <summary>
+        /// Validates a test case DTO for required fields and business rules.
+        /// </summary>
+        /// <param name="dto">The test case DTO to validate.</param>
+        /// <returns>True if the DTO is valid; otherwise, false.</returns>
+        private static bool IsValidTestCaseDto(TestCaseDto testCase)
+        {
+            if (string.IsNullOrWhiteSpace(testCase.Title))
+                return false;
+
+            if (testCase.CreatedBy <= 0)
+                return false;
+
+            return AreTestStepsValid(testCase.Steps);
+        }
+
+        /// <summary>
+        /// Validates test steps to ensure all required fields are present.
+        /// </summary>
+        /// <param name="steps">The test steps to validate.</param>
+        /// <returns>True if all steps are valid; otherwise, false.</returns>
+        private static bool AreTestStepsValid(IEnumerable<TestStepDto>? steps)
+        {
+            if (steps == null) return true;
+
+            return steps.All(step => 
+                !string.IsNullOrWhiteSpace(step.Description) && 
+                !string.IsNullOrWhiteSpace(step.ExpectedResult));
+        }
+
+        /// <summary>
+        /// Updates the properties of a test case entity from a DTO.
+        /// </summary>
+        /// <param name="entity">The test case entity to update.</param>
+        /// <param name="dto">The DTO containing the new values.</param>
+        private static void UpdateTestCaseProperties(TestCase entity, TestCaseDto testCase)
+        {
+            entity.Title = testCase.Title;
+            entity.Description = testCase.Description;
+            entity.SuiteId = testCase.SuiteId;
+        }
+
+        /// <summary>
+        /// Replaces all test steps in a test case with new ones from the DTO.
+        /// </summary>
+        /// <param name="entity">The test case entity to update.</param>
+        /// <param name="steps">The new test steps from the DTO.</param>
+        private static void ReplaceTestSteps(TestCase entity, IEnumerable<TestStepDto>? steps)
+        {
+            entity.Steps.Clear();
+            
+            if (steps == null) return;
+
+            foreach (var stepDto in steps)
+            {
+                entity.Steps.Add(new TestStep 
+                { 
+                    Description = stepDto.Description, 
+                    ExpectedResult = stepDto.ExpectedResult 
+                });
+            }
         }
 
         /// <summary>
@@ -132,11 +192,154 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves test cases with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test cases and pagination metadata.</returns>
+        public async Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .Include(tc => tc.Suite)
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(tc => tc.Title.Contains(parameters.SearchTerm) || 
+                                        (tc.Description != null && tc.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Apply test suite filter if specified
+            if (parameters.SuiteId.HasValue)
+            {
+                query = query.Where(tc => tc.SuiteId == parameters.SuiteId.Value);
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var testCases = await query
+                .OrderBy(tc => tc.Title)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestCaseDto>
+            {
+                Items = testCases.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
+        /// Retrieves all test cases for a specific test suite.
+        /// </summary>
+        /// <param name="testSuiteId">The unique identifier of the test suite.</param>
+        /// <returns>A list of test cases for the specified test suite.</returns>
+        public async Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId)
+        {
+            var testCases = await _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .Include(tc => tc.Suite)
+                .Where(tc => tc.SuiteId == testSuiteId)
+                .ToListAsync();
+
+            return testCases.Select(ToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves test cases for a specific test suite with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="testSuiteId">The unique identifier of the test suite.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test cases for the test suite and pagination metadata.</returns>
+        public async Task<PagedResult<TestCaseDto>> GetPagedByTestSuiteIdAsync(int testSuiteId, PaginationParameters parameters)
+        {
+            var query = _context.TestCases
+                .Include(tc => tc.Steps)
+                .Include(tc => tc.Creator)
+                .Include(tc => tc.Suite)
+                .Where(tc => tc.SuiteId == testSuiteId);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(tc => tc.Title.Contains(parameters.SearchTerm) || 
+                                        (tc.Description != null && tc.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var testCases = await query
+                .OrderBy(tc => tc.Title)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestCaseDto>
+            {
+                Items = testCases.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+            /// <summary>
+            /// Retrieves test cases for a specific project with pagination, filtering, and sorting capabilities.
+            /// This includes test cases from all test suites belonging to the project, plus any unassigned test cases.
+            /// </summary>
+            /// <param name="projectId">The unique identifier of the project.</param>
+            /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+            /// <returns>A paginated result containing test cases for the project and pagination metadata.</returns>
+            public async Task<PagedResult<TestCaseDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+            {
+                var query = _context.TestCases
+                    .Include(tc => tc.Steps)
+                    .Include(tc => tc.Creator)
+                    .Include(tc => tc.Suite)
+                    .Where(tc => tc.Suite == null || tc.Suite.ProjectId == projectId);
+
+                // Apply search filter
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                {
+                    query = query.Where(tc => tc.Title.Contains(parameters.SearchTerm) || 
+                                            (tc.Description != null && tc.Description.Contains(parameters.SearchTerm)));
+                }
+
+                // Get total count for pagination metadata
+                var totalItems = await query.CountAsync();
+
+                // Apply pagination
+                var testCases = await query
+                    .OrderBy(tc => tc.Title)
+                    .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                    .Take(parameters.PageSize)
+                    .ToListAsync();
+
+                return new PagedResult<TestCaseDto>
+                {
+                    Items = testCases.Select(ToDto).ToList(),
+                    PageNumber = parameters.PageNumber,
+                    PageSize = parameters.PageSize,
+                        TotalItems = totalItems,
+                };
+            }
+
+        /// <summary>
         /// Converts a TestCase entity to a TestCaseDto for API responses.
-        /// Includes mapping of associated test steps.
+        /// Includes mapping of associated test steps and creator details.
         /// </summary>
         /// <param name="tc">The test case entity to convert.</param>
-        /// <returns>A TestCaseDto with all properties and test steps mapped.</returns>
+        /// <returns>A TestCaseDto with all properties, test steps, and creator details mapped.</returns>
         private static TestCaseDto ToDto(TestCase tc) => new TestCaseDto
         {
             Id = tc.Id,
@@ -152,6 +355,13 @@ namespace backend.Services
                 }).ToList()
                 : new List<TestStepDto>(),
             CreatedBy = tc.CreatedBy,
+            CreatedByUser = tc.Creator != null ? new UserDto
+            {
+                Id = tc.Creator.Id,
+                UserName = tc.Creator.UserName,
+                Email = tc.Creator.Email,
+                Roles = new List<string>() // Roles are not loaded in this context for performance
+            } : null,
             CreatedAt = tc.CreatedAt
         };
 
@@ -161,21 +371,21 @@ namespace backend.Services
         /// </summary>
         /// <param name="dto">The test case DTO to convert.</param>
         /// <returns>A TestCase entity with all properties and test steps mapped.</returns>
-        private static TestCase FromDto(TestCaseDto dto)
+        private static TestCase FromDto(TestCaseDto testCaseDto)
         {
             var testCase = new TestCase
             {
-                Id = dto.Id,
-                SuiteId = dto.SuiteId,
-                Title = dto.Title,
-                Description = dto.Description,
-                CreatedBy = dto.CreatedBy,
-                CreatedAt = dto.CreatedAt,
+                Id = testCaseDto.Id,
+                SuiteId = testCaseDto.SuiteId,
+                Title = testCaseDto.Title,
+                Description = testCaseDto.Description,
+                CreatedBy = testCaseDto.CreatedBy,
+                CreatedAt = testCaseDto.CreatedAt,
                 Steps = new List<TestStep>()
             };
-            if (dto.Steps != null)
+            if (testCaseDto.Steps != null)
             {
-                foreach (var s in dto.Steps)
+                foreach (var s in testCaseDto.Steps)
                 {
                     var step = new TestStep
                     {

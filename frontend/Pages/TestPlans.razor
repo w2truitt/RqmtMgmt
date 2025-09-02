@@ -1,132 +1,603 @@
 @page "/testplans"
+@page "/projects/{ProjectId:int}/testplans"
+@attribute [Authorize]
 @using RqmtMgmtShared
 @inject ITestPlanService TestPlanService
+@inject IProjectService ProjectService
+@inject IProjectContextService ProjectContextService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
-<h3>Test Plans</h3>
-<button class="btn btn-success" @onclick="ShowAddForm">Add Test Plan</button>
+<PageTitle>Test Plans</PageTitle>
 
-@if (testPlans == null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var plan in testPlans)
-            {
-                <tr>
-                    <td>@plan.Id</td>
-                    <td>@plan.Name</td>
-                    <td>@plan.Type</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(plan)">Edit</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(plan.Id)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="container-fluid">
+    @if (project != null)
+    {
+        <!-- Project Context Header -->
+        <div class="project-context-header mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item">
+                        <a href="/projects" class="text-decoration-none">
+                            <i class="bi bi-folder me-1"></i>Projects
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">@project.Name</li>
+                    <li class="breadcrumb-item active" aria-current="page">Test Plans</li>
+                </ol>
+            </nav>
+            <h1 class="h4 mb-1">@project.Name - Test Plans</h1>
+            <p class="text-muted mb-0">@project.Description</p>
+        </div>
+    }
+    else
+    {
+        <!-- Global Test Plans Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-clipboard-check me-2"></i>Test Plans
+            </h1>
+        </div>
+    }
 
-@if (showForm)
-{
-    <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@((editTestPlan == null ? "Add" : "Edit")) Test Plan</h5>
-                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+    <!-- Search Controls -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search test plans..." 
+                       @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+                <button class="btn btn-outline-secondary" type="button" @onclick="SearchTestPlans">
+                    <i class="bi bi-search me-1"></i>Search
+                </button>
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                        <i class="bi bi-x-circle me-1"></i>Clear
                     </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Name</label>
-                        <input class="form-control" @bind="formModel.Name" />
-                    </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <input class="form-control" @bind="formModel.Type" />
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input class="form-control" @bind="formModel.Description" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="SaveTestPlan">Save</button>
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                }
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="sortBy" @bind:after="SortTestPlans">
+                <option value="name">Name</option>
+                <option value="type">Type</option>
+                <option value="created">Created Date</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-success w-100" @onclick="CreateNewTestPlan">
+                <i class="bi bi-plus-circle me-1"></i>Add Test Plan
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (pagedResult == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading test plans...</p>
+        </div>
+    }
+    else if (!pagedResult.Items.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-clipboard-check fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Test Plans Found</h5>
+            <p class="text-muted mb-0">
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <span>No test plans match your current search for @(project != null ? "this project" : "your search criteria").</span>
+                }
+                else
+                {
+                    <span>@(project != null ? "This project doesn't have any test plans yet" : "No test plans found"). Get started by creating your first test plan.</span>
+                }
+            </p>
+            <button class="btn btn-primary mt-3" @onclick="CreateNewTestPlan">
+                <i class="bi bi-plus-circle me-1"></i>Create First Test Plan
+            </button>
+        </div>
+    }
+    else
+    {
+        <!-- Test Plans Table -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" style="width: 80px;">ID</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Description</th>
+                                <th scope="col" style="width: 150px;">Type</th>
+                                <th scope="col" style="width: 150px;">Created</th>
+                                <th scope="col" style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var testPlan in pagedResult.Items)
+                            {
+                                <tr data-testid="testplan-row">
+                                    <td>
+                                        <span class="badge bg-light text-dark">@testPlan.Id</span>
+                                    </td>
+                                    <td>
+                                        <strong>@testPlan.Name</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(string.IsNullOrEmpty(testPlan.Description) ? "No description" : testPlan.Description)</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetTypeBadgeClass(testPlan.Type.ToString())">
+                                            @GetTypeDisplayName(testPlan.Type.ToString())
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@testPlan.CreatedAt.ToString("MMM d, yyyy")</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" @onclick="() => ViewTestPlan(testPlan.Id)" 
+                                                    title="View Test Plan" data-testid="view-testplan">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="async () => await EditTestPlan(testPlan.Id)" 
+                                                    title="Edit Test Plan" data-testid="edit-testplan">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" @onclick="() => ConfirmDeleteTestPlan(testPlan)" 
+                                                    title="Delete Test Plan" data-testid="delete-testplan">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="modal-backdrop show"></div>
+
+        <!-- Pagination -->
+        @if (pagedResult.TotalPages > 1)
+        {
+            <nav aria-label="Test plans pagination" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(pagedResult.PageNumber == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(pagedResult.PageNumber - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    </li>
+                    
+                    @for (int i = Math.Max(1, pagedResult.PageNumber - 2); i <= Math.Min(pagedResult.TotalPages, pagedResult.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == pagedResult.PageNumber ? "active" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                        </li>
+                    }
+                    
+                    <li class="page-item @(pagedResult.PageNumber == pagedResult.TotalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(pagedResult.PageNumber + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
 }
 
+<!-- Create/Edit Test Plan Modal -->
+<div class="modal fade @(showTestPlanModal ? "show" : "")" style="display: @(showTestPlanModal ? "block" : "none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(isEditMode ? "Edit Test Plan" : "Add Test Plan")</h5>
+                <button type="button" class="btn-close" @onclick="CloseTestPlanModal"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="testPlanName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="testPlanName" @bind="currentTestPlan.Name" placeholder="Enter test plan name" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="testPlanDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="testPlanDescription" @bind="currentTestPlan.Description" rows="3" placeholder="Enter test plan description"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="testPlanType" class="form-label">Type</label>
+                        <select class="form-select" id="testPlanType" @bind="currentTestPlan.Type">
+                            <option value="UserValidation">User Validation</option>
+                            <option value="SoftwareVerification">Software Verification</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseTestPlanModal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SaveTestPlan">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade @(showDeleteModal ? "show" : "")" style="display: @(showDeleteModal ? "block" : "none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Test Plan</h5>
+                <button type="button" class="btn-close" @onclick="CloseDeleteModal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the test plan "<strong>@testPlanToDelete?.Name</strong>"?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseDeleteModal">Cancel</button>
+                <button type="button" class="btn btn-danger" @onclick="DeleteTestPlan">Delete Test Plan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (showTestPlanModal || showDeleteModal)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+</div>
+
 @code {
-    List<TestPlanDto>? testPlans;
-    TestPlanDto formModel = new() { Name = string.Empty, Type = string.Empty };
-    TestPlanDto? editTestPlan = null;
-    bool showForm = false;
+    [Parameter] public int? ProjectId { get; set; }
+    
+    private ProjectDto? project;
+    private PagedResult<TestPlanDto>? pagedResult;
+    private string? errorMessage;
+    private string searchTerm = string.Empty;
+    private string sortBy = "name";
+    private int currentPage = 1;
+    private const int pageSize = 10;
+
+    // Modal state management
+    private bool showTestPlanModal = false;
+    private bool showDeleteModal = false;
+    private bool isEditMode = false;
+    private TestPlanDto currentTestPlan = new() { Name = "", Type = "UserValidation" };
+    private TestPlanDto? testPlanToDelete;
 
     protected override async Task OnInitializedAsync()
     {
-        testPlans = await TestPlanService.GetAllAsync();
-    }
-
-    async Task Delete(int id)
-    {
-        if (await TestPlanService.DeleteAsync(id))
-            testPlans = await TestPlanService.GetAllAsync();
-    }
-
-    void Edit(TestPlanDto plan)
-    {
-        formModel = new TestPlanDto
+        if (ProjectId.HasValue)
         {
-            Id = plan.Id,
-            Name = plan.Name,
-            Type = plan.Type,
-            Description = plan.Description,
-            CreatedBy = plan.CreatedBy,
-            CreatedAt = plan.CreatedAt
-        };
-        editTestPlan = plan;
-        showForm = true;
-    }
-
-    void ShowAddForm()
-    {
-        formModel = new TestPlanDto { Name = string.Empty, Type = string.Empty };
-        editTestPlan = null;
-        showForm = true;
-    }
-
-    void HideForm()
-    {
-        showForm = false;
-    }
-
-    async Task SaveTestPlan()
-    {
-        if (editTestPlan != null)
-        {
-            await TestPlanService.UpdateAsync(formModel);
+            await LoadProjectAndTestPlans();
         }
         else
         {
-            await TestPlanService.CreateAsync(formModel);
+            await LoadTestPlans();
         }
-        testPlans = await TestPlanService.GetAllAsync();
-        showForm = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Update project context when route parameter changes
+        if (ProjectId.HasValue && project?.Id != ProjectId.Value)
+        {
+            await LoadProjectAndTestPlans();
+        }
+        else if (!ProjectId.HasValue && project != null)
+        {
+            // Switched from project-specific to global view
+            project = null;
+            await ProjectContextService.ClearProjectContextAsync();
+            await LoadTestPlans();
+        }
+    }
+
+    private async Task LoadProjectAndTestPlans()
+    {
+        try
+        {
+            // Load project details first
+            var projectData = await ProjectService.GetProjectByIdAsync(ProjectId!.Value);
+            if (projectData != null)
+            {
+                this.project = projectData;
+                await ProjectContextService.SetCurrentProjectAsync(projectData);
+                
+                // Load test plans for this project
+                await LoadTestPlans();
+            }
+            else
+            {
+                errorMessage = "Failed to load project";
+                Navigation.NavigateTo("/projects");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading project: {ex.Message}";
+            Console.WriteLine($"Error loading project {ProjectId}: {ex}");
+        }
+    }
+
+    private async Task LoadTestPlans()
+    {
+        try
+        {
+            var request = new PaginationParameters
+            {
+                PageNumber = currentPage,
+                PageSize = pageSize,
+                SearchTerm = searchTerm,
+                SortBy = sortBy,
+                ProjectId = ProjectId // Filter by project if specified
+            };
+
+            PagedResult<TestPlanDto>? result;
+            
+            if (ProjectId.HasValue)
+            {
+                result = await TestPlanService.GetPagedByProjectIdAsync(ProjectId.Value, request);
+            }
+            else
+            {
+                result = await TestPlanService.GetPagedAsync(request);
+            }
+
+            if (result != null)
+            {
+                pagedResult = result;
+            }
+            else
+            {
+                errorMessage = "Failed to load test plans";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading test plans: {ex.Message}";
+            Console.WriteLine($"Error loading test plans: {ex}");
+        }
+    }
+
+    private async Task SearchTestPlans()
+    {
+        currentPage = 1;
+        await LoadTestPlans();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        currentPage = 1;
+        await LoadTestPlans();
+    }
+
+    private async Task SortTestPlans()
+    {
+        // Delegate to SearchTestPlans
+        await SearchTestPlans();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= (pagedResult?.TotalPages ?? 1))
+        {
+            currentPage = page;
+            await LoadTestPlans();
+        }
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchTestPlans();
+        }
+    }
+
+    private void CreateNewTestPlan()
+    {
+        isEditMode = false;
+        currentTestPlan = new() { Name = "", Type = "UserValidation" };
+        if (ProjectId.HasValue)
+        {
+            currentTestPlan.ProjectId = ProjectId.Value;
+        }
+        showTestPlanModal = true;
+    }
+
+    private void ViewTestPlan(int testPlanId)
+    {
+        if (ProjectId.HasValue)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectId}/testplans/{testPlanId}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/testplans/{testPlanId}");
+        }
+    }
+
+    private async Task EditTestPlan(int testPlanId)
+    {
+        try
+        {
+            var testPlan = pagedResult?.Items.FirstOrDefault(tp => tp.Id == testPlanId);
+            if (testPlan != null)
+            {
+                isEditMode = true;
+                currentTestPlan = new TestPlanDto 
+                { 
+                    Id = testPlan.Id,
+                    Name = testPlan.Name, 
+                    Description = testPlan.Description,
+                    Type = testPlan.Type,
+                    ProjectId = testPlan.ProjectId
+                };
+                showTestPlanModal = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading test plan: {ex.Message}";
+        }
+    }
+
+    private void ConfirmDeleteTestPlan(TestPlanDto testPlan)
+    {
+        testPlanToDelete = testPlan;
+        showDeleteModal = true;
+    }
+
+    // Modal management methods
+    private void CloseTestPlanModal()
+    {
+        showTestPlanModal = false;
+        isEditMode = false;
+        currentTestPlan = new() { Name = "", Type = "UserValidation" };
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        testPlanToDelete = null;
+    }
+
+    private async Task SaveTestPlan()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(currentTestPlan.Name))
+            {
+                errorMessage = "Test plan name is required";
+                return;
+            }
+
+            if (isEditMode)
+            {
+                var result = await TestPlanService.UpdateAsync(currentTestPlan);
+                if (result)
+                {
+                    await LoadTestPlans();
+                    CloseTestPlanModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to update test plan";
+                }
+            }
+            else
+            {
+                var result = await TestPlanService.CreateAsync(currentTestPlan);
+                if (result != null)
+                {
+                    await LoadTestPlans();
+                    CloseTestPlanModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to create test plan";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving test plan: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteTestPlan()
+    {
+        try
+        {
+            if (testPlanToDelete != null)
+            {
+                var result = await TestPlanService.DeleteAsync(testPlanToDelete.Id);
+                if (result)
+                {
+                    await LoadTestPlans();
+                    CloseDeleteModal();
+                }
+                else
+                {
+                    errorMessage = "Failed to delete test plan";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting test plan: {ex.Message}";
+        }
+    }
+
+    private string GetTypeBadgeClass(string type)
+    {
+        return type.ToLower() switch
+        {
+            "uservalidation" => "bg-info",
+            "softwareverification" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetTypeDisplayName(string type)
+    {
+        return type switch
+        {
+            "UserValidation" => "User Validation",
+            "SoftwareVerification" => "Software Verification",
+            _ => type
+        };
     }
 }
+
+<style>
+.project-context-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--bs-primary);
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.4rem;
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.75rem 0.5rem;
+}
+
+.page-link {
+    border: none;
+    color: var(--bs-primary);
+}
+
+.page-link:hover {
+    background-color: var(--bs-light);
+    color: var(--bs-primary);
+}
+
+.page-item.active .page-link {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+</style>
