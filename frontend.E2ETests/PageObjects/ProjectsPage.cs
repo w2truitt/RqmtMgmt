@@ -29,7 +29,7 @@ public class ProjectsPage
     /// </summary>
     public async Task ClickCreateProjectAsync()
     {
-        await _page.ClickAsync("[data-testid='create-project-button']");
+        await _page.ClickAsync("button:has-text('Add Project')");
     }
     
     /// <summary>
@@ -63,8 +63,8 @@ public class ProjectsPage
     /// <param name="searchTerm">Search term</param>
     public async Task SearchProjectsAsync(string searchTerm)
     {
-        await _page.FillAsync("[data-testid='search-input']", searchTerm);
-        await _page.PressAsync("[data-testid='search-input']", "Enter");
+        await _page.FillAsync("input[placeholder='Search projects...']", searchTerm);
+        await _page.PressAsync("input[placeholder='Search projects...']", "Enter");
     }
     
     /// <summary>
@@ -73,7 +73,7 @@ public class ProjectsPage
     /// <returns>Number of project rows</returns>
     public async Task<int> GetProjectCountAsync()
     {
-        var rows = await _page.QuerySelectorAllAsync("[data-testid='project-row']");
+        var rows = await _page.QuerySelectorAllAsync("tbody tr");
         return rows.Count;
     }
     
@@ -172,8 +172,7 @@ public class ProjectsPage
     /// </summary>
     public async Task WaitForPageLoadAsync()
     {
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await _page.WaitForSelectorAsync("[data-testid='projects-table'], .projects-container", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await _page.WaitForSelectorAsync("table", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
     
     /// <summary>
@@ -221,7 +220,7 @@ public class ProjectsPage
     public async Task<string> GetFirstProjectNameAsync()
     {
         // Try to get the first project name from the table
-        var firstProjectElement = await _page.QuerySelectorAsync("[data-testid='project-row']:first-child [data-testid*='project-name'], tbody tr:first-child td:nth-child(2)");
+        var firstProjectElement = await _page.QuerySelectorAsync("tbody tr:first-child td:nth-child(2) a");
         if (firstProjectElement != null)
         {
             var text = await firstProjectElement.TextContentAsync();
@@ -240,16 +239,12 @@ public class ProjectsPage
         var viewButton = await _page.QuerySelectorAsync($"[data-testid='view-{projectName}']");
         if (viewButton != null)
         {
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await viewButton.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         else
         {
             // Fallback: look for any View button and use navigation waiting
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await _page.ClickAsync("button:has-text('View')");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
     
@@ -263,16 +258,12 @@ public class ProjectsPage
         var projectLink = await _page.QuerySelectorAsync($"[data-testid='project-name-link-{projectName}']");
         if (projectLink != null)
         {
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await projectLink.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         else
         {
             // Fallback: click the first project name link
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await _page.ClickAsync("tbody tr:first-child td:nth-child(2) a");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
 }

@@ -7,6 +7,7 @@ namespace backend.Services
     /// <summary>
     /// Service implementation for dashboard statistics and recent activity tracking.
     /// Provides aggregated data for dashboard display including requirement stats, test metrics, and recent activities.
+    /// ARCHITECTURAL FIX: Updated to implement consolidated IDashboardService interface.
     /// </summary>
     public class DashboardService : IDashboardService
     {
@@ -24,6 +25,7 @@ namespace backend.Services
         /// <summary>
         /// Retrieves comprehensive dashboard statistics including requirement, test suite, test case, and test plan metrics.
         /// Aggregates data from multiple entities to provide a complete system overview.
+        /// LEGACY METHOD: Maintained for backward compatibility.
         /// </summary>
         /// <returns>A DashboardStatisticsDto containing all system metrics and counts.</returns>
         public async Task<DashboardStatisticsDto> GetStatisticsAsync()
@@ -68,6 +70,184 @@ namespace backend.Services
             statistics.TestPlans.CoveragePercentage = 0; // Percentage
 
             return statistics;
+        }
+
+        /// <summary>
+        /// Retrieves comprehensive dashboard statistics combining all system metrics.
+        /// ENHANCED METHOD: Provides comprehensive system metrics.
+        /// </summary>
+        /// <returns>A DashboardStatsDto containing all dashboard metrics and recent activities.</returns>
+        public async Task<DashboardStatsDto> GetDashboardStatsAsync()
+        {
+            // Execute all queries sequentially to avoid DbContext threading issues
+            var requirements = await GetRequirementStatsAsync();
+            var testManagement = await GetTestManagementStatsAsync();
+            var testExecution = await GetTestExecutionStatsAsync();
+            var recentActivities = await GetRecentActivityAsync(5);
+
+            var dashboardStats = new DashboardStatsDto
+            {
+                Requirements = requirements,
+                TestManagement = testManagement,
+                TestExecution = testExecution,
+                RecentActivities = recentActivities
+            };
+
+            return dashboardStats;
+        }
+
+        /// <summary>
+        /// Retrieves detailed requirement statistics with optimized grouping queries.
+        /// Provides comprehensive breakdowns by status and type with efficient single-query execution.
+        /// </summary>
+        /// <returns>RequirementStatsDto with detailed requirement metrics and distributions.</returns>
+        public async Task<RequirementStatsDto> GetRequirementStatsAsync()
+        {
+            // Optimized single query for requirement statistics with grouping
+            var requirementStats = await _context.Requirements
+                .GroupBy(r => new { r.Status, r.Type })
+                .Select(g => new { g.Key.Status, g.Key.Type, Count = g.Count() })
+                .ToListAsync();
+
+            var stats = new RequirementStatsDto
+            {
+                TotalRequirements = requirementStats.Sum(s => s.Count)
+            };
+
+            // Group by status for detailed breakdown
+            var statusGroups = requirementStats.GroupBy(s => s.Status);
+            foreach (var group in statusGroups)
+            {
+                var count = group.Sum(g => g.Count);
+                stats.ByStatus[group.Key] = count;
+
+                // Map to individual status properties
+                switch (group.Key)
+                {
+                    case RequirementStatus.Draft:
+                        stats.DraftRequirements = count;
+                        break;
+                    case RequirementStatus.Approved:
+                        stats.ApprovedRequirements = count;
+                        break;
+                    case RequirementStatus.Implemented:
+                        stats.ImplementedRequirements = count;
+                        break;
+                    case RequirementStatus.Verified:
+                        stats.VerifiedRequirements = count;
+                        break;
+                }
+            }
+
+            // Group by type for type distribution
+            var typeGroups = requirementStats.GroupBy(s => s.Type);
+            foreach (var group in typeGroups)
+            {
+                stats.ByType[group.Key] = group.Sum(g => g.Count);
+            }
+
+            return stats;
+        }
+
+        /// <summary>
+        /// Retrieves test management statistics including coverage calculations.
+        /// Executes sequential queries to gather comprehensive test organization metrics.
+        /// </summary>
+        /// <returns>TestManagementStatsDto with test suite, plan, case metrics and coverage percentage.</returns>
+        public async Task<TestManagementStatsDto> GetTestManagementStatsAsync()
+        {
+            // Execute queries sequentially to avoid DbContext threading issues
+            var testSuiteCount = await _context.TestSuites.CountAsync();
+            var testPlanCount = await _context.TestPlans.CountAsync();
+            var testCaseCount = await _context.TestCases.CountAsync();
+            var testCasesWithSteps = await _context.TestCases
+                .Where(tc => tc.Steps.Any())
+                .CountAsync();
+            var requirementTestCaseLinks = await _context.RequirementTestCaseLinks.CountAsync();
+            var totalRequirements = await _context.Requirements.CountAsync();
+
+            var stats = new TestManagementStatsDto
+            {
+                TotalTestSuites = testSuiteCount,
+                TotalTestPlans = testPlanCount,
+                TotalTestCases = testCaseCount,
+                TestCasesWithSteps = testCasesWithSteps,
+                RequirementTestCaseLinks = requirementTestCaseLinks,
+                // Calculate test coverage percentage based on requirement-test case links
+                TestCoveragePercentage = totalRequirements > 0 
+                    ? Math.Round((double)requirementTestCaseLinks / totalRequirements * 100, 2)
+                    : 0
+            };
+
+            return stats;
+        }
+
+        /// <summary>
+        /// Retrieves test execution statistics with optimized grouping and pass rate calculations.
+        /// Provides comprehensive execution metrics including pass rates and execution trends.
+        /// </summary>
+        /// <returns>TestExecutionStatsDto with execution results, pass rates, and timing information.</returns>
+        public async Task<TestExecutionStatsDto> GetTestExecutionStatsAsync()
+        {
+            // Optimized queries for test execution statistics with grouping
+            var testRunSessionStats = await _context.TestRunSessions
+                .GroupBy(trs => trs.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var testCaseExecutionStats = await _context.TestCaseExecutions
+                .GroupBy(tce => tce.OverallResult)
+                .Select(g => new { Result = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var lastExecutionDate = await _context.TestCaseExecutions
+                .Where(tce => tce.ExecutedAt.HasValue)
+                .OrderByDescending(tce => tce.ExecutedAt)
+                .Select(tce => tce.ExecutedAt)
+                .FirstOrDefaultAsync();
+
+            // Calculate session statistics
+            var totalTestRuns = testRunSessionStats.Sum(s => s.Count);
+            var activeTestRuns = testRunSessionStats
+                .Where(s => s.Status == TestRunStatus.InProgress || s.Status == TestRunStatus.Paused)
+                .Sum(s => s.Count);
+            var completedTestRuns = testRunSessionStats
+                .Where(s => s.Status == TestRunStatus.Completed)
+                .Sum(s => s.Count);
+
+            // Calculate execution statistics
+            var totalExecutions = testCaseExecutionStats.Sum(s => s.Count);
+            var passedExecutions = testCaseExecutionStats
+                .Where(s => s.Result == TestResult.Passed)
+                .Sum(s => s.Count);
+            var failedExecutions = testCaseExecutionStats
+                .Where(s => s.Result == TestResult.Failed)
+                .Sum(s => s.Count);
+            var blockedExecutions = testCaseExecutionStats
+                .Where(s => s.Result == TestResult.Blocked)
+                .Sum(s => s.Count);
+            var notRunExecutions = testCaseExecutionStats
+                .Where(s => s.Result == TestResult.NotRun)
+                .Sum(s => s.Count);
+
+            var stats = new TestExecutionStatsDto
+            {
+                TotalTestRuns = totalTestRuns,
+                ActiveTestRuns = activeTestRuns,
+                CompletedTestRuns = completedTestRuns,
+                TotalTestCaseExecutions = totalExecutions,
+                PassedExecutions = passedExecutions,
+                FailedExecutions = failedExecutions,
+                BlockedExecutions = blockedExecutions,
+                NotRunExecutions = notRunExecutions,
+                // Calculate pass rate percentage
+                PassRate = totalExecutions > 0 
+                    ? Math.Round((double)passedExecutions / totalExecutions * 100, 2)
+                    : 0,
+                LastExecutionDate = lastExecutionDate
+            };
+
+            return stats;
         }
 
         /// <summary>

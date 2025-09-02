@@ -62,7 +62,6 @@ builder.Services.AddScoped<IUserService, UsersDataService>();
 builder.Services.AddScoped<IRequirementTestCaseLinkService, RequirementTestCaseLinkService>();
 builder.Services.AddScoped<IRoleService, RolesDataService>();
 builder.Services.AddScoped<IDashboardService, DashboardDataService>();
-builder.Services.AddScoped<IEnhancedDashboardService, EnhancedDashboardDataService>();
 builder.Services.AddScoped<ITestRunSessionDataService, TestRunSessionDataService>();
 builder.Services.AddScoped<ITestExecutionDataService, TestExecutionDataService>();
 builder.Services.AddScoped<IProjectService, ProjectsDataService>();

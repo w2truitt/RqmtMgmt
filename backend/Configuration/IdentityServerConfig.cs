@@ -19,13 +19,15 @@ namespace backend.Configuration
                 new IdentityResources.Email()
             };
 
+        private const string API_SCOPE_NAME = "rqmtapi";
+
         /// <summary>
         /// Gets the API scopes that can be requested by clients.
         /// </summary>
         public static IEnumerable<ApiScope> ApiScopes =>
             new ApiScope[]
             {
-                new ApiScope("rqmtapi", "Requirements Management API")
+                    new ApiScope(API_SCOPE_NAME, "Requirements Management API")
                 {
                     Description = "Access to the Requirements Management API endpoints"
                 }
@@ -37,9 +39,9 @@ namespace backend.Configuration
         public static IEnumerable<ApiResource> ApiResources =>
             new ApiResource[]
             {
-                new ApiResource("rqmtapi", "Requirements Management API")
+                new ApiResource(API_SCOPE_NAME, "Requirements Management API")
                 {
-                    Scopes = { "rqmtapi" },
+                    Scopes = { API_SCOPE_NAME },
                     UserClaims = { "name", "email", "role" }
                 }
             };
@@ -90,7 +92,7 @@ namespace backend.Configuration
                         "openid",
                         "profile", 
                         "email",
-                        "rqmtapi"
+                        API_SCOPE_NAME
                     },
 
                     AllowedCorsOrigins = 

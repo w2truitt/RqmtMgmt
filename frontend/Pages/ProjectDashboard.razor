@@ -210,7 +210,7 @@ else
     [Parameter] public int ProjectId { get; set; }
     
     private ProjectDto? project;
-    private ProjectStats projectStats = new();
+    private readonly ProjectStats projectStats = new();
     private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -232,11 +232,11 @@ else
         try
         {
             // Load project details
-            var project = await ProjectService.GetProjectByIdAsync(ProjectId);
-            if (project != null)
+            var projectData = await ProjectService.GetProjectByIdAsync(ProjectId);
+            if (projectData != null)
             {
-                this.project = project;
-                await ProjectContextService.SetCurrentProjectAsync(project);
+                this.project = projectData;
+                await ProjectContextService.SetCurrentProjectAsync(projectData);
                 
                 // Force re-render to update breadcrumb with project name
                 StateHasChanged();
@@ -277,14 +277,14 @@ else
             var suiteResult = await TestSuiteService.GetAllAsync();
             if (suiteResult != null)
             {
-                projectStats.TestSuiteCount = suiteResult.Where(ts => ts.ProjectId == ProjectId).Count();
+                projectStats.TestSuiteCount = suiteResult.Count(ts => ts.ProjectId == ProjectId);
             }
 
             // Load test plans count
             var planResult = await TestPlanService.GetAllAsync();
             if (planResult != null)
             {
-                projectStats.TestPlanCount = planResult.Where(tp => tp.ProjectId == ProjectId).Count();
+                projectStats.TestPlanCount = planResult.Count(tp => tp.ProjectId == ProjectId);
             }
         }
         catch (Exception ex)
@@ -293,7 +293,7 @@ else
         }
     }
 
-    private string GetStatusBadgeClass(string status)
+    private static string GetStatusBadgeClass(string status)
     {
         return status.ToLower() switch
         {
@@ -330,7 +330,7 @@ else
         Navigation.NavigateTo($"/projects/{ProjectId}/testsuites");
     }
 
-    private class ProjectStats
+    private sealed class ProjectStats
     {
         public int RequirementCount { get; set; }
         public int TestSuiteCount { get; set; }

@@ -12,6 +12,33 @@ namespace backend.ApiTests
     {
         private async Task<(int requirementId, int testCaseId)> CreateRequirementAndTestCase()
         {
+            // First create a project to satisfy foreign key constraint
+            var projectDto = new CreateProjectDto
+            {
+                Name = "Req-TC Link Test Project",
+                Code = "RTCLP001",
+                Description = "Project for RequirementTestCaseLink API test",
+                OwnerId = 1
+            };
+            var projectResponse = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            projectResponse.EnsureSuccessStatusCode();
+            var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
+            // Create a test suite for the test case
+            var testSuiteDto = new TestSuiteDto
+            {
+                Name = "Req-TC Link Test Suite",
+                Description = "Test suite for RequirementTestCaseLink API test",
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = project.Id
+            };
+            var testSuiteResponse = await _client.PostAsJsonAsync("/api/testsuite", testSuiteDto, _jsonOptions);
+            testSuiteResponse.EnsureSuccessStatusCode();
+            var testSuite = await testSuiteResponse.Content.ReadFromJsonAsync<TestSuiteDto>(_jsonOptions);
+            Assert.NotNull(testSuite);
+
             var reqDto = new RequirementDto
             {
                 Title = "Req-TC Link Req",
@@ -19,7 +46,8 @@ namespace backend.ApiTests
                 Status = RequirementStatus.Draft,
                 Description = "For link test",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = project.Id
             };
             var reqResp = await _client.PostAsJsonAsync("/api/requirement", reqDto, _jsonOptions);
             reqResp.EnsureSuccessStatusCode();
@@ -31,7 +59,7 @@ namespace backend.ApiTests
                 Title = "Req-TC Link TC",
                 Description = "For link test",
                 Steps = new List<TestStepDto>(),
-                SuiteId = 1, // Add required SuiteId
+                SuiteId = testSuite.Id,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -90,6 +118,9 @@ namespace backend.ApiTests
             var resp = await _client.DeleteAsync("/api/requirementtestcaselink?requirementId=9999999&testCaseId=9999999");
             // The service doesn't return NotFound, it just succeeds silently
             resp.EnsureSuccessStatusCode();
+
+            // Explicitly assert the expected behavior for SonarQube compliance
+            Assert.True(resp.IsSuccessStatusCode, "Service should succeed silently for non-existent links");
         }
 
         [Fact]

@@ -82,8 +82,8 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         Assert.NotNull(title);
         
         // Verify main page elements are visible
-        await Expect(Page.Locator("[data-testid='create-project-button']")).ToBeVisibleAsync();
-        await Expect(Page.Locator("[data-testid='search-input']")).ToBeVisibleAsync();
+        await Expect(Page.Locator("button:has-text('Add Project')")).ToBeVisibleAsync();
+        await Expect(Page.Locator("input[placeholder='Search projects...']")).ToBeVisibleAsync();
         await Expect(Page.Locator("h3:has-text('Projects')")).ToBeVisibleAsync();
         
         _output.WriteLine("All expected page elements are present");
@@ -157,7 +157,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         Assert.Contains("/projects", Page.Url);
         
         // Verify the search input has the expected value
-        var searchValue = await Page.InputValueAsync("[data-testid='search-input']");
+        var searchValue = await Page.InputValueAsync("input[placeholder='Search projects...']");
         Assert.Equal("Test", searchValue);
         
         _output.WriteLine("Search functionality works correctly");

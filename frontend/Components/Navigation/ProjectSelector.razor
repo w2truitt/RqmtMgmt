@@ -112,7 +112,6 @@
 @code {
     private ProjectDto? currentProject;
     private List<ProjectDto>? availableProjects;
-    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -126,7 +125,6 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading projects: {ex.Message}";
             Console.WriteLine($"ProjectSelector initialization error: {ex}");
         }
     }

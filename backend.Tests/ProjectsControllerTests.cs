@@ -12,12 +12,25 @@ namespace backend.Tests
 {
     public class ProjectsControllerTests
     {
-        private ProjectsController CreateController(Mock<IProjectService> projectService = null, Mock<IRequirementService> requirementService = null)
-        {
-            var mockProjectService = projectService ?? new Mock<IProjectService>();
-            var mockRequirementService = requirementService ?? new Mock<IRequirementService>();
-            return new ProjectsController(mockProjectService.Object, mockRequirementService.Object);
-        }
+            private static ProjectsController CreateController(
+                Mock<IProjectService> projectService = null,
+                Mock<IRequirementService> requirementService = null,
+                Mock<ITestSuiteService> testSuiteService = null,
+                Mock<ITestPlanService> testPlanService = null,
+                Mock<ITestCaseService> testCaseService = null)
+            {
+                var mockProjectService = projectService ?? new Mock<IProjectService>();
+                var mockRequirementService = requirementService ?? new Mock<IRequirementService>();
+                var mockTestSuiteService = testSuiteService ?? new Mock<ITestSuiteService>();
+                var mockTestPlanService = testPlanService ?? new Mock<ITestPlanService>();
+                var mockTestCaseService = testCaseService ?? new Mock<ITestCaseService>();
+                return new ProjectsController(
+                    mockProjectService.Object,
+                    mockRequirementService.Object,
+                    mockTestSuiteService.Object,
+                    mockTestPlanService.Object,
+                    mockTestCaseService.Object);
+            }
 
         [Fact]
         public async Task CreateProject_InvalidModelState_ReturnsBadRequest()
@@ -389,7 +402,25 @@ namespace backend.Tests
         [Fact]
         public async Task GetProjectTestSuites_ReturnsOk()
         {
-            var controller = CreateController();
+            var projectServiceMock = new Mock<IProjectService>();
+            var testSuiteServiceMock = new Mock<ITestSuiteService>();
+            
+            // Setup project to exist
+            var projectDto = new ProjectDto { Id = 1, Name = "Test Project", Code = "TP", Status = ProjectStatus.Active, OwnerId = 1, OwnerName = "Test Owner", CreatedAt = DateTime.UtcNow };
+            projectServiceMock.Setup(s => s.GetProjectByIdAsync(1)).ReturnsAsync(projectDto);
+            
+            // Setup empty paged result
+            var emptyPagedResult = new PagedResult<TestSuiteDto>
+            {
+                Items = new List<TestSuiteDto>(),
+                TotalItems = 0,
+                PageNumber = 1,
+                PageSize = 20
+            };
+            testSuiteServiceMock.Setup(s => s.GetPagedByProjectIdAsync(1, It.IsAny<PaginationParameters>()))
+                .ReturnsAsync(emptyPagedResult);
+            
+            var controller = CreateController(projectServiceMock, null, testSuiteServiceMock);
             var result = await controller.GetProjectTestSuites(1);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var paged = Assert.IsType<PagedResult<TestSuiteDto>>(ok.Value);
@@ -399,7 +430,25 @@ namespace backend.Tests
         [Fact]
         public async Task GetProjectTestPlans_ReturnsOk()
         {
-            var controller = CreateController();
+            var projectServiceMock = new Mock<IProjectService>();
+            var testPlanServiceMock = new Mock<ITestPlanService>();
+            
+            // Setup project to exist
+            var projectDto = new ProjectDto { Id = 1, Name = "Test Project", Code = "TP", Status = ProjectStatus.Active, OwnerId = 1, OwnerName = "Test Owner", CreatedAt = DateTime.UtcNow };
+            projectServiceMock.Setup(s => s.GetProjectByIdAsync(1)).ReturnsAsync(projectDto);
+            
+            // Setup empty paged result
+            var emptyPagedResult = new PagedResult<TestPlanDto>
+            {
+                Items = new List<TestPlanDto>(),
+                TotalItems = 0,
+                PageNumber = 1,
+                PageSize = 20
+            };
+            testPlanServiceMock.Setup(s => s.GetPagedByProjectIdAsync(1, It.IsAny<PaginationParameters>()))
+                .ReturnsAsync(emptyPagedResult);
+            
+            var controller = CreateController(projectServiceMock, null, null, testPlanServiceMock);
             var result = await controller.GetProjectTestPlans(1);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var paged = Assert.IsType<PagedResult<TestPlanDto>>(ok.Value);

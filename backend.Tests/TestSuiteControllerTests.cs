@@ -13,12 +13,14 @@ namespace backend.Tests
     public class TestSuiteControllerTests
     {
         private readonly Mock<ITestSuiteService> _mockService;
+        private readonly Mock<ITestCaseService> _mockTestCaseService;
         private readonly TestSuiteController _controller;
 
         public TestSuiteControllerTests()
         {
             _mockService = new Mock<ITestSuiteService>();
-            _controller = new TestSuiteController(_mockService.Object);
+            _mockTestCaseService = new Mock<ITestCaseService>();
+            _controller = new TestSuiteController(_mockService.Object, _mockTestCaseService.Object);
         }
 
         [Fact]
