@@ -25,6 +25,7 @@ public interface ITestCaseService
     Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters);
     Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId);
     Task<PagedResult<TestCaseDto>> GetPagedByTestSuiteIdAsync(int testSuiteId, PaginationParameters parameters);
+        Task<PagedResult<TestCaseDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
     Task<TestCaseDto?> GetByIdAsync(int id);
     Task<TestCaseDto?> CreateAsync(TestCaseDto testCase);
     Task<bool> UpdateAsync(TestCaseDto testCase);

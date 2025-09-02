@@ -68,19 +68,32 @@
             TEST MANAGEMENT
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="testsuites">
-                <span class="bi bi-collection-nav-menu" aria-hidden="true"></span> Test Suites
-            </NavLink>
+            @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+            {
+                <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/testsuites")">
+                    <span class="bi bi-collection-nav-menu" aria-hidden="true"></span> Test Suites
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="testsuites">
+                    <span class="bi bi-collection-nav-menu" aria-hidden="true"></span> Test Suites
+                </NavLink>
+            }
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="testcases">
-                <span class="bi bi-file-earmark-check-nav-menu" aria-hidden="true"></span> Test Cases
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="testplans">
-                <span class="bi bi-journal-code-nav-menu" aria-hidden="true"></span> Test Plans
-            </NavLink>
+            @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+            {
+                <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/testplans")">
+                    <span class="bi bi-journal-code-nav-menu" aria-hidden="true"></span> Test Plans
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="testplans">
+                    <span class="bi bi-journal-code-nav-menu" aria-hidden="true"></span> Test Plans
+                </NavLink>
+            }
         </div>
 
         <!-- TEST EXECUTION -->

@@ -87,34 +87,98 @@ namespace backend.Services
 
         public async Task<ProjectDto?> GetProjectByIdAsync(int projectId)
         {
-            // PERFORMANCE OPTIMIZATION: For detail view, we need full data but still use AsNoTracking
+                // PERFORMANCE OPTIMIZATION: Load only essential project data, then counts separately
             var project = await _context.Projects
                 .Include(p => p.Owner)
-                .Include(p => p.TeamMembers)
-                .ThenInclude(tm => tm.User)
-                .Include(p => p.Requirements)
-                .Include(p => p.TestSuites)
-                .Include(p => p.TestPlans)
-                .AsNoTracking() // Critical: Don't track entities for read-only operations
+                    .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            return project != null ? MapToDto(project) : null;
+                if (project == null) return null;
+
+                // Load counts with efficient separate queries instead of expensive includes
+                var requirementCount = await _context.Requirements
+                    .AsNoTracking()
+                    .CountAsync(r => r.ProjectId == projectId);
+
+                var testSuiteCount = await _context.TestSuites
+                    .AsNoTracking()
+                    .CountAsync(ts => ts.ProjectId == projectId);
+
+                var testPlanCount = await _context.TestPlans
+                    .AsNoTracking()
+                    .CountAsync(tp => tp.ProjectId == projectId);
+
+                // Load team members separately (only essential data)
+                var teamMembers = await _context.ProjectTeamMembers
+                    .Include(tm => tm.User)
+                    .AsNoTracking()
+                    .Where(tm => tm.ProjectId == projectId)
+                    .ToListAsync();
+
+                return new ProjectDto
+                {
+                    Id = project.Id,
+                    Name = project.Name,
+                    Code = project.Code,
+                    Description = project.Description,
+                    Status = project.Status,
+                    OwnerId = project.OwnerId,
+                    OwnerName = project.Owner?.UserName ?? "Unknown",
+                    CreatedAt = project.CreatedAt,
+                    UpdatedAt = project.UpdatedAt,
+                    TeamMembers = teamMembers.Select(MapTeamMemberToDto).ToList(),
+                    RequirementCount = requirementCount,
+                    TestSuiteCount = testSuiteCount,
+                    TestPlanCount = testPlanCount
+                };
         }
 
         public async Task<ProjectDto?> GetProjectByCodeAsync(string code)
         {
-            // PERFORMANCE OPTIMIZATION: For detail view, we need full data but still use AsNoTracking
+                // PERFORMANCE OPTIMIZATION: Load only essential project data, then counts separately
             var project = await _context.Projects
                 .Include(p => p.Owner)
-                .Include(p => p.TeamMembers)
-                .ThenInclude(tm => tm.User)
-                .Include(p => p.Requirements)
-                .Include(p => p.TestSuites)
-                .Include(p => p.TestPlans)
-                .AsNoTracking() // Critical: Don't track entities for read-only operations
+                    .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Code == code);
 
-            return project != null ? MapToDto(project) : null;
+                if (project == null) return null;
+
+                // Load counts with efficient separate queries instead of expensive includes
+                var requirementCount = await _context.Requirements
+                    .AsNoTracking()
+                    .CountAsync(r => r.ProjectId == project.Id);
+
+                var testSuiteCount = await _context.TestSuites
+                    .AsNoTracking()
+                    .CountAsync(ts => ts.ProjectId == project.Id);
+
+                var testPlanCount = await _context.TestPlans
+                    .AsNoTracking()
+                    .CountAsync(tp => tp.ProjectId == project.Id);
+
+                // Load team members separately (only essential data)
+                var teamMembers = await _context.ProjectTeamMembers
+                    .Include(tm => tm.User)
+                    .AsNoTracking()
+                    .Where(tm => tm.ProjectId == project.Id)
+                    .ToListAsync();
+
+                return new ProjectDto
+                {
+                    Id = project.Id,
+                    Name = project.Name,
+                    Code = project.Code,
+                    Description = project.Description,
+                    Status = project.Status,
+                    OwnerId = project.OwnerId,
+                    OwnerName = project.Owner?.UserName ?? "Unknown",
+                    CreatedAt = project.CreatedAt,
+                    UpdatedAt = project.UpdatedAt,
+                    TeamMembers = teamMembers.Select(MapTeamMemberToDto).ToList(),
+                    RequirementCount = requirementCount,
+                    TestSuiteCount = testSuiteCount,
+                    TestPlanCount = testPlanCount
+                };
         }
 
         public async Task<ProjectDto> CreateProjectAsync(CreateProjectDto createProjectDto)

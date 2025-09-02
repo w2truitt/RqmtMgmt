@@ -5,7 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>1.0.22</Version>
-    <PackageVersion>1.0.22</PackageVersion>
+        <Version>1.0.23</Version>
+        <PackageVersion>1.0.23</PackageVersion>
   </PropertyGroup>
 
 </Project>

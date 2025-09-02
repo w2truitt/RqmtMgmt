@@ -14,17 +14,20 @@ namespace backend.Controllers
         private readonly IRequirementService _requirementService;
         private readonly ITestSuiteService _testSuiteService;
         private readonly ITestPlanService _testPlanService;
+        private readonly ITestCaseService _testCaseService;
 
         public ProjectsController(
             IProjectService projectService, 
             IRequirementService requirementService,
             ITestSuiteService testSuiteService,
-            ITestPlanService testPlanService)
+            ITestPlanService testPlanService,
+            ITestCaseService testCaseService)
         {
             _projectService = projectService;
             _requirementService = requirementService;
             _testSuiteService = testSuiteService;
             _testPlanService = testPlanService;
+                _testCaseService = testCaseService;
         }
 
         /// <summary>
@@ -390,6 +393,47 @@ namespace backend.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+            /// <summary>
+            /// Gets test cases for a specific project.
+            /// This includes test cases from all test suites belonging to the project, plus any unassigned test cases.
+            /// </summary>
+            [HttpGet("{id}/test-cases")]
+            public async Task<ActionResult<PagedResult<TestCaseDto>>> GetProjectTestCases(
+                int id, 
+                [FromQuery] int page = 1, 
+                [FromQuery] int pageSize = 20,
+                [FromQuery] string? searchTerm = null,
+                [FromQuery] string? sortBy = null,
+                [FromQuery] bool sortDescending = false)
+            {
+                try
+                {
+                    // Verify project exists
+                    var project = await _projectService.GetProjectByIdAsync(id);
+                    if (project == null)
+                    {
+                        return NotFound($"Project with ID {id} not found.");
+                    }
+
+                    // Create pagination parameters with project filtering
+                    var parameters = new PaginationParameters
+                    {
+                        PageNumber = page,
+                        PageSize = pageSize,
+                        SearchTerm = searchTerm,
+                        SortBy = sortBy,
+                        SortDescending = sortDescending
+                    };
+
+                    var result = await _testCaseService.GetPagedByProjectIdAsync(id, parameters);
+                    return Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Internal server error: {ex.Message}");
+                }
+            }
 
         /// <summary>
         /// Gets test suites for a specific project (alternative route for frontend compatibility).
