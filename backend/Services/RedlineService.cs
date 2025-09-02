@@ -98,7 +98,13 @@ namespace backend.Services
             if (oldValue == newValue) return;
             
             // Determine change type based on null states
-            var changeType = oldValue == null ? "Added" : newValue == null ? "Removed" : "Modified";
+            string changeType;
+            if (oldValue == null)
+                changeType = "Added";
+            else if (newValue == null)
+                changeType = "Removed";
+            else
+                changeType = "Modified";
             
             result.Changes.Add(new RedlineFieldChangeDto
             {

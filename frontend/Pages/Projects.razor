@@ -282,6 +282,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await InitializePageData();
+    }
+
+    private async Task InitializePageData()
+    {
         await LoadCurrentUserAsync();
         await LoadProjects();
         await LoadUsers();
@@ -291,16 +296,27 @@
     {
         try
         {
-            var filter = new ProjectFilterDto { Page = 1, PageSize = 1000 };
-            var result = await ProjectService.GetProjectsAsync(filter);
-            projects = result.Items;
+            var projectsData = await FetchProjectsData();
+            projects = projectsData;
             filteredProjects = projects;
             ApplyFiltersAndSort();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading projects: {ex.Message}";
+            HandleProjectLoadError(ex);
         }
+    }
+
+    private async Task<List<ProjectDto>> FetchProjectsData()
+    {
+        var filter = new ProjectFilterDto { Page = 1, PageSize = 1000 };
+        var result = await ProjectService.GetProjectsAsync(filter);
+        return result.Items;
+    }
+
+    private void HandleProjectLoadError(Exception ex)
+    {
+        errorMessage = $"Error loading projects: {ex.Message}";
     }
 
     private async Task LoadUsers()
@@ -311,8 +327,13 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading users: {ex.Message}";
+            HandleUserLoadError(ex);
         }
+    }
+
+    private void HandleUserLoadError(Exception ex)
+    {
+        errorMessage = $"Error loading users: {ex.Message}";
     }
 
     private void ApplyFiltersAndSort()
@@ -320,26 +341,44 @@
         if (projects == null) return;
 
         filteredProjects = projects.ToList();
+        ApplySearchFilter();
+        ApplyStatusFilter();
+        ApplySorting();
+    }
 
-        // Apply search filter
-        if (!string.IsNullOrEmpty(searchTerm))
-        {
-            filteredProjects = filteredProjects.Where(p => 
-                p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                p.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrEmpty(p.Description) && p.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                p.OwnerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
-            ).ToList();
-        }
+    private void ApplySearchFilter()
+    {
+        if (string.IsNullOrEmpty(searchTerm)) return;
 
-        // Apply status filter
-        if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<ProjectStatus>(filterStatus, out var status))
+        filteredProjects = filteredProjects.Where(ProjectMatchesSearchTerm).ToList();
+    }
+
+    private bool ProjectMatchesSearchTerm(ProjectDto project)
+    {
+        return project.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+               project.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+               (!string.IsNullOrEmpty(project.Description) && project.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+               project.OwnerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ApplyStatusFilter()
+    {
+        if (string.IsNullOrEmpty(filterStatus)) return;
+
+        if (Enum.TryParse<ProjectStatus>(filterStatus, out var status))
         {
             filteredProjects = filteredProjects.Where(p => p.Status == status).ToList();
         }
+    }
 
-        // Apply sorting
-        filteredProjects = sortBy switch
+    private void ApplySorting()
+    {
+        filteredProjects = GetSortedProjects();
+    }
+
+    private List<ProjectDto> GetSortedProjects()
+    {
+        return sortBy switch
         {
             "name" => filteredProjects.OrderBy(p => p.Name).ToList(),
             "status" => filteredProjects.OrderBy(p => p.Status).ThenBy(p => p.Name).ToList(),
@@ -385,21 +424,38 @@
     private void ShowAddForm()
     {
         editProject = null;
-        formModel = new ProjectFormModel() 
+        formModel = CreateNewProjectFormModel();
+        ClearFormErrors();
+        showForm = true;
+    }
+
+    private ProjectFormModel CreateNewProjectFormModel()
+    {
+        return new ProjectFormModel() 
         { 
             Name = string.Empty,
             Code = string.Empty,
             Status = ProjectStatus.Planning,
-            OwnerId = currentUser?.Id ?? 1  // Use current user ID, fallback to 1 if not available
+            OwnerId = GetDefaultOwnerId()
         };
-        formErrorMessage = string.Empty;
-        showForm = true;
+    }
+
+    private int GetDefaultOwnerId()
+    {
+        return currentUser?.Id ?? 1;  // Use current user ID, fallback to 1 if not available
     }
 
     private void ShowEditForm(ProjectDto project)
     {
         editProject = project;
-        formModel = new ProjectFormModel
+        formModel = CreateEditProjectFormModel(project);
+        ClearFormErrors();
+        showForm = true;
+    }
+
+    private ProjectFormModel CreateEditProjectFormModel(ProjectDto project)
+    {
+        return new ProjectFormModel
         {
             Name = project.Name,
             Code = project.Code,
@@ -407,8 +463,11 @@
             Status = project.Status,
             OwnerId = project.OwnerId
         };
+    }
+
+    private void ClearFormErrors()
+    {
         formErrorMessage = string.Empty;
-        showForm = true;
     }
 
     private void HideForm()
@@ -421,21 +480,8 @@
 
     private async Task SaveProject()
     {
-        if (string.IsNullOrWhiteSpace(formModel.Name))
+        if (!ValidateProjectForm())
         {
-            formErrorMessage = "Project name is required.";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(formModel.Code))
-        {
-            formErrorMessage = "Project code is required.";
-            return;
-        }
-
-        if (formModel.OwnerId <= 0)
-        {
-            formErrorMessage = "Project owner is required.";
             return;
         }
 
@@ -443,49 +489,121 @@
         {
             if (editProject == null)
             {
-                // Create new project
-                var createDto = new CreateProjectDto
-                {
-                    Name = formModel.Name.Trim(),
-                    Code = formModel.Code.Trim().ToUpper(),
-                    Description = formModel.Description?.Trim(),
-                    Status = formModel.Status,
-                    OwnerId = formModel.OwnerId
-                };
-
-                await ProjectService.CreateProjectAsync(createDto);
+                await CreateNewProject();
             }
             else
             {
-                // Update existing project
-                var updateDto = new UpdateProjectDto
-                {
-                    Name = formModel.Name.Trim(),
-                    Code = formModel.Code.Trim().ToUpper(),
-                    Description = formModel.Description?.Trim(),
-                    Status = formModel.Status,
-                    OwnerId = formModel.OwnerId
-                };
-
-                await ProjectService.UpdateProjectAsync(editProject.Id, updateDto);
+                await UpdateExistingProject();
             }
 
-            HideForm();
-            await LoadProjects();
+            await CompleteProjectSave();
         }
         catch (Exception ex)
         {
-            formErrorMessage = $"Error saving project: {ex.Message}";
+            HandleProjectSaveError(ex);
         }
+    }
+
+    private bool ValidateProjectForm()
+    {
+        var validationError = GetFormValidationError();
+        if (!string.IsNullOrEmpty(validationError))
+        {
+            formErrorMessage = validationError;
+            return false;
+        }
+        return true;
+    }
+
+    private string GetFormValidationError()
+    {
+        if (string.IsNullOrWhiteSpace(formModel.Name))
+        {
+            return "Project name is required.";
+        }
+
+        if (string.IsNullOrWhiteSpace(formModel.Code))
+        {
+            return "Project code is required.";
+        }
+
+        if (formModel.OwnerId <= 0)
+        {
+            return "Project owner is required.";
+        }
+
+        return string.Empty;
+    }
+
+    private async Task CreateNewProject()
+    {
+        var createDto = CreateProjectDto();
+        await ProjectService.CreateProjectAsync(createDto);
+    }
+
+    private CreateProjectDto CreateProjectDto()
+    {
+        return new CreateProjectDto
+        {
+            Name = formModel.Name.Trim(),
+            Code = formModel.Code.Trim().ToUpper(),
+            Description = formModel.Description?.Trim(),
+            Status = formModel.Status,
+            OwnerId = formModel.OwnerId
+        };
+    }
+
+    private async Task UpdateExistingProject()
+    {
+        var updateDto = CreateUpdateProjectDto();
+        await ProjectService.UpdateProjectAsync(editProject!.Id, updateDto);
+    }
+
+    private UpdateProjectDto CreateUpdateProjectDto()
+    {
+        return new UpdateProjectDto
+        {
+            Name = formModel.Name.Trim(),
+            Code = formModel.Code.Trim().ToUpper(),
+            Description = formModel.Description?.Trim(),
+            Status = formModel.Status,
+            OwnerId = formModel.OwnerId
+        };
+    }
+
+    private async Task CompleteProjectSave()
+    {
+        HideForm();
+        await LoadProjects();
+    }
+
+    private void HandleProjectSaveError(Exception ex)
+    {
+        formErrorMessage = $"Error saving project: {ex.Message}";
     }
 
     private async Task DeleteProject(ProjectDto project)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"Are you sure you want to delete the project '{project.Name}'? This action cannot be undone and will delete all associated requirements, test suites, and test plans.");
-        
-        if (!confirmed) return;
+        if (await ConfirmProjectDeletion(project))
+        {
+            await PerformProjectDeletion(project);
+        }
+    }
 
+    private async Task<bool> ConfirmProjectDeletion(ProjectDto project)
+    {
+        var confirmationMessage = GenerateDeleteConfirmationMessage(project);
+        return await JSRuntime.InvokeAsync<bool>("confirm", confirmationMessage);
+    }
+
+    private string GenerateDeleteConfirmationMessage(ProjectDto project)
+    {
+        return $"Are you sure you want to delete the project '{project.Name}'? " +
+               "This action cannot be undone and will delete all associated requirements, test suites, and test plans.";
+    }
+
+    private async Task PerformProjectDeletion(ProjectDto project)
+    {
         try
         {
             var success = await ProjectService.DeleteProjectAsync(project.Id);
@@ -495,13 +613,23 @@
             }
             else
             {
-                errorMessage = "Failed to delete project. It may be referenced by other data.";
+                HandleProjectDeletionFailure();
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error deleting project: {ex.Message}";
+            HandleProjectDeletionError(ex);
         }
+    }
+
+    private void HandleProjectDeletionFailure()
+    {
+        errorMessage = "Failed to delete project. It may be referenced by other data.";
+    }
+
+    private void HandleProjectDeletionError(Exception ex)
+    {
+        errorMessage = $"Error deleting project: {ex.Message}";
     }
 
     private void NavigateToProject(int projectId)
@@ -518,7 +646,7 @@
         _ => "bg-secondary"
     };
 
-    private class ProjectFormModel
+    private sealed class ProjectFormModel
     {
         public string Name { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;

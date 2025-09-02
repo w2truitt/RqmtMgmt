@@ -17,6 +17,27 @@ namespace backend.ApiTests
     [Collection("Integration Tests")]
     public class RedlineApiTests : BaseIntegrationTest
     {
+        /// <summary>
+        /// Helper method to create a project and return its ID for use in test entities
+        /// </summary>
+        private async Task<int> CreateTestProjectAsync()
+        {
+            var projectDto = new CreateProjectDto
+            {
+                Name = $"Test Project {DateTime.Now.Ticks}",
+                Code = $"RL{DateTime.Now.Ticks % 10000}",
+                Description = "Test project for RedlineApiTests",
+                OwnerId = 1
+            };
+
+            var response = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            response.EnsureSuccessStatusCode();
+
+            var project = await response.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+            return project.Id;
+        }
+
         #region Requirement Version Tests
 
         [Fact]
@@ -24,13 +45,16 @@ namespace backend.ApiTests
         {
             await SkipIfSystemNotAvailableAsync();
 
-            // Arrange: Create a requirement first
+            // Arrange: Create a project first, then a requirement
+            var projectId = await CreateTestProjectAsync();
+            
             var createDto = new RequirementDto
             {
                 Title = "Redline Test Requirement",
                 Type = RequirementType.CRS,
                 Status = RequirementStatus.Draft,
                 Description = "Test requirement for version history",
+                ProjectId = projectId,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -78,13 +102,16 @@ namespace backend.ApiTests
         {
             await SkipIfSystemNotAvailableAsync();
 
-            // Arrange: Create a requirement to generate a version
+            // Arrange: Create a project first, then a requirement to generate a version
+            var projectId = await CreateTestProjectAsync();
+            
             var createDto = new RequirementDto
             {
                 Title = "Version Test Requirement",
                 Type = RequirementType.PRS,
                 Status = RequirementStatus.Draft,
                 Description = "Test for single version retrieval",
+                ProjectId = projectId,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -130,13 +157,16 @@ namespace backend.ApiTests
         {
             await SkipIfSystemNotAvailableAsync();
 
-            // Arrange: Create a requirement and modify it to create versions
+            // Arrange: Create a project first, then a requirement and modify it to create versions
+            var projectId = await CreateTestProjectAsync();
+            
             var createDto = new RequirementDto
             {
                 Title = "Original Title",
                 Type = RequirementType.CRS,
                 Status = RequirementStatus.Draft,
                 Description = "Original description",
+                ProjectId = projectId,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -202,13 +232,16 @@ namespace backend.ApiTests
         {
             await SkipIfSystemNotAvailableAsync();
 
-            // Arrange: Create a requirement
+            // Arrange: Create a project first, then a requirement
+            var projectId = await CreateTestProjectAsync();
+            
             var createDto = new RequirementDto
             {
                 Title = "Same Version Test",
                 Type = RequirementType.CRS,
                 Status = RequirementStatus.Draft,
                 Description = "Test comparing same version to itself",
+                ProjectId = projectId,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };
@@ -242,13 +275,16 @@ namespace backend.ApiTests
         {
             await SkipIfSystemNotAvailableAsync();
 
-            // Arrange: Create a requirement to get one valid version
+            // Arrange: Create a project first, then a requirement to get one valid version
+            var projectId = await CreateTestProjectAsync();
+            
             var createDto = new RequirementDto
             {
                 Title = "Mixed Valid Invalid Test",
                 Type = RequirementType.PRS,
                 Status = RequirementStatus.Draft,
                 Description = "Test mixed valid/invalid version IDs",
+                ProjectId = projectId,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow
             };

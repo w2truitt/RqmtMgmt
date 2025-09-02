@@ -38,22 +38,22 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new test case by sending a POST request to the backend API.
         /// </summary>
-        /// <param name="dto">The test case data to create, including test steps.</param>
+        /// <param name="testCase">The test case data to create, including test steps.</param>
         /// <returns>The created test case with its assigned ID if successful; otherwise, null.</returns>
-        public async Task<TestCaseDto?> CreateAsync(TestCaseDto dto)
+        public async Task<TestCaseDto?> CreateAsync(TestCaseDto testCase)
         {
-            var resp = await _http.PostAsJsonAsync("/api/TestCase", dto);
+            var resp = await _http.PostAsJsonAsync("/api/TestCase", testCase);
             return await resp.Content.ReadFromJsonAsync<TestCaseDto>();
         }
 
         /// <summary>
         /// Updates an existing test case by sending a PUT request to the backend API.
         /// </summary>
-        /// <param name="dto">The test case data to update, including test steps.</param>
+        /// <param name="testCase">The test case data to update, including test steps.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestCaseDto dto)
+        public async Task<bool> UpdateAsync(TestCaseDto testCase)
         {
-            var resp = await _http.PutAsJsonAsync($"/api/TestCase/{dto.Id}", dto);
+            var resp = await _http.PutAsJsonAsync($"/api/TestCase/{testCase.Id}", testCase);
             return resp.IsSuccessStatusCode;
         }
 
@@ -68,5 +68,85 @@ namespace frontend.Services
             var resp = await _http.DeleteAsync($"/api/TestCase/{id}");
             return resp.IsSuccessStatusCode;
         }
+
+        /// <summary>
+        /// Retrieves test cases with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test cases and pagination metadata.</returns>
+        public async Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/TestCase{queryString}");
+            return result ?? new PagedResult<TestCaseDto>();
+        }
+
+        /// <summary>
+        /// Retrieves test cases for a specific test suite.
+        /// </summary>
+        /// <param name="testSuiteId">The unique identifier of the test suite.</param>
+        /// <returns>A list of test cases for the test suite.</returns>
+        public async Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId)
+        {
+            var result = await _http.GetFromJsonAsync<List<TestCaseDto>>($"/api/TestSuite/{testSuiteId}/testcases");
+            return result ?? new List<TestCaseDto>();
+        }
+
+        /// <summary>
+        /// Retrieves test cases for a specific test suite with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="testSuiteId">The unique identifier of the test suite.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test cases for the test suite and pagination metadata.</returns>
+        public async Task<PagedResult<TestCaseDto>> GetPagedByTestSuiteIdAsync(int testSuiteId, PaginationParameters parameters)
+        {
+            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+            if (parameters.SortDescending)
+                queryString += "&sortDescending=true";
+
+            var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/TestSuite/{testSuiteId}/testcases{queryString}");
+            return result ?? new PagedResult<TestCaseDto>();
+        }
+
+            /// <summary>
+            /// Retrieves test cases for a specific project with pagination, filtering, and sorting capabilities.
+            /// This includes test cases from all test suites belonging to the project, plus any unassigned test cases.
+            /// </summary>
+            /// <param name="projectId">The unique identifier of the project.</param>
+            /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+            /// <returns>A paginated result containing test cases for the project and pagination metadata.</returns>
+            public async Task<PagedResult<TestCaseDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+            {
+                var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+            
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                    queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+            
+                if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                    queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+            
+                if (parameters.SortDescending)
+                    queryString += "&sortDescending=true";
+
+                var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/Projects/{projectId}/test-cases{queryString}");
+                return result ?? new PagedResult<TestCaseDto>();
+            }
     }
 }

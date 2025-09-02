@@ -222,7 +222,7 @@ public class HomeTests : ComponentTestBase
     /// </summary>
     private void SetupMockEnhancedDashboardService()
     {
-        var mockEnhancedDashboardService = GetMockService<IEnhancedDashboardService>();
+        var mockEnhancedDashboardService = GetMockService<IDashboardService>();
         
         // Set up mock statistics to return the expected test values using the new DashboardStatsDto structure
         var mockDashboardStats = new DashboardStatsDto

@@ -37,6 +37,44 @@ namespace backend.Controllers
         }
 
         /// <summary>
+        /// Retrieves test cases with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="page">The page number (default: 1).</param>
+        /// <param name="pageSize">The number of items per page (default: 20).</param>
+        /// <param name="searchTerm">Optional search term to filter test cases.</param>
+        /// <param name="sortBy">Optional field to sort by.</param>
+        /// <param name="sortDescending">Whether to sort in descending order (default: false).</param>
+        /// <returns>A paginated result of test cases.</returns>
+        /// <response code="200">Returns the paginated list of test cases.</response>
+        [HttpGet("paged")]
+        public async Task<ActionResult<PagedResult<TestCaseDto>>> GetPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            try
+            {
+                var parameters = new PaginationParameters
+                {
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    SearchTerm = searchTerm,
+                    SortBy = sortBy,
+                    SortDescending = sortDescending
+                };
+
+                var result = await _testCaseService.GetPagedAsync(parameters);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Retrieves a specific test case by its ID including associated test steps.
         /// </summary>
         /// <param name="id">The unique identifier of the test case.</param>

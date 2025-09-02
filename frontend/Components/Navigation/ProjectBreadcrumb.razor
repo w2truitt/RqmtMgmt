@@ -49,7 +49,7 @@
     [Parameter] public string? ItemName { get; set; }
     [Parameter] public List<frontend.Models.BreadcrumbItem>? CustomItems { get; set; }
     
-    private List<frontend.Models.BreadcrumbItem> breadcrumbItems = new();
+    private readonly List<frontend.Models.BreadcrumbItem> breadcrumbItems = new();
 
     protected override void OnParametersSet()
     {
@@ -72,155 +72,175 @@
             return;
         }
 
-        // Build automatic breadcrumb based on current route and parameters
-        var uri = Navigation.Uri;
-        var relativePath = Navigation.ToBaseRelativePath(uri);
-        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-
         // Always start with Home
+        AddHomeBreadcrumb();
+
+        // Build breadcrumb based on context
+        if (ProjectId.HasValue)
+        {
+            BuildProjectBreadcrumb();
+        }
+        else
+        {
+            BuildRouteBreadcrumb();
+        }
+
+        // Add item name if specified
+        if (!string.IsNullOrEmpty(ItemName))
+        {
+            AddCurrentPageBreadcrumb(ItemName);
+        }
+    }
+
+    private void AddHomeBreadcrumb()
+    {
         breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
         {
             Title = "Home",
             Icon = "bi bi-house-door",
             Url = "/"
         });
+    }
 
-        // If we have project context
-        if (ProjectId.HasValue)
+    private void AddCurrentPageBreadcrumb(string title)
+    {
+        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
         {
-            // Add Projects
-            breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-            {
-                Title = "Projects",
-                Icon = "bi bi-folder",
-                Url = "/projects"
-            });
+            Title = title,
+            Url = null // Current page
+        });
+    }
 
-            // Add specific project
-            breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-            {
-                Title = ProjectName ?? $"Project {ProjectId}",
-                Icon = "bi bi-folder-fill",
-                Url = $"/projects/{ProjectId}"
-            });
+    private void BuildProjectBreadcrumb()
+    {
+        // Add Projects
+        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+        {
+            Title = "Projects",
+            Icon = "bi bi-folder",
+            Url = "/projects"
+        });
 
-            // Add section if specified
-            if (!string.IsNullOrEmpty(Section))
-            {
-                var sectionUrl = $"/projects/{ProjectId}/{Section.ToLower()}";
-                var sectionIcon = GetSectionIcon(Section);
-                
-                breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                {
-                    Title = Section,
-                    Icon = sectionIcon,
-                    Url = sectionUrl
-                });
+        // Add specific project
+        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+        {
+            Title = ProjectName ?? $"Project {ProjectId}",
+            Icon = "bi bi-folder-fill",
+            Url = $"/projects/{ProjectId}"
+        });
 
-                // Add sub-section if specified
-                if (!string.IsNullOrEmpty(SubSection))
-                {
-                    breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                    {
-                        Title = SubSection,
-                        Url = null // Current page
-                    });
-                }
-            }
+        // Add section if specified
+        if (!string.IsNullOrEmpty(Section))
+        {
+            AddProjectSection();
         }
-        else
-        {
-            // No project context - build based on current route
-            if (segments.Length > 0)
-            {
-                var firstSegment = segments[0].ToLower();
-                switch (firstSegment)
-                {
-                    case "projects":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Projects",
-                            Icon = "bi bi-folder",
-                            Url = "/projects"
-                        });
-                        break;
-                    case "requirements":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Requirements",
-                            Icon = "bi bi-file-earmark-text",
-                            Url = "/requirements"
-                        });
-                        break;
-                    case "testsuites":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Test Suites",
-                            Icon = "bi bi-collection",
-                            Url = "/testsuites"
-                        });
-                        break;
-                    case "testcases":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Test Cases",
-                            Icon = "bi bi-file-earmark-check",
-                            Url = "/testcases"
-                        });
-                        break;
-                    case "testplans":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Test Plans",
-                            Icon = "bi bi-journal-code",
-                            Url = "/testplans"
-                        });
-                        break;
-                    case "test-run-sessions":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Test Execution",
-                            Icon = "bi bi-play-circle",
-                            Url = "/test-run-sessions"
-                        });
-                        break;
-                    case "users":
-                        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
-                        {
-                            Title = "Users",
-                            Icon = "bi bi-person-lines-fill",
-                            Url = "/users"
-                        });
-                        break;
-                }
-            }
-        }
+    }
 
-        // Add item name if specified
-        if (!string.IsNullOrEmpty(ItemName))
+    private void AddProjectSection()
+    {
+        var sectionUrl = $"/projects/{ProjectId}/{Section!.ToLower()}";
+        var sectionIcon = GetSectionIcon(Section);
+        
+        breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
+        {
+            Title = Section,
+            Icon = sectionIcon,
+            Url = sectionUrl
+        });
+
+        // Add sub-section if specified
+        if (!string.IsNullOrEmpty(SubSection))
         {
             breadcrumbItems.Add(new frontend.Models.BreadcrumbItem
             {
-                Title = ItemName,
+                Title = SubSection,
                 Url = null // Current page
             });
         }
     }
 
-    private string GetSectionIcon(string section)
+    private void BuildRouteBreadcrumb()
     {
-        return section.ToLower() switch
+        var uri = Navigation.Uri;
+        var relativePath = Navigation.ToBaseRelativePath(uri);
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments.Length > 0)
         {
-            "requirements" => "bi bi-file-earmark-text",
-            "testsuites" => "bi bi-collection",
-            "testcases" => "bi bi-file-earmark-check", 
-            "testplans" => "bi bi-journal-code",
-            "execution" => "bi bi-play-circle",
-            "reports" => "bi bi-graph-up",
-            "team" => "bi bi-people",
-            "settings" => "bi bi-gear",
-            _ => "bi bi-circle"
+            var firstSegment = segments[0].ToLower();
+            var routeBreadcrumb = CreateRouteBreadcrumb(firstSegment);
+            if (routeBreadcrumb != null)
+            {
+                breadcrumbItems.Add(routeBreadcrumb);
+            }
+        }
+    }
+
+    private frontend.Models.BreadcrumbItem? CreateRouteBreadcrumb(string segment)
+    {
+        return segment switch
+        {
+            "projects" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Projects",
+                Icon = "bi bi-folder",
+                Url = "/projects"
+            },
+            "requirements" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Requirements",
+                Icon = "bi bi-file-earmark-text",
+                Url = "/requirements"
+            },
+            "testsuites" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Test Suites",
+                Icon = "bi bi-collection",
+                Url = "/testsuites"
+            },
+            "testcases" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Test Cases",
+                Icon = "bi bi-file-earmark-check",
+                Url = "/testcases"
+            },
+            "testplans" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Test Plans",
+                Icon = "bi bi-journal-code",
+                Url = "/testplans"
+            },
+            "test-run-sessions" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Test Execution",
+                Icon = "bi bi-play-circle",
+                Url = "/test-run-sessions"
+            },
+            "users" => new frontend.Models.BreadcrumbItem
+            {
+                Title = "Users",
+                Icon = "bi bi-person-lines-fill",
+                Url = "/users"
+            },
+            _ => null
         };
+    }
+
+    private static readonly Dictionary<string, string> SectionIcons = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["requirements"] = "bi bi-file-earmark-text",
+        ["testsuites"] = "bi bi-collection",
+        ["testcases"] = "bi bi-file-earmark-check",
+        ["testplans"] = "bi bi-journal-code",
+        ["execution"] = "bi bi-play-circle",
+        ["reports"] = "bi bi-graph-up",
+        ["team"] = "bi bi-people",
+        ["settings"] = "bi bi-gear"
+    };
+
+    private static string GetSectionIcon(string section)
+    {
+        return SectionIcons.TryGetValue(section, out var icon) ? icon : "bi bi-circle";
     }
 }
 

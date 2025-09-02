@@ -249,51 +249,75 @@ else
         isLoading = true;
         try
         {
-            // Load project info
-            var project = await ProjectService.GetProjectByIdAsync(ProjectId);
-            if (project == null)
-            {
-                Navigation.NavigateTo("/projects");
-                return;
-            }
-            projectName = project.Name;
-
-            // Load team members
-            teamMembers = await ProjectService.GetProjectTeamMembersAsync(ProjectId);
-            
-            // Load all users for the dropdown
-            availableUsers = await UserService.GetAllAsync();
+            await LoadProjectInfo();
+            await LoadTeamData();
         }
         catch (Exception ex)
         {
-            // Handle error - you might want to show a toast or error message
-            Console.WriteLine($"Error loading data: {ex.Message}");
+            HandleDataLoadError(ex);
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            CompleteDataLoad();
         }
     }
 
+    private async Task LoadProjectInfo()
+    {
+        var project = await ProjectService.GetProjectByIdAsync(ProjectId);
+        if (project == null)
+        {
+            Navigation.NavigateTo("/projects");
+            return;
+        }
+        projectName = project.Name;
+    }
+
+    private async Task LoadTeamData()
+    {
+        teamMembers = await ProjectService.GetProjectTeamMembersAsync(ProjectId);
+        availableUsers = await UserService.GetAllAsync();
+    }
+
+    private void HandleDataLoadError(Exception ex)
+    {
+        Console.WriteLine($"Error loading data: {ex.Message}");
+    }
+
+    private void CompleteDataLoad()
+    {
+        isLoading = false;
+        StateHasChanged();
+    }
+
     private void ShowAddMemberForm()
+    {
+        InitializeAddMemberForm();
+        showMemberForm = true;
+    }
+
+    private void InitializeAddMemberForm()
     {
         editingMember = null;
         selectedUserId = 0;
         selectedRole = ProjectRole.Developer;
         memberIsActive = true;
         memberFormError = string.Empty;
-        showMemberForm = true;
     }
 
     private void ShowEditMemberForm(ProjectTeamMemberDto member)
+    {
+        InitializeEditMemberForm(member);
+        showMemberForm = true;
+    }
+
+    private void InitializeEditMemberForm(ProjectTeamMemberDto member)
     {
         editingMember = member;
         selectedUserId = member.UserId;
         selectedRole = member.Role;
         memberIsActive = member.IsActive;
         memberFormError = string.Empty;
-        showMemberForm = true;
     }
 
     private void HideMemberForm()
@@ -307,70 +331,127 @@ else
     {
         if (isSaving) return;
 
-        memberFormError = string.Empty;
-        isSaving = true;
+        if (!ValidateAndPrepareSave())
+        {
+            return;
+        }
 
         try
         {
             if (editingMember == null)
             {
-                // Adding new member
-                if (selectedUserId == 0)
-                {
-                    memberFormError = "Please select a user.";
-                    return;
-                }
-
-                // Check if user is already a team member
-                if (teamMembers?.Any(m => m.UserId == selectedUserId) == true)
-                {
-                    memberFormError = "This user is already a team member.";
-                    return;
-                }
-
-                var addDto = new AddProjectTeamMemberDto
-                {
-                    UserId = selectedUserId,
-                    Role = selectedRole
-                };
-
-                var newMember = await ProjectService.AddTeamMemberAsync(ProjectId, addDto);
-                if (newMember == null)
-                {
-                    memberFormError = "Failed to add team member. Please try again.";
-                    return;
-                }
+                await AddNewMember();
             }
             else
             {
-                // Updating existing member
-                var updateDto = new UpdateProjectTeamMemberDto
-                {
-                    Role = selectedRole,
-                    IsActive = memberIsActive
-                };
-
-                var updatedMember = await ProjectService.UpdateTeamMemberAsync(ProjectId, editingMember.UserId, updateDto);
-                if (updatedMember == null)
-                {
-                    memberFormError = "Failed to update team member. Please try again.";
-                    return;
-                }
+                await UpdateExistingMember();
             }
 
-            // Success - refresh data and close form
-            await LoadData();
-            HideMemberForm();
+            await CompleteMemberSave();
         }
         catch (Exception ex)
         {
-            memberFormError = $"An error occurred: {ex.Message}";
+            HandleMemberSaveError(ex);
         }
         finally
         {
-            isSaving = false;
-            StateHasChanged();
+            CompleteSaveOperation();
         }
+    }
+
+    private bool ValidateAndPrepareSave()
+    {
+        memberFormError = string.Empty;
+        isSaving = true;
+
+        if (editingMember == null && !ValidateNewMemberForm())
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool ValidateNewMemberForm()
+    {
+        if (selectedUserId == 0)
+        {
+            memberFormError = "Please select a user.";
+            return false;
+        }
+
+        if (IsUserAlreadyTeamMember())
+        {
+            memberFormError = "This user is already a team member.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsUserAlreadyTeamMember()
+    {
+        return teamMembers?.Any(m => m.UserId == selectedUserId) == true;
+    }
+
+    private async Task AddNewMember()
+    {
+        var addDto = CreateAddMemberDto();
+        var newMember = await ProjectService.AddTeamMemberAsync(ProjectId, addDto);
+        
+        if (newMember == null)
+        {
+            memberFormError = "Failed to add team member. Please try again.";
+        }
+    }
+
+    private AddProjectTeamMemberDto CreateAddMemberDto()
+    {
+        return new AddProjectTeamMemberDto
+        {
+            UserId = selectedUserId,
+            Role = selectedRole
+        };
+    }
+
+    private async Task UpdateExistingMember()
+    {
+        var updateDto = CreateUpdateMemberDto();
+        var updatedMember = await ProjectService.UpdateTeamMemberAsync(ProjectId, editingMember!.UserId, updateDto);
+        
+        if (updatedMember == null)
+        {
+            memberFormError = "Failed to update team member. Please try again.";
+        }
+    }
+
+    private UpdateProjectTeamMemberDto CreateUpdateMemberDto()
+    {
+        return new UpdateProjectTeamMemberDto
+        {
+            Role = selectedRole,
+            IsActive = memberIsActive
+        };
+    }
+
+    private async Task CompleteMemberSave()
+    {
+        if (string.IsNullOrEmpty(memberFormError))
+        {
+            await LoadData();
+            HideMemberForm();
+        }
+    }
+
+    private void HandleMemberSaveError(Exception ex)
+    {
+        memberFormError = $"An error occurred: {ex.Message}";
+    }
+
+    private void CompleteSaveOperation()
+    {
+        isSaving = false;
+        StateHasChanged();
     }
 
     private void ConfirmRemoveMember(ProjectTeamMemberDto member)
@@ -389,34 +470,58 @@ else
     {
         if (isRemoving || memberToRemove == null) return;
 
+        await PerformMemberRemoval();
+    }
+
+    private async Task PerformMemberRemoval()
+    {
         isRemoving = true;
 
         try
         {
-            var success = await ProjectService.RemoveTeamMemberAsync(ProjectId, memberToRemove.UserId);
+            var success = await ProjectService.RemoveTeamMemberAsync(ProjectId, memberToRemove!.UserId);
             if (success)
             {
-                await LoadData();
-                HideConfirmModal();
+                await CompleteMemberRemoval();
             }
             else
             {
-                // Handle error - you might want to show a toast
-                Console.WriteLine("Failed to remove team member");
+                HandleRemovalFailure();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error removing team member: {ex.Message}");
+            HandleRemovalError(ex);
         }
         finally
         {
-            isRemoving = false;
-            StateHasChanged();
+            CompleteRemovalOperation();
         }
     }
 
-    private string GetRoleDisplayName(ProjectRole role)
+    private async Task CompleteMemberRemoval()
+    {
+        await LoadData();
+        HideConfirmModal();
+    }
+
+    private void HandleRemovalFailure()
+    {
+        Console.WriteLine("Failed to remove team member");
+    }
+
+    private void HandleRemovalError(Exception ex)
+    {
+        Console.WriteLine($"Error removing team member: {ex.Message}");
+    }
+
+    private void CompleteRemovalOperation()
+    {
+        isRemoving = false;
+        StateHasChanged();
+    }
+
+    private static string GetRoleDisplayName(ProjectRole role)
     {
         return role switch
         {
@@ -430,7 +535,7 @@ else
         };
     }
 
-    private string GetRoleBadgeColor(ProjectRole role)
+    private static string GetRoleBadgeColor(ProjectRole role)
     {
         return role switch
         {

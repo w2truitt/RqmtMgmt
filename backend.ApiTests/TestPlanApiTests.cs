@@ -20,25 +20,41 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
+            // First create a project to satisfy foreign key constraint
+            var projectDto = new CreateProjectDto
+            {
+                Name = "TestPlan Test Project",
+                Code = "TTP001",
+                Description = "Project for TestPlan API test",
+                OwnerId = 1
+            };
+            var projectResponse = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            projectResponse.EnsureSuccessStatusCode();
+            var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
             var createDto = new TestPlanDto
             {
                 Name = "API Test Plan",
                 Type = "UserValidation",
                 Description = "Created by integration test",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = project.Id
             };
             var response = await _client.PostAsJsonAsync("/api/testplan", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
             var created = await response.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(created);
             Assert.Equal("API Test Plan", created.Name);
+            Assert.Equal(project.Id, created.ProjectId);
 
             var getResp = await _client.GetAsync($"/api/testplan/{created.Id}");
             getResp.EnsureSuccessStatusCode();
             var fetched = await getResp.Content.ReadFromJsonAsync<TestPlanDto>(_jsonOptions);
             Assert.NotNull(fetched);
             Assert.Equal("API Test Plan", fetched.Name);
+            Assert.Equal(project.Id, fetched.ProjectId);
         }
 
         [Fact]
@@ -60,6 +76,19 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
+            // First create a project to satisfy foreign key constraint
+            var projectDto = new CreateProjectDto
+            {
+                Name = "TestPlan Update Test Project",
+                Code = "TUTP001",
+                Description = "Project for TestPlan update API test",
+                OwnerId = 1
+            };
+            var projectResponse = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            projectResponse.EnsureSuccessStatusCode();
+            var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
             // First create
             var createDto = new TestPlanDto
             {
@@ -67,7 +96,8 @@ namespace backend.ApiTests
                 Type = "SoftwareVerification",
                 Description = "To be updated",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = project.Id
             };
             var response = await _client.PostAsJsonAsync("/api/testplan", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -87,6 +117,7 @@ namespace backend.ApiTests
             Assert.NotNull(updated);
             Assert.Equal("Updated Name", updated.Name);
             Assert.Equal("Updated Desc", updated.Description);
+            Assert.Equal(project.Id, updated.ProjectId);
         }
 
         [Fact]
@@ -95,6 +126,19 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
+            // First create a project to satisfy foreign key constraint
+            var projectDto = new CreateProjectDto
+            {
+                Name = "TestPlan Delete Test Project",
+                Code = "TDTP001",
+                Description = "Project for TestPlan delete API test",
+                OwnerId = 1
+            };
+            var projectResponse = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            projectResponse.EnsureSuccessStatusCode();
+            var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
             // Create
             var createDto = new TestPlanDto
             {
@@ -102,7 +146,8 @@ namespace backend.ApiTests
                 Type = "UserValidation",
                 Description = "To be deleted",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = project.Id
             };
             var response = await _client.PostAsJsonAsync("/api/testplan", createDto, _jsonOptions);
             response.EnsureSuccessStatusCode();
@@ -134,6 +179,19 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
+            // First create a project to satisfy foreign key constraint
+            var projectDto = new CreateProjectDto
+            {
+                Name = "TestPlan NonExistent Test Project",
+                Code = "TNTP001",
+                Description = "Project for TestPlan non-existent API test",
+                OwnerId = 1
+            };
+            var projectResponse = await _client.PostAsJsonAsync("/api/projects", projectDto, _jsonOptions);
+            projectResponse.EnsureSuccessStatusCode();
+            var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>(_jsonOptions);
+            Assert.NotNull(project);
+
             var updateDto = new TestPlanDto
             {
                 Id = 9999999,
@@ -141,7 +199,8 @@ namespace backend.ApiTests
                 Type = "UserValidation",
                 Description = "No such test plan",
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = project.Id
             };
             var resp = await _client.PutAsJsonAsync("/api/testplan/9999999", updateDto, _jsonOptions);
             Assert.False(resp.IsSuccessStatusCode);

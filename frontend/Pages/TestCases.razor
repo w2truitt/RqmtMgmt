@@ -1,160 +1,463 @@
 @page "/testcases"
+@page "/projects/{ProjectId:int}/testcases"
+@page "/testsuites/{TestSuiteId:int}/testcases"
+@page "/projects/{ProjectId:int}/testsuites/{TestSuiteId:int}/testcases"
 @attribute [Authorize]
 @using RqmtMgmtShared
 @inject ITestCaseService TestCaseService
 @inject ITestSuiteService TestSuiteService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<h3>Test Cases</h3>
-<button class="btn btn-success" @onclick="ShowAddForm">Add Test Case</button>
+<PageTitle>Test Cases</PageTitle>
 
-@if (testCases == null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Suite</th>
-                <th>Created By</th>
-                <th>Created At</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var tc in testCases)
-            {
-                <tr>
-                    <td data-testid="testcase-id-@tc.Id">@tc.Id</td>
-                    <td data-testid="testcase-title-@tc.Id">@tc.Title</td>
-                    <td data-testid="testcase-suite-@tc.Id">@tc.SuiteId</td>
-                    <td data-testid="testcase-created-by-@tc.Id">
-                        @if (tc.CreatedByUser != null)
-                        {
-                            <div>
-                                <strong>@tc.CreatedByUser.UserName</strong><br />
-                                <small class="text-muted">@tc.CreatedByUser.Email</small>
-                            </div>
-                        }
-                        else
-                        {
-                            <span class="text-muted">User ID: @tc.CreatedBy</span>
-                        }
-                    </td>
-                    <td data-testid="testcase-created-at-@tc.Id">@tc.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" @onclick="() => Edit(tc)">Edit</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(tc.Id)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="container-fluid">
+    @if (testSuite != null)
+    {
+        <!-- Test Suite Context Header -->
+        <div class="project-context-header mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item">
+                        <a href="/testsuites" class="text-decoration-none">
+                            <i class="bi bi-collection me-1"></i>Test Suites
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">@testSuite.Name</li>
+                    <li class="breadcrumb-item active" aria-current="page">Test Cases</li>
+                </ol>
+            </nav>
+            <h1 class="h4 mb-1">@testSuite.Name - Test Cases</h1>
+            <p class="text-muted mb-0">@(string.IsNullOrEmpty(testSuite.Description) ? "Test cases for this test suite" : testSuite.Description)</p>
+        </div>
+    }
+    else
+    {
+        <!-- Global Test Cases Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-list-check me-2"></i>Test Cases
+                    @if (ProjectId.HasValue)
+                    {
+                        <small class="text-muted">for Project @ProjectId</small>
+                    }
+            </h1>
+        </div>
+    }
 
-@if (showForm)
-{
-    <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@((editTestCase == null ? "Add" : "Edit")) Test Case</h5>
-                    <button type="button" class="close" @onclick="HideForm" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
+    <!-- Search Controls -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search test cases..." 
+                       @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+                <button class="btn btn-outline-secondary" type="button" @onclick="SearchTestCases">
+                    <i class="bi bi-search me-1"></i>Search
+                </button>
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                        <i class="bi bi-x-circle me-1"></i>Clear
                     </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input class="form-control" @bind="formModel.Title" />
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input class="form-control" @bind="formModel.Description" />
-                    </div>
-                    <div class="form-group">
-                        <label>Test Suite</label>
-                        <select class="form-control" @bind="formModel.SuiteId">
-                            <option value="">-- Select Suite --</option>
-                            @if (testSuites != null)
-                            {
-                                foreach (var suite in testSuites)
+                }
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="sortBy" @bind:after="SortTestCases">
+                <option value="title">Title</option>
+                <option value="created">Created Date</option>
+                <option value="suite">Test Suite</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-success w-100" @onclick="CreateNewTestCase">
+                <i class="bi bi-plus-circle me-1"></i>Add Test Case
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (pagedResult == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading test cases...</p>
+        </div>
+    }
+    else if (!pagedResult.Items.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-list-check fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Test Cases Found</h5>
+            <p class="text-muted mb-0">
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <span>No test cases match your current search for @(testSuite != null ? "this test suite" : "your search criteria").</span>
+                }
+                else
+                {
+                    <span>@(testSuite != null ? "This test suite doesn't have any test cases yet" : "No test cases found"). Get started by creating your first test case.</span>
+                }
+            </p>
+            <button class="btn btn-primary mt-3" @onclick="CreateNewTestCase">
+                <i class="bi bi-plus-circle me-1"></i>Create First Test Case
+            </button>
+        </div>
+    }
+    else
+    {
+        <!-- Test Cases Table -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" style="width: 80px;">ID</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Description</th>
+                                @if (testSuite == null)
                                 {
-                                    <option value="@suite.Id">@suite.Name</option>
+                                    <th scope="col" style="width: 150px;">Test Suite</th>
                                 }
+                                <th scope="col" style="width: 150px;">Created By</th>
+                                <th scope="col" style="width: 150px;">Created</th>
+                                <th scope="col" style="width: 200px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var testCase in pagedResult.Items)
+                            {
+                                <tr data-testid="testcase-row">
+                                    <td>
+                                        <span class="badge bg-light text-dark">@testCase.Id</span>
+                                    </td>
+                                    <td>
+                                        <strong>@testCase.Title</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(string.IsNullOrEmpty(testCase.Description) ? "No description" : testCase.Description)</span>
+                                    </td>
+                                    @if (testSuite == null)
+                                    {
+                                        <td>
+                                            <span class="badge bg-secondary">Suite @testCase.SuiteId</span>
+                                        </td>
+                                    }
+                                    <td>
+                                        @if (testCase.CreatedByUser != null)
+                                        {
+                                            <div>
+                                                <strong>@testCase.CreatedByUser.UserName</strong><br />
+                                                <small class="text-muted">@testCase.CreatedByUser.Email</small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">User @testCase.CreatedBy</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@testCase.CreatedAt.ToString("MMM d, yyyy")</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" @onclick="() => ViewTestCase(testCase.Id)" 
+                                                    title="View Test Case" data-testid="view-testcase">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="() => EditTestCase(testCase.Id)" 
+                                                    title="Edit Test Case" data-testid="edit-testcase">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" @onclick="() => ConfirmDeleteTestCase(testCase)" 
+                                                    title="Delete Test Case" data-testid="delete-testcase">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             }
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="SaveTestCase">Save</button>
-                    <button type="button" class="btn btn-secondary" @onclick="HideForm">Cancel</button>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="modal-backdrop show"></div>
+
+        <!-- Pagination -->
+        @if (pagedResult.TotalPages > 1)
+        {
+            <nav aria-label="Test cases pagination" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(pagedResult.PageNumber == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(pagedResult.PageNumber - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    </li>
+                    
+                    @for (int i = Math.Max(1, pagedResult.PageNumber - 2); i <= Math.Min(pagedResult.TotalPages, pagedResult.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == pagedResult.PageNumber ? "active" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                        </li>
+                    }
+                    
+                    <li class="page-item @(pagedResult.PageNumber == pagedResult.TotalPages ? "disabled" : "")">
+                        <button class="page-link" @onclick="() => GoToPage(pagedResult.PageNumber + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
 }
+</div>
 
 @code {
-    List<TestCaseDto>? testCases;
-    List<TestSuiteDto>? testSuites;
-    TestCaseDto formModel = new() { Title = string.Empty };
-    TestCaseDto? editTestCase = null;
-    bool showForm = false;
+    [Parameter] public int? TestSuiteId { get; set; }
+        [Parameter] public int? ProjectId { get; set; }
+    
+    private TestSuiteDto? testSuite;
+    private PagedResult<TestCaseDto>? pagedResult;
+    private string? errorMessage;
+    private string searchTerm = string.Empty;
+    private string sortBy = "title";
+    private int currentPage = 1;
+    private const int pageSize = 10;
 
     protected override async Task OnInitializedAsync()
     {
-        testCases = await TestCaseService.GetAllAsync();
-        testSuites = await TestSuiteService.GetAllAsync();
-    }
-
-    async Task Delete(int id)
-    {
-        if (await TestCaseService.DeleteAsync(id))
-            testCases = await TestCaseService.GetAllAsync();
-    }
-
-    void Edit(TestCaseDto tc)
-    {
-        formModel = new TestCaseDto
+        if (TestSuiteId.HasValue)
         {
-            Id = tc.Id,
-            Title = tc.Title,
-            Description = tc.Description,
-            SuiteId = tc.SuiteId
-            // Add more fields as needed
-        };
-        editTestCase = tc;
-        showForm = true;
-    }
-
-    void ShowAddForm()
-    {
-        formModel = new TestCaseDto { Title = string.Empty };
-        editTestCase = null;
-        showForm = true;
-    }
-
-    void HideForm()
-    {
-        showForm = false;
-    }
-
-    async Task SaveTestCase()
-    {
-        if (editTestCase != null)
-        {
-            await TestCaseService.UpdateAsync(formModel);
+            await LoadTestSuiteAndTestCases();
         }
+            else if (ProjectId.HasValue)
+            {
+                await LoadTestCases();
+            }
         else
         {
-            await TestCaseService.CreateAsync(formModel);
+            await LoadTestCases();
         }
-        testCases = await TestCaseService.GetAllAsync();
-        showForm = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Update test suite context when route parameter changes
+        if (TestSuiteId.HasValue && testSuite?.Id != TestSuiteId.Value)
+        {
+            await LoadTestSuiteAndTestCases();
+        }
+        else if (!TestSuiteId.HasValue && testSuite != null)
+        {
+            // Switched from test suite-specific to global view
+            testSuite = null;
+            await LoadTestCases();
+        }
+    }
+
+    private async Task LoadTestSuiteAndTestCases()
+    {
+        try
+        {
+            // Load test suite details first
+            var testSuiteData = await TestSuiteService.GetByIdAsync(TestSuiteId!.Value);
+            if (testSuiteData != null)
+            {
+                this.testSuite = testSuiteData;
+                
+                // Load test cases for this test suite
+                await LoadTestCases();
+            }
+            else
+            {
+                errorMessage = "Failed to load test suite";
+                Navigation.NavigateTo("/testsuites");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading test suite: {ex.Message}";
+            Console.WriteLine($"Error loading test suite {TestSuiteId}: {ex}");
+        }
+    }
+
+    private async Task LoadTestCases()
+    {
+        try
+        {
+            var request = new PaginationParameters
+            {
+                PageNumber = currentPage,
+                PageSize = pageSize,
+                SearchTerm = searchTerm,
+                SortBy = sortBy,
+                SuiteId = TestSuiteId // Filter by test suite if specified
+            };
+
+            PagedResult<TestCaseDto>? result;
+            
+            if (TestSuiteId.HasValue)
+            {
+                result = await TestCaseService.GetPagedByTestSuiteIdAsync(TestSuiteId.Value, request);
+            }
+                else if (ProjectId.HasValue)
+                {
+                    result = await TestCaseService.GetPagedByProjectIdAsync(ProjectId.Value, request);
+                }
+            else
+            {
+                result = await TestCaseService.GetPagedAsync(request);
+            }
+
+            if (result != null)
+            {
+                pagedResult = result;
+            }
+            else
+            {
+                errorMessage = "Failed to load test cases";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading test cases: {ex.Message}";
+            Console.WriteLine($"Error loading test cases: {ex}");
+        }
+    }
+
+    private async Task SearchTestCases()
+    {
+        currentPage = 1;
+        await LoadTestCases();
+    }
+
+    private async Task ClearSearch()
+    {
+        searchTerm = string.Empty;
+        currentPage = 1;
+        await LoadTestCases();
+    }
+
+    private async Task SortTestCases()
+    {
+        // Delegate to SearchTestCases
+        await SearchTestCases();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= (pagedResult?.TotalPages ?? 1))
+        {
+            currentPage = page;
+            await LoadTestCases();
+        }
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchTestCases();
+        }
+    }
+
+    private void CreateNewTestCase()
+    {
+        if (TestSuiteId.HasValue)
+        {
+            Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/new");
+        }
+            else if (ProjectId.HasValue)
+            {
+                Navigation.NavigateTo($"/projects/{ProjectId}/testcases/new");
+            }
+        else
+        {
+            Navigation.NavigateTo("/testcases/new");
+        }
+    }
+
+    private void ViewTestCase(int testCaseId)
+    {
+        if (TestSuiteId.HasValue)
+        {
+            Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/{testCaseId}");
+        }
+            else if (ProjectId.HasValue)
+            {
+                Navigation.NavigateTo($"/projects/{ProjectId}/testcases/{testCaseId}");
+            }
+        else
+        {
+            Navigation.NavigateTo($"/testcases/{testCaseId}");
+        }
+    }
+
+    private void EditTestCase(int testCaseId)
+    {
+        if (TestSuiteId.HasValue)
+        {
+            Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/{testCaseId}/edit");
+        }
+            else if (ProjectId.HasValue)
+            {
+                Navigation.NavigateTo($"/projects/{ProjectId}/testcases/{testCaseId}/edit");
+            }
+        else
+        {
+            Navigation.NavigateTo($"/testcases/{testCaseId}/edit");
+        }
+    }
+
+    private void ConfirmDeleteTestCase(TestCaseDto testCase)
+    {
+        // TODO: Implement delete confirmation modal
+        Console.WriteLine($"Delete test case {testCase.Id}: {testCase.Title}");
     }
 }
+
+<style>
+.project-context-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--bs-primary);
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.4rem;
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.75rem 0.5rem;
+}
+
+.page-link {
+    border: none;
+    color: var(--bs-primary);
+}
+
+.page-link:hover {
+    background-color: var(--bs-light);
+    color: var(--bs-primary);
+}
+
+.page-item.active .page-link {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+</style>

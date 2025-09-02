@@ -1,0 +1,56 @@
+@page "/testcases/{TestCaseId:int}/edit"
+@page "/testsuites/{TestSuiteId:int}/testcases/{TestCaseId:int}/edit"
+@page "/projects/{ProjectId:int}/testcases/{TestCaseId:int}/edit"
+@page "/projects/{ProjectId:int}/testsuites/{TestSuiteId:int}/testcases/{TestCaseId:int}/edit"
+@using RqmtMgmtShared
+@inject ITestCaseService TestCaseService
+@inject NavigationManager Navigation
+
+<h3>Edit Test Case</h3>
+
+@if (testCase == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading test case...</p>
+    </div>
+}
+else
+{
+    <TestCaseForm OnSaved="OnSaved" EditModel="testCase" SuiteId="TestSuiteId" />
+}
+
+@code {
+    [Parameter] public int TestCaseId { get; set; }
+    [Parameter] public int? TestSuiteId { get; set; }
+    [Parameter] public int? ProjectId { get; set; }
+
+    private TestCaseDto? testCase;
+
+    protected override async Task OnInitializedAsync()
+    {
+        testCase = await TestCaseService.GetByIdAsync(TestCaseId);
+    }
+
+    void OnSaved()
+    {
+        if (TestSuiteId.HasValue && ProjectId.HasValue)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/{TestSuiteId}/testcases");
+        }
+        else if (TestSuiteId.HasValue)
+        {
+            Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases");
+        }
+        else if (ProjectId.HasValue)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectId}/testcases");
+        }
+        else
+        {
+            Navigation.NavigateTo("/testcases");
+        }
+    }
+}

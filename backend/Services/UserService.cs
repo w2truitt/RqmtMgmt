@@ -31,7 +31,7 @@ namespace backend.Services
         /// <returns>A list of all users as DTOs with their role information.</returns>
         public async Task<List<UserDto>> GetAllAsync()
         {
-            var users = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToListAsync();
+            var users = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsNoTracking().ToListAsync();
             return users.Select(ToDto).ToList();
         }
 
@@ -74,24 +74,24 @@ namespace backend.Services
         /// <summary>
         /// Creates a new user with validation for email format and uniqueness.
         /// </summary>
-        /// <param name="dto">The user data to create.</param>
+        /// <param name="user">The user data to create.</param>
         /// <returns>The created user DTO if successful; otherwise, null.</returns>
-        public async Task<UserDto?> CreateAsync(UserDto dto)
+        public async Task<UserDto?> CreateAsync(UserDto user)
         {
             // Validate email format using built-in email validation
-            if (!IsValidEmail(dto.Email))
+            if (!IsValidEmail(user.Email))
                 return null;
 
             // Check for duplicate email to ensure uniqueness
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email);
             if (existingUser != null)
                 return null;
 
             // Validate username is not empty or whitespace
-            if (string.IsNullOrWhiteSpace(dto.UserName))
+            if (string.IsNullOrWhiteSpace(user.UserName))
                 return null;
 
-            var entity = FromDto(dto);
+            var entity = FromDto(user);
             _context.Users.Add(entity);
             await _context.SaveChangesAsync();
             
@@ -108,50 +108,65 @@ namespace backend.Services
         /// Updates an existing user with validation for email format and uniqueness.
         /// Also updates user role assignments.
         /// </summary>
-        /// <param name="dto">The user data to update.</param>
+        /// <param name="user">The user data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(UserDto dto)
+        public async Task<bool> UpdateAsync(UserDto user)
         {
-            var tracked = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == dto.Id);
+            var tracked = await _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == user.Id);
             if (tracked == null) return false;
 
+            if (!await ValidateUserUpdateAsync(user))
+                return false;
+
+            UpdateUserProperties(tracked, user);
+            await UpdateUserRolesAsync(tracked, user);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<bool> ValidateUserUpdateAsync(UserDto user)
+        {
             // Validate email format using built-in email validation
-            if (!IsValidEmail(dto.Email))
+            if (!IsValidEmail(user.Email))
                 return false;
 
             // Check for duplicate email (excluding current user)
-            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email && u.Id != dto.Id);
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == user.Email && u.Id != user.Id);
             if (existingUser != null)
                 return false;
 
             // Validate username is not empty or whitespace
-            if (string.IsNullOrWhiteSpace(dto.UserName))
+            if (string.IsNullOrWhiteSpace(user.UserName))
                 return false;
 
-            // Update basic user information
-            tracked.UserName = dto.UserName;
-            tracked.Email = dto.Email;
+            return true;
+        }
 
+        private static void UpdateUserProperties(User tracked, UserDto user)
+        {
+            tracked.UserName = user.UserName;
+            tracked.Email = user.Email;
+        }
+
+        private async Task UpdateUserRolesAsync(User tracked, UserDto user)
+        {
             // Update user roles if provided
-            if (dto.Roles != null)
-            {
-                // Remove existing roles
-                var currentRoles = tracked.UserRoles.ToList();
-                _context.UserRoles.RemoveRange(currentRoles);
+            if (user.Roles == null) return;
 
-                // Add new roles
-                foreach (var roleName in dto.Roles)
+            // Remove existing roles
+            var currentRoles = tracked.UserRoles.ToList();
+            _context.UserRoles.RemoveRange(currentRoles);
+
+            // Add new roles
+            foreach (var roleName in user.Roles)
+            {
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+                if (role != null)
                 {
-                    var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-                    if (role != null)
-                    {
-                        tracked.UserRoles.Add(new UserRole { UserId = dto.Id, RoleId = role.Id });
-                    }
+                    tracked.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
                 }
             }
-
-            await _context.SaveChangesAsync();
-            return true;
         }
 
         /// <summary>
@@ -228,9 +243,52 @@ namespace backend.Services
         }
 
         /// <summary>
+        /// Retrieves users with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing users and pagination metadata.</returns>
+        public async Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(u => u.UserName.Contains(parameters.SearchTerm) || 
+                                        u.Email.Contains(parameters.SearchTerm));
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply sorting
+            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToUpperInvariant() switch
+            {
+                "USERNAME" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
+                "EMAIL" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+                "CREATEDAT" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+                _ => query.OrderBy(u => u.UserName)
+            } : query.OrderBy(u => u.UserName);
+
+            // Apply pagination
+            var users = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<UserDto>
+            {
+                Items = users.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
         /// Validates email format using .NET's built-in MailAddress validation.
         /// </summary>
-        /// <param name="email">The email address to validate.</param>
+        /// <param name="EMAIL">The email address to validate.</param>
         /// <returns>True if the email format is valid; otherwise, false.</returns>
         private static bool IsValidEmail(string email)
         {
@@ -268,11 +326,11 @@ namespace backend.Services
         /// </summary>
         /// <param name="dto">The user DTO to convert.</param>
         /// <returns>A User entity with all properties mapped.</returns>
-        private static User FromDto(UserDto dto) => new User
+        private static User FromDto(UserDto user) => new User
         {
-            Id = dto.Id,
-            UserName = dto.UserName,
-            Email = dto.Email,
+            Id = user.Id,
+            UserName = user.UserName,
+            Email = user.Email,
             UserRoles = new List<UserRole>(),
             CreatedAt = DateTime.UtcNow
         };

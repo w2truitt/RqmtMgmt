@@ -67,8 +67,8 @@ public class DebugUsersPageStructure : AuthenticatedE2ETestBase
             
             // Check page content for user-related text
             var bodyText = await Page.TextContentAsync("body");
-            var hasUserText = bodyText?.ToLower().Contains("user") == true;
-            var hasManageText = bodyText?.ToLower().Contains("manage") == true;
+            var hasUserText = bodyText?.Contains("user", StringComparison.OrdinalIgnoreCase) == true;
+            var hasManageText = bodyText?.Contains("manage", StringComparison.OrdinalIgnoreCase) == true;
             _output.WriteLine($"Page contains 'user' text: {hasUserText}");
             _output.WriteLine($"Page contains 'manage' text: {hasManageText}");
             
@@ -104,7 +104,7 @@ public class DebugUsersPageStructure : AuthenticatedE2ETestBase
                 {
                     _output.WriteLine($"✅ Successfully accessed {path}");
                     var pageText = await Page.TextContentAsync("body");
-                    if (pageText?.ToLower().Contains("user") == true)
+                    if (pageText?.Contains("user", StringComparison.OrdinalIgnoreCase) == true)
                     {
                         _output.WriteLine($"✅ {path} contains user-related content");
                     }

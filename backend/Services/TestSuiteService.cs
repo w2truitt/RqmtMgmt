@@ -48,13 +48,20 @@ namespace backend.Services
         /// <summary>
         /// Creates a new test suite with the provided data.
         /// </summary>
-        /// <param name="dto">The test suite data to create.</param>
+        /// <param name="testSuite">The test suite data to create.</param>
         /// <returns>The created test suite DTO if successful; otherwise, null.</returns>
-        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto dto)
+        public async Task<TestSuiteDto?> CreateAsync(TestSuiteDto testSuite)
         {
-            var entity = FromDto(dto);
-            entity.CreatedBy = dto.CreatedBy;
-            entity.CreatedAt = dto.CreatedAt;
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(testSuite.Name))
+                return null;
+
+            if (testSuite.CreatedBy <= 0)
+                return null;
+
+            var entity = FromDto(testSuite);
+            entity.CreatedBy = testSuite.CreatedBy;
+            entity.CreatedAt = testSuite.CreatedAt;
             _context.TestSuites.Add(entity);
             await _context.SaveChangesAsync();
             
@@ -70,17 +77,17 @@ namespace backend.Services
         /// <summary>
         /// Updates an existing test suite with new data.
         /// </summary>
-        /// <param name="dto">The test suite data to update.</param>
+        /// <param name="testSuite">The test suite data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
-        public async Task<bool> UpdateAsync(TestSuiteDto dto)
+        public async Task<bool> UpdateAsync(TestSuiteDto testSuite)
         {
-            var tracked = await _context.TestSuites.FindAsync(dto.Id);
+            var tracked = await _context.TestSuites.FindAsync(testSuite.Id);
             if (tracked == null) return false;
             
-            tracked.Name = dto.Name;
-            tracked.Description = dto.Description;
-            tracked.CreatedBy = dto.CreatedBy;
-            tracked.CreatedAt = dto.CreatedAt;
+            tracked.Name = testSuite.Name;
+            tracked.Description = testSuite.Description;
+            tracked.CreatedBy = testSuite.CreatedBy;
+            tracked.CreatedAt = testSuite.CreatedAt;
             await _context.SaveChangesAsync();
             return true;
         }
@@ -97,6 +104,105 @@ namespace backend.Services
             _context.TestSuites.Remove(suite);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        /// <summary>
+        /// Retrieves test suites with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test suites and pagination metadata.</returns>
+        public async Task<PagedResult<TestSuiteDto>> GetPagedAsync(PaginationParameters parameters)
+        {
+            var query = _context.TestSuites
+                .Include(ts => ts.Project)
+                .Include(ts => ts.TestCases)
+                .AsQueryable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(ts => ts.Name.Contains(parameters.SearchTerm) || 
+                                        (ts.Description != null && ts.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Apply project filter if specified
+            if (parameters.ProjectId.HasValue)
+            {
+                query = query.Where(ts => ts.ProjectId == parameters.ProjectId.Value);
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var suites = await query
+                .OrderBy(ts => ts.Name)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestSuiteDto>
+            {
+                Items = suites.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
+        }
+
+        /// <summary>
+        /// Retrieves all test suites for a specific project.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <returns>A list of test suites for the specified project.</returns>
+        public async Task<List<TestSuiteDto>> GetByProjectIdAsync(int projectId)
+        {
+            var suites = await _context.TestSuites
+                .Include(ts => ts.Project)
+                .Include(ts => ts.TestCases)
+                .Where(ts => ts.ProjectId == projectId)
+                .ToListAsync();
+
+            return suites.Select(ToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves test suites for a specific project with pagination, filtering, and sorting capabilities.
+        /// </summary>
+        /// <param name="projectId">The unique identifier of the project.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, search term, and sorting options.</param>
+        /// <returns>A paginated result containing test suites for the project and pagination metadata.</returns>
+        public async Task<PagedResult<TestSuiteDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters)
+        {
+            var query = _context.TestSuites
+                .Include(ts => ts.Project)
+                .Include(ts => ts.TestCases)
+                .Where(ts => ts.ProjectId == projectId);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                query = query.Where(ts => ts.Name.Contains(parameters.SearchTerm) || 
+                                        (ts.Description != null && ts.Description.Contains(parameters.SearchTerm)));
+            }
+
+            // Get total count for pagination metadata
+            var totalItems = await query.CountAsync();
+
+            // Apply pagination
+            var suites = await query
+                .OrderBy(ts => ts.Name)
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<TestSuiteDto>
+            {
+                Items = suites.Select(ToDto).ToList(),
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize,
+                TotalItems = totalItems
+            };
         }
 
         /// <summary>
@@ -121,14 +227,14 @@ namespace backend.Services
         /// </summary>
         /// <param name="dto">The test suite DTO to convert.</param>
         /// <returns>A TestSuite entity with all properties mapped.</returns>
-        private static TestSuite FromDto(TestSuiteDto dto) => new TestSuite
+        private static TestSuite FromDto(TestSuiteDto testSuite) => new TestSuite
         {
-            Id = dto.Id,
-            Name = dto.Name,
-            Description = dto.Description,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = dto.CreatedAt,
-            ProjectId = dto.ProjectId
+            Id = testSuite.Id,
+            Name = testSuite.Name,
+            Description = testSuite.Description,
+            CreatedBy = testSuite.CreatedBy,
+            CreatedAt = testSuite.CreatedAt,
+            ProjectId = testSuite.ProjectId
         };
     }
 }
