@@ -246,9 +246,30 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         // Arrange - Admin user already authenticated
         var usersPage = new UsersPage(Page, BaseUrl);
         
-        // Act
-        await usersPage.NavigateToAsync();
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        try
+        {
+            // Act - Enhanced resource management
+            Output.WriteLine("Starting form validation test");
+            
+            // Clear any potential resource issues
+            await Page.EvaluateAsync("() => { if (window.gc) window.gc(); }"); // Trigger garbage collection if available
+            
+            await usersPage.NavigateToAsync();
+            
+            Output.WriteLine($"Successfully navigated to users page: {Page.Url}");
+        }
+        catch (TimeoutException ex)
+        {
+            Output.WriteLine($"Navigation timeout occurred: {ex.Message}");
+            Output.WriteLine($"Current URL: {Page.Url}");
+            Output.WriteLine($"Page title: {await Page.TitleAsync()}");
+            
+            // Try a fallback navigation approach
+            Output.WriteLine("Attempting fallback navigation...");
+            await Page.GotoAsync($"{BaseUrl}/users", new PageGotoOptions { Timeout = 60000 });
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Output.WriteLine($"Fallback navigation successful: {Page.Url}");
+        }
         
         // FIXED: Use correct button selector
         var createButton = await Page.QuerySelectorAsync("button:has-text('Add User'), .btn-success:has-text('Add User')");

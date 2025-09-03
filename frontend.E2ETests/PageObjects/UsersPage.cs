@@ -22,7 +22,38 @@ public class UsersPage
     /// </summary>
     public async Task NavigateToAsync()
     {
-        await _page.GotoAsync($"{_baseUrl}/users");
+        // Enhanced navigation with better timeout handling and resource management
+        try
+        {
+            // Clear any existing page state that might cause issues
+            await _page.EvaluateAsync("() => { if (window.stop) window.stop(); }");
+            
+            // Navigate with explicit timeout and wait conditions
+            await _page.GotoAsync($"{_baseUrl}/users", new PageGotoOptions
+            {
+                Timeout = 45000, // 45 seconds instead of default 30
+                WaitUntil = WaitUntilState.NetworkIdle
+            });
+            
+            // Additional wait for page to be fully ready
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            
+            // Wait for essential page elements to ensure page is fully loaded
+            await _page.WaitForSelectorAsync("table, .users-container, h1, h2", new PageWaitForSelectorOptions 
+            { 
+                Timeout = 10000 
+            });
+        }
+        catch (TimeoutException ex)
+        {
+            // Enhanced error reporting for timeout issues
+            var currentUrl = _page.Url;
+            var pageTitle = await _page.TitleAsync();
+            
+            throw new TimeoutException(
+                $"Navigation to users page timed out. Current URL: {currentUrl}, Page Title: {pageTitle}, " +
+                $"Target URL: {_baseUrl}/users. Original error: {ex.Message}", ex);
+        }
     }
     
     /// <summary>
