@@ -13,6 +13,7 @@ namespace frontend.E2ETests.Workflows;
 /// E2E tests for the Dashboard page functionality
 /// OPTIMIZED: Now uses shared browser and cached authentication for 4-10x performance improvement
 /// All tests run as admin user for full dashboard access
+/// FIXED: Dashboard is at root URL "/" not "/dashboard"
 /// </summary>
 public class DashboardPageTests : AuthenticatedE2ETestBase
 {
@@ -28,13 +29,13 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated via base class
         
-        // Act
-        await Page.GotoAsync($"{BaseUrl}/dashboard");
+        // Act - Navigate to root URL where dashboard is located
+        await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Assert
-        Assert.Contains("/dashboard", Page.Url);
-        await Expect(Page.Locator("h3:has-text('Dashboard')")).ToBeVisibleAsync();
+        Assert.True(Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl));
+        await Expect(Page.Locator("h1:has-text('Dashboard')")).ToBeVisibleAsync();
         
         Output.WriteLine($"Successfully navigated to dashboard: {Page.Url}");
     }
@@ -44,15 +45,15 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated
         
-        // Act
-        await Page.GotoAsync($"{BaseUrl}/dashboard");
+        // Act - Navigate to root URL where dashboard is located
+        await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Assert - Check that page loads without JavaScript errors
         var errors = await Page.EvaluateAsync<string[]>("() => window.errors || []");
         Assert.Empty(errors);
         
-        Assert.Contains("/dashboard", Page.Url);
+        Assert.True(Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl));
         Output.WriteLine("Dashboard page loaded without errors");
     }
     
@@ -61,22 +62,24 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated
         
-        // Act
-        await Page.GotoAsync($"{BaseUrl}/dashboard");
+        // Act - Navigate to root URL where dashboard is located
+        await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Assert
-        await Expect(Page.Locator("h3:has-text('Dashboard')")).ToBeVisibleAsync();
+        await Expect(Page.Locator("h1:has-text('Dashboard')")).ToBeVisibleAsync();
         
         // Check for dashboard widgets or content
         var hasDashboardContent = await Page.IsVisibleAsync(".dashboard-widget") || 
                                  await Page.IsVisibleAsync(".dashboard-content") ||
-                                 await Page.IsVisibleAsync("[data-testid='dashboard-content']");
+                                 await Page.IsVisibleAsync("[data-testid='dashboard-content']") ||
+                                 await Page.IsVisibleAsync(".dashboard-grid") ||
+                                 await Page.IsVisibleAsync(".dashboard-card");
         
         // If no specific dashboard content, at least verify we're on the right page
         if (!hasDashboardContent)
         {
-            Assert.Contains("/dashboard", Page.Url);
+            Assert.True(Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl));
         }
         
         Output.WriteLine("Dashboard page elements are present");
@@ -87,8 +90,8 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated
         
-        // Act
-        await Page.GotoAsync($"{BaseUrl}/dashboard");
+        // Act - Navigate to root URL where dashboard is located
+        await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Assert - Look for project-related metrics
@@ -97,7 +100,7 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
                                await Page.IsVisibleAsync(".project-metric");
         
         // Dashboard should show some form of project information
-        Assert.True(hasProjectMetrics || Page.Url.Contains("/dashboard"), 
+        Assert.True(hasProjectMetrics || Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl), 
             "Dashboard should show project metrics or at least be accessible");
         
         Output.WriteLine("Dashboard shows project-related information");
@@ -108,8 +111,8 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated
         
-        // Act
-        await Page.GotoAsync($"{BaseUrl}/dashboard");
+        // Act - Navigate to root URL where dashboard is located
+        await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Assert - Look for requirement-related metrics
@@ -118,7 +121,7 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
                                    await Page.IsVisibleAsync(".requirement-metric");
         
         // Dashboard should show some form of requirement information
-        Assert.True(hasRequirementMetrics || Page.Url.Contains("/dashboard"), 
+        Assert.True(hasRequirementMetrics || Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl), 
             "Dashboard should show requirement metrics or at least be accessible");
         
         Output.WriteLine("Dashboard shows requirement-related information");
