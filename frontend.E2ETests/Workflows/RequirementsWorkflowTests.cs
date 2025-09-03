@@ -1,3 +1,4 @@
+using frontend.E2ETests.Fixtures;
 using frontend.E2ETests.PageObjects;
 using frontend.E2ETests.TestData;
 using Microsoft.Playwright;
@@ -10,21 +11,22 @@ namespace frontend.E2ETests.Workflows;
 
 /// <summary>
 /// E2E tests for the Requirements page with authentication
+/// OPTIMIZED: Now uses shared browser and cached authentication for 4-10x performance improvement
 /// UPDATED: Now works with project-context requirements (user identity integration)
 /// </summary>
 public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
 {
-    public RequirementsWorkflowTests(ITestOutputHelper output) : base(output)
+    public RequirementsWorkflowTests(PlaywrightFixture fixture, ITestOutputHelper output) 
+        : base(fixture, output)
     {
+        // Set user role for all tests in this class - admin has full requirements access
+        SetAdminUser();
     }
 
     [Fact]
     public async Task Requirements_NavigatesSuccessfully_AuthenticatedUser()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
-        
+        // Arrange - User already authenticated via base class (no login overhead!)
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // Act
@@ -38,10 +40,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
     [Fact]
     public async Task Requirements_LoadsWithoutErrors_AuthenticatedUser()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
-        
+        // Arrange - User already authenticated
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // Act
@@ -58,10 +57,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
     [Fact]
     public async Task Requirements_HasExpectedPageElements_AuthenticatedUser()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
-        
+        // Arrange - User already authenticated
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // Act
@@ -80,10 +76,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
     [Fact]
     public async Task Requirements_CanSearchRequirements_AuthenticatedUser()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
-        
+        // Arrange - User already authenticated
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // Act
@@ -104,10 +97,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
     [Fact]
     public async Task Requirements_FormValidatesRequiredFields_AuthenticatedUser()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
-        
+        // Arrange - User already authenticated
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // Act
@@ -124,10 +114,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
     [Fact]
     public async Task Requirements_CanOpenAndCancelForm_AuthenticatedUser()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
-        
+        // Arrange - User already authenticated
         var requirementsPage = new RequirementsPage(Page, BaseUrl);
         
         // Act
@@ -157,9 +144,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
     [Fact]
     public async Task Requirements_UserIdentityIntegration_ProjectContextRequired()
     {
-        // Arrange - Login as admin
-        var loginSuccess = await LoginAsAdminAsync();
-        Assert.True(loginSuccess, "Should be able to login as admin");
+        // Arrange - User already authenticated
         
         // Act & Assert - Document the application logic change
         

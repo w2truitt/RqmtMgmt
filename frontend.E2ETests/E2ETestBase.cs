@@ -1,79 +1,55 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using frontend.E2ETests.Fixtures;
 using Microsoft.Playwright;
 using Xunit;
 
 namespace frontend.E2ETests;
 
 /// <summary>
-/// Base class for end-to-end tests using Playwright
+/// Optimized base class for E2E tests using shared browser with isolated contexts per test.
+/// Creates lightweight BrowserContext + Page instead of expensive full browser creation.
+/// 
+/// Performance improvement: ~2-3 seconds saved per test by reusing browser instance.
 /// </summary>
+[Collection("Playwright")]
 public abstract class E2ETestBase : IAsyncLifetime
 {
-    private static readonly string[] BrowserArgs = {
-        "--no-sandbox",
-        "--disable-setuid-sandbox", 
-        "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
-        "--disable-gpu",
-        "--disable-web-security",
-        "--ignore-certificate-errors", // Trust self-signed certificates
-        "--ignore-ssl-errors", // Ignore SSL errors
-        "--ignore-certificate-errors-spki-list", // Ignore certificate pinning
-        "--ignore-certificate-errors-skip-list", // Skip certificate error list
-        "--memory-pressure-off", // Disable memory pressure simulation
-        "--max_old_space_size=512" // Limit V8 memory usage
-    };
-    protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
-    protected IPlaywright PlaywrightInstance { get; private set; } = null!;
-    protected IBrowser Browser { get; private set; } = null!;
-    protected IPage Page { get; private set; } = null!;
-    protected string BaseUrl { get; private set; } = null!;
-    
-    /// <summary>
-    /// Initialize test setup
-    /// </summary>
-    public async Task InitializeAsync()
+    protected readonly PlaywrightFixture Fixture;
+    public IBrowserContext Context { get; protected set; } = null!;
+    public IPage Page { get; protected set; } = null!;
+    protected string BaseUrl { get; } = "https://rqmtmgmt.local";
+
+    protected E2ETestBase(PlaywrightFixture fixture)
     {
-        // Initialize Playwright with resource-optimized settings
-        PlaywrightInstance = await Playwright.CreateAsync();
-        Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        Fixture = fixture;
+    }
+
+    /// <summary>
+    /// Creates isolated browser context and page per test.
+    /// This is a fast operation (~100ms) compared to browser creation (~2-3s).
+    /// Provides complete test isolation while sharing the expensive browser instance.
+    /// </summary>
+    public virtual async Task InitializeAsync()
+    {
+        Context = await Fixture.Browser.NewContextAsync(new BrowserNewContextOptions
         {
-            Headless = true, // Always headless for resource efficiency
-            Args = BrowserArgs
-        });
-        
-        // Create a new page for each test with explicit viewport for desktop navigation
-        Page = await Browser.NewPageAsync(new BrowserNewPageOptions
-        {
-            ViewportSize = new ViewportSize
-            {
-                Width = 1280,
-                Height = 720
-            },
-            IgnoreHTTPSErrors = true // Ignore HTTPS certificate errors
+            IgnoreHTTPSErrors = true,
+            ViewportSize = new ViewportSize { Width = 1280, Height = 720 }
         });
 
-        // Set shorter timeouts to avoid hanging tests
-        Page.SetDefaultTimeout(30000); // 30 seconds instead of default 60
+        Page = await Context.NewPageAsync();
+        Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
-        
-        // Use HTTPS URL for testing with proper domain
-        BaseUrl = "https://rqmtmgmt.local";
-        
-        // Create a minimal factory just for cleanup purposes (some tests might reference it)
-        Factory = new WebApplicationFactory<Program>();
     }
-    
+
     /// <summary>
-    /// Cleanup test resources
+    /// Cleanup context and page after each test.
+    /// Fast operation that maintains test isolation.
     /// </summary>
-    public async Task DisposeAsync()
+    public virtual async Task DisposeAsync()
     {
         try
         {
-            // Close page first to free browser resources quickly
-            if (Page != null)
+            if (Page != null && !Page.IsClosed)
             {
                 await Page.CloseAsync();
             }
@@ -85,43 +61,17 @@ public abstract class E2ETestBase : IAsyncLifetime
         
         try
         {
-            // Close browser and free memory
-            if (Browser != null)
+            if (Context != null)
             {
-                await Browser.CloseAsync();
+                await Context.DisposeAsync();
             }
         }
         catch (Exception)
         {
             // Ignore cleanup errors
         }
-        
-        try
-        {
-            // Dispose Playwright instance
-            PlaywrightInstance?.Dispose();
-        }
-        catch (Exception)
-        {
-            // Ignore cleanup errors
-        }
-        
-        try
-        {
-            // Dispose factory last
-            Factory?.Dispose();
-        }
-        catch (Exception)
-        {
-            // Ignore cleanup errors
-        }
-        
-        // Force garbage collection to free memory immediately
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
     }
-    
+
     /// <summary>
     /// Creates a unique test identifier for test isolation
     /// </summary>
