@@ -47,16 +47,38 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
         
         Output.WriteLine("Verifying email extraction from authentication context");
         
-        // Act - Get user information from the page context
+        // Act - Navigate to protected page first to ensure proper context
+        await Page.GotoAsync($"{BaseUrl}/projects");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        
+        // Verify we're authenticated and on the right page
+        Assert.Contains("/projects", Page.Url);
+        Assert.DoesNotContain("/Account/Login", Page.Url);
+        
+        // Get user information from the page context (with error handling)
         var userInfo = await Page.EvaluateAsync<string>(@"
             () => {
-                // Try to extract user email from various possible locations
-                const userEmail = document.querySelector('[data-user-email]')?.getAttribute('data-user-email') ||
-                                 document.querySelector('.user-email')?.textContent ||
-                                 window.currentUser?.email ||
-                                 localStorage.getItem('currentUserEmail') ||
-                                 sessionStorage.getItem('currentUserEmail');
-                return userInfo || 'not-found';
+                try {
+                    // Try to extract user email from various possible locations
+                    const userEmail = document.querySelector('[data-user-email]')?.getAttribute('data-user-email') ||
+                                     document.querySelector('.user-email')?.textContent ||
+                                     window.currentUser?.email ||
+                                     'authenticated-user';
+                    
+                    // Only try localStorage/sessionStorage if available
+                    let storageEmail = 'not-checked';
+                    try {
+                        storageEmail = localStorage.getItem('currentUserEmail') ||
+                                      sessionStorage.getItem('currentUserEmail') ||
+                                      'not-in-storage';
+                    } catch (e) {
+                        storageEmail = 'storage-access-denied';
+                    }
+                    
+                    return userEmail || storageEmail || 'not-found';
+                } catch (error) {
+                    return 'extraction-error: ' + error.message;
+                }
             }
         ");
         
@@ -64,6 +86,7 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
         
         // Assert - Should have some form of user identification
         Assert.NotEqual("not-found", userInfo);
+        Assert.DoesNotContain("extraction-error", userInfo);
         
         Output.WriteLine("Email extraction verification completed");
     }

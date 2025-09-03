@@ -178,9 +178,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         await projectsPage.FillProjectFormAsync(
             name: projectName,
             code: $"E2E{testId}",
-            description: "Created by E2E test",
-            status: "Active",
-            ownerId: 1 // Admin user
+            description: "Created by E2E test"
         );
         
         await projectsPage.SaveProjectAsync();
@@ -212,9 +210,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         await projectsPage.FillProjectFormAsync(
             name: originalName,
             code: $"E2E{testId}",
-            description: "Created by E2E test",
-            status: "Active",
-            ownerId: 1
+            description: "Created by E2E test"
         );
         
         await projectsPage.SaveProjectAsync();
@@ -254,9 +250,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         await projectsPage.FillProjectFormAsync(
             name: projectName,
             code: $"E2E{testId}",
-            description: "Created by E2E test for deletion",
-            status: "Active",
-            ownerId: 1
+            description: "Created by E2E test for deletion"
         );
         
         await projectsPage.SaveProjectAsync();
@@ -293,9 +287,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         await projectsPage.FillProjectFormAsync(
             name: projectName,
             code: $"E2E{testId}",
-            description: "CRUD test project",
-            status: "Active",
-            ownerId: 1
+            description: "CRUD test project"
         );
         
         await projectsPage.SaveProjectAsync();
