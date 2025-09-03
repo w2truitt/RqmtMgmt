@@ -32,7 +32,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
         
         // Assert
         Assert.Contains("/requirements", Page.Url);
-        await Expect(Page.Locator("h3:has-text('Requirements')")).ToBeVisibleAsync();
+        await Expect(Page.Locator("h1:has-text('Requirements')")).ToBeVisibleAsync();
     }
     
     [Fact]
@@ -68,7 +68,7 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
         await requirementsPage.NavigateToAsync();
         
         // Assert
-        await Expect(Page.Locator("h3:has-text('Requirements')")).ToBeVisibleAsync();
+        await Expect(Page.Locator("h1:has-text('Requirements')")).ToBeVisibleAsync();
         
         // Check for requirements table or list
         var hasRequirementsDisplay = await Page.IsVisibleAsync("table") || 
@@ -141,8 +141,8 @@ public class RequirementsWorkflowTests : AuthenticatedE2ETestBase
             await createButton.ClickAsync();
             await Task.Delay(1000);
             
-            // Look for cancel button
-            var cancelButton = await Page.QuerySelectorAsync("button:has-text('Cancel'), [data-testid='cancel-button']");
+            // Look for cancel button using class selector first, then fallback
+            var cancelButton = await Page.QuerySelectorAsync("button.btn-secondary:has-text('Cancel'), button:has-text('Cancel')");
             if (cancelButton != null)
             {
                 await cancelButton.ClickAsync();

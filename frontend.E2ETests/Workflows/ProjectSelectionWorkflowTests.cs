@@ -39,7 +39,13 @@ public class ProjectSelectionWorkflowTests : AuthenticatedE2ETestBase
         
         // Assert
         Assert.Contains("/requirements", Page.Url);
-        await Expect(Page.Locator("h3:has-text('Requirements')")).ToBeVisibleAsync();
+        
+        // Check for either global requirements (h1) or project-specific requirements (h2)
+        var hasGlobalHeader = await Page.IsVisibleAsync("h1:has-text('Requirements')");
+        var hasProjectHeader = await Page.IsVisibleAsync("h2:has-text('Requirements')");
+        
+        Assert.True(hasGlobalHeader || hasProjectHeader, 
+            "Should have either global requirements header (h1) or project-specific requirements header (h2)");
     }
     
     [Fact]

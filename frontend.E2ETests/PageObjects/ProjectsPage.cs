@@ -126,7 +126,7 @@ public class ProjectsPage
     /// </summary>
     public async Task CancelFormAsync()
     {
-        await _page.ClickAsync("[data-testid='cancel-button']");
+        await _page.ClickAsync("button.btn-secondary:has-text('Cancel')");
     }
     
     /// <summary>

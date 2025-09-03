@@ -49,7 +49,8 @@ public class BasicProjectSelectionTests : AuthenticatedE2ETestBase
         
         // Assert
         Assert.Contains($"/projects/{projectId}/requirements", Page.Url);
-        await Expect(Page.Locator("h3:has-text('Requirements')")).ToBeVisibleAsync();
+        // Project-specific requirements page uses h2, not h1
+        await Expect(Page.Locator("h2:has-text('Requirements')")).ToBeVisibleAsync();
     }
     
     [Fact]
