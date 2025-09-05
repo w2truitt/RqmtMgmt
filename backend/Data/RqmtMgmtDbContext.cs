@@ -90,6 +90,12 @@ namespace backend.Data
                 .HasForeignKey(tc => tc.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<TestCase>()
+                .HasOne(tc => tc.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(tc => tc.UpdatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // TestSuite <-> User
             modelBuilder.Entity<TestSuite>()
                 .HasOne(ts => ts.Creator)

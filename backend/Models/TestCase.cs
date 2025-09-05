@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RqmtMgmtShared;
 
 namespace backend.Models
 {
@@ -29,6 +30,11 @@ namespace backend.Models
         public string? Description { get; set; }
 
         /// <summary>
+        /// Gets or sets the priority of the test case.
+        /// </summary>
+        public TestCasePriority Priority { get; set; }
+
+        /// <summary>
         /// Gets or sets the steps for executing the test case.
         /// </summary>
         public ICollection<TestStep> Steps { get; set; } = new List<TestStep>();
@@ -44,6 +50,16 @@ namespace backend.Models
         public DateTime CreatedAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the user who last updated this test case.
+        /// </summary>
+        public int? UpdatedBy { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp when this test case was last updated.
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
         /// Gets or sets the navigation property to the test suite.
         /// </summary>
         public TestSuite? Suite { get; set; }
@@ -52,6 +68,11 @@ namespace backend.Models
         /// Gets or sets the navigation property to the creator user.
         /// </summary>
         public User? Creator { get; set; }
+
+        /// <summary>
+        /// Gets or sets the navigation property to the user who last updated this test case.
+        /// </summary>
+        public User? UpdatedByUser { get; set; }
 
         /// <summary>
         /// Gets or sets the collection of links to test plans.
