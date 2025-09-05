@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using RqmtMgmtShared;
 
 namespace frontend.Services
@@ -10,6 +12,7 @@ namespace frontend.Services
     public class TestCasesDataService : ITestCaseService
     {
         private readonly HttpClient _http;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         /// <summary>
         /// Initializes a new instance of the TestCasesDataService with the specified HTTP client.
@@ -18,6 +21,11 @@ namespace frontend.Services
         public TestCasesDataService(HttpClient http)
         {
             _http = http;
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
         }
 
         /// <summary>
@@ -76,19 +84,27 @@ namespace frontend.Services
         /// <returns>A paginated result containing test cases and pagination metadata.</returns>
         public async Task<PagedResult<TestCaseDto>> GetPagedAsync(PaginationParameters parameters)
         {
-            var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
-            
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-                queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
-            
-            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
-                queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
-            
-            if (parameters.SortDescending)
-                queryString += "&sortDescending=true";
+            try
+            {
+                var queryString = $"?page={parameters.PageNumber}&pageSize={parameters.PageSize}";
+                
+                if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+                    queryString += $"&searchTerm={Uri.EscapeDataString(parameters.SearchTerm)}";
+                
+                if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+                    queryString += $"&sortBy={Uri.EscapeDataString(parameters.SortBy)}";
+                
+                if (parameters.SortDescending)
+                    queryString += "&sortDescending=true";
 
-            var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/TestCase/paged{queryString}");
-            return result ?? new PagedResult<TestCaseDto>();
+                var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/TestCase/paged{queryString}", _jsonOptions);
+                return result ?? new PagedResult<TestCaseDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetPagedAsync: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>

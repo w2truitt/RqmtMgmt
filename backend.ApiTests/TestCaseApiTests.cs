@@ -198,5 +198,33 @@ namespace backend.ApiTests
             var resp = await _client.DeleteAsync("/api/testcase/1/steps/9999999");
             Assert.Equal(System.Net.HttpStatusCode.NotFound, resp.StatusCode);
         }
+
+        [Fact]
+        public async Task CanGetPagedTestCasesWithPriorityEnum()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/testcase/paged?page=1&pageSize=10");
+            
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var rawJson = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Raw JSON Response: {rawJson}");
+            
+            var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<TestCaseDto>>(_jsonOptions);
+            Assert.NotNull(pagedResult);
+            Assert.NotNull(pagedResult.Items);
+            
+            // Check that we can deserialize TestCases with Priority enum
+            if (pagedResult.Items.Count > 0)
+            {
+                var firstTestCase = pagedResult.Items[0];
+                Console.WriteLine($"First TestCase Priority: {firstTestCase.Priority}");
+                // Priority should be a valid TestCasePriority enum value
+                Assert.True(Enum.IsDefined(typeof(TestCasePriority), firstTestCase.Priority));
+            }
+        }
     }
 }
