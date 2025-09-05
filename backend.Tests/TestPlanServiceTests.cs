@@ -107,35 +107,34 @@ namespace backend.Tests
             
             var result = await service.CreateAsync(testPlan);
             
-            // Service allows empty name - it's not validated at service level
-            Assert.NotNull(result);
-            Assert.Equal("", result.Name);
+            Assert.Null(result);
+            Assert.Empty(await db.TestPlans.ToListAsync());
         }
 
         [Fact]
-        public async Task CreateAsync_ThrowsException_WhenNameIsNull()
+        public async Task CreateAsync_ReturnsNull_WhenNameIsNull()
         {
-            using var db = GetDbContext(nameof(CreateAsync_ThrowsException_WhenNameIsNull));
+            using var db = GetDbContext(nameof(CreateAsync_ReturnsNull_WhenNameIsNull));
             var service = new TestPlanService(db);
             var testPlan = new TestPlanDto { Name = null!, Type = "UserValidation", Description = "Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
             
-            // Database enforces required name constraint
-            await Assert.ThrowsAsync<Microsoft.EntityFrameworkCore.DbUpdateException>(
-                () => service.CreateAsync(testPlan));
+            var result = await service.CreateAsync(testPlan);
+            
+            Assert.Null(result);
+            Assert.Empty(await db.TestPlans.ToListAsync());
         }
 
         [Fact]
-        public async Task CreateAsync_AllowsCreation_WhenCreatedByIsZero()
+        public async Task CreateAsync_ReturnsNull_WhenCreatedByIsInvalid()
         {
-            using var db = GetDbContext(nameof(CreateAsync_AllowsCreation_WhenCreatedByIsZero));
+            using var db = GetDbContext(nameof(CreateAsync_ReturnsNull_WhenCreatedByIsInvalid));
             var service = new TestPlanService(db);
             var testPlan = new TestPlanDto { Name = "Test Plan", Type = "UserValidation", Description = "Description", CreatedBy = 0, CreatedAt = DateTime.UtcNow };
             
             var result = await service.CreateAsync(testPlan);
             
-            // Service allows CreatedBy = 0 - validation not enforced at service level
-            Assert.NotNull(result);
-            Assert.Equal(0, result.CreatedBy);
+            Assert.Null(result);
+            Assert.Empty(await db.TestPlans.ToListAsync());
         }
 
         [Fact]
@@ -151,9 +150,9 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task UpdateAsync_AllowsUpdate_WhenNameIsEmpty()
+        public async Task UpdateAsync_ReturnsFalse_WhenNameIsEmpty()
         {
-            using var db = GetDbContext(nameof(UpdateAsync_AllowsUpdate_WhenNameIsEmpty));
+            using var db = GetDbContext(nameof(UpdateAsync_ReturnsFalse_WhenNameIsEmpty));
             var testPlan = new TestPlan { Name = "Original", Type = TestPlanType.UserValidation, Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
             db.TestPlans.Add(testPlan);
             await db.SaveChangesAsync();
@@ -162,11 +161,11 @@ namespace backend.Tests
             var dto = new TestPlanDto { Id = testPlan.Id, Name = "", Type = "UserValidation", Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
             var result = await service.UpdateAsync(dto);
             
-            // Service allows empty name updates
-            Assert.True(result);
+            Assert.False(result);
             
-            var updated = await db.TestPlans.FindAsync(testPlan.Id);
-            Assert.Equal("", updated!.Name);
+            // Verify original name is unchanged
+            var unchanged = await db.TestPlans.FindAsync(testPlan.Id);
+            Assert.Equal("Original", unchanged!.Name);
         }
 
         [Fact]
@@ -240,17 +239,16 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task CreateAsync_WithInvalidType_DefaultsToUserValidation()
+        public async Task CreateAsync_ReturnsNull_WithInvalidType()
         {
-            using var db = GetDbContext(nameof(CreateAsync_WithInvalidType_DefaultsToUserValidation));
+            using var db = GetDbContext(nameof(CreateAsync_ReturnsNull_WithInvalidType));
             var service = new TestPlanService(db);
             var dto = new TestPlanDto { Name = "Test Plan", Type = "InvalidType", Description = "Test Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
             
             var result = await service.CreateAsync(dto);
             
-            Assert.NotNull(result);
-            var saved = await db.TestPlans.FindAsync(result.Id);
-            Assert.Equal(TestPlanType.UserValidation, saved!.Type); // Should default to UserValidation
+            Assert.Null(result);
+            Assert.Empty(await db.TestPlans.ToListAsync());
         }
 
         [Fact]
@@ -286,6 +284,72 @@ namespace backend.Tests
             Assert.Contains(result, p => p.Name == "Plan 1");
             Assert.Contains(result, p => p.Name == "Plan 2");
             Assert.Contains(result, p => p.Name == "Plan 3");
+        }
+
+        [Fact]
+        public async Task CreateAsync_ReturnsNull_WhenTypeIsNull()
+        {
+            using var db = GetDbContext(nameof(CreateAsync_ReturnsNull_WhenTypeIsNull));
+            var service = new TestPlanService(db);
+            var dto = new TestPlanDto { Name = "Test Plan", Type = null!, Description = "Test Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            
+            var result = await service.CreateAsync(dto);
+            
+            Assert.Null(result);
+            Assert.Empty(await db.TestPlans.ToListAsync());
+        }
+
+        [Fact]
+        public async Task CreateAsync_ReturnsNull_WhenTypeIsEmpty()
+        {
+            using var db = GetDbContext(nameof(CreateAsync_ReturnsNull_WhenTypeIsEmpty));
+            var service = new TestPlanService(db);
+            var dto = new TestPlanDto { Name = "Test Plan", Type = "", Description = "Test Description", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            
+            var result = await service.CreateAsync(dto);
+            
+            Assert.Null(result);
+            Assert.Empty(await db.TestPlans.ToListAsync());
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ReturnsFalse_WhenCreatedByIsInvalid()
+        {
+            using var db = GetDbContext(nameof(UpdateAsync_ReturnsFalse_WhenCreatedByIsInvalid));
+            var testPlan = new TestPlan { Name = "Original", Type = TestPlanType.UserValidation, Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestPlans.Add(testPlan);
+            await db.SaveChangesAsync();
+            var service = new TestPlanService(db);
+            
+            var dto = new TestPlanDto { Id = testPlan.Id, Name = "Updated", Type = "UserValidation", Description = "Desc", CreatedBy = 0, CreatedAt = DateTime.UtcNow };
+            var result = await service.UpdateAsync(dto);
+            
+            Assert.False(result);
+            
+            // Verify original data is unchanged
+            var unchanged = await db.TestPlans.FindAsync(testPlan.Id);
+            Assert.Equal("Original", unchanged!.Name);
+            Assert.Equal(1, unchanged.CreatedBy);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ReturnsFalse_WhenTypeIsInvalid()
+        {
+            using var db = GetDbContext(nameof(UpdateAsync_ReturnsFalse_WhenTypeIsInvalid));
+            var testPlan = new TestPlan { Name = "Original", Type = TestPlanType.UserValidation, Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            db.TestPlans.Add(testPlan);
+            await db.SaveChangesAsync();
+            var service = new TestPlanService(db);
+            
+            var dto = new TestPlanDto { Id = testPlan.Id, Name = "Updated", Type = "InvalidType", Description = "Desc", CreatedBy = 1, CreatedAt = DateTime.UtcNow };
+            var result = await service.UpdateAsync(dto);
+            
+            Assert.False(result);
+            
+            // Verify original data is unchanged
+            var unchanged = await db.TestPlans.FindAsync(testPlan.Id);
+            Assert.Equal("Original", unchanged!.Name);
+            Assert.Equal(TestPlanType.UserValidation, unchanged.Type);
         }
     }
 }
