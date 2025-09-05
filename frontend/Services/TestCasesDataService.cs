@@ -33,7 +33,7 @@ namespace frontend.Services
         /// </summary>
         /// <returns>A list of all test cases with their test steps, or an empty list if the request fails.</returns>
         public async Task<List<TestCaseDto>> GetAllAsync()
-            => await _http.GetFromJsonAsync<List<TestCaseDto>>("/api/TestCase") ?? new();
+            => await _http.GetFromJsonAsync<List<TestCaseDto>>("/api/TestCase", _jsonOptions) ?? new();
 
         /// <summary>
         /// Retrieves a specific test case by its ID from the backend API including test steps.
@@ -41,7 +41,7 @@ namespace frontend.Services
         /// <param name="id">The unique identifier of the test case.</param>
         /// <returns>The test case if found; otherwise, null.</returns>
         public async Task<TestCaseDto?> GetByIdAsync(int id)
-            => await _http.GetFromJsonAsync<TestCaseDto>($"/api/TestCase/{id}");
+            => await _http.GetFromJsonAsync<TestCaseDto>($"/api/TestCase/{id}", _jsonOptions);
 
         /// <summary>
         /// Creates a new test case by sending a POST request to the backend API.
@@ -114,7 +114,7 @@ namespace frontend.Services
         /// <returns>A list of test cases for the test suite.</returns>
         public async Task<List<TestCaseDto>> GetByTestSuiteIdAsync(int testSuiteId)
         {
-            var result = await _http.GetFromJsonAsync<List<TestCaseDto>>($"/api/TestSuite/{testSuiteId}/testcases");
+            var result = await _http.GetFromJsonAsync<List<TestCaseDto>>($"/api/TestSuite/{testSuiteId}/testcases", _jsonOptions);
             return result ?? new List<TestCaseDto>();
         }
 
@@ -137,7 +137,7 @@ namespace frontend.Services
             if (parameters.SortDescending)
                 queryString += "&sortDescending=true";
 
-            var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/TestSuite/{testSuiteId}/testcases{queryString}");
+            var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/TestSuite/{testSuiteId}/testcases{queryString}", _jsonOptions);
             return result ?? new PagedResult<TestCaseDto>();
         }
 
@@ -161,7 +161,7 @@ namespace frontend.Services
                 if (parameters.SortDescending)
                     queryString += "&sortDescending=true";
 
-                var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/Projects/{projectId}/test-cases{queryString}");
+                var result = await _http.GetFromJsonAsync<PagedResult<TestCaseDto>>($"/api/Projects/{projectId}/test-cases{queryString}", _jsonOptions);
                 return result ?? new PagedResult<TestCaseDto>();
             }
     }
