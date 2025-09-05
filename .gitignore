@@ -34,7 +34,6 @@ frontend-coverage-report/
 TestResults/
 certs/
 keys/
-Migrations/
 publish/
 .sonarqube/
 backend.LoadTests/load-test-results/
