@@ -64,7 +64,7 @@
         </div>
     }
 
-    @if (pagedResult == null)
+    @if (projects == null)
     {
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -75,7 +75,7 @@
     }
     else
     {
-        @if (!pagedResult.Items.Any())
+        @if (!filteredProjects.Any())
         {
             <div class="text-center py-3 mb-3">
                 <i class="fas fa-folder fa-2x text-muted mb-2"></i>
@@ -109,7 +109,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var project in pagedResult.Items)
+                            @foreach (var project in filteredProjects)
                             {
                                 <tr data-testid="project-row">
                                     <td class="align-middle">@project.Id</td>
@@ -172,19 +172,16 @@
                     </table>
                 </div>
             </div>
-            
-            <!-- Pagination Controls -->
             <div class="card-footer bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <button class="btn btn-primary" @onclick="PreviousPage" disabled="@(!pagedResult.HasPreviousPage)">Previous</button>
-                        <span class="mx-3">Page @pagedResult.PageNumber of @pagedResult.TotalPages</span>
-                        <button class="btn btn-primary" @onclick="NextPage" disabled="@(!pagedResult.HasNextPage)">Next</button>
-                    </div>
-                    <div class="text-muted">
-                        Showing @pagedResult.FirstItemIndex - @pagedResult.LastItemIndex of @pagedResult.TotalItems projects
-                    </div>
-                </div>
+                <small class="text-muted">
+                    Showing @filteredProjects.Count of @projects.Count project@(projects.Count == 1 ? "" : "s")
+                    @if (projects.Any())
+                    {
+                        <span class="ms-3">Total Requirements: @projects.Sum(p => p.RequirementCount)</span>
+                        <span class="ms-3">Total Test Suites: @projects.Sum(p => p.TestSuiteCount)</span>
+                        <span class="ms-3">Total Test Plans: @projects.Sum(p => p.TestPlanCount)</span>
+                    }
+                </small>
             </div>
         </div>
     }
@@ -268,9 +265,11 @@
             </div>
         </div>
     </div>
-}@code {
-    private PagedResult<ProjectDto>? pagedResult;
-    private PaginationParameters paginationParams = new() { PageSize = 50 };
+}
+
+@code {
+    private List<ProjectDto>? projects;
+    private List<ProjectDto> filteredProjects = new();
     private List<UserDto>? users;
     private string searchTerm = string.Empty;
     private string filterStatus = string.Empty;
@@ -289,54 +288,35 @@
     private async Task InitializePageData()
     {
         await LoadCurrentUserAsync();
-        await LoadData();
+        await LoadProjects();
         await LoadUsers();
     }
 
-    private async Task LoadData()
+    private async Task LoadProjects()
     {
-        errorMessage = string.Empty; // Clear previous errors
         try
         {
-            // Set pagination parameters
-            paginationParams.SearchTerm = searchTerm;
-            paginationParams.SortBy = sortBy;
-            paginationParams.SortDescending = false;
-            
-            // Note: We'll need to handle status filtering through a custom parameter
-            // since PaginationParameters doesn't have status filtering built-in
-            var filter = new ProjectFilterDto 
-            { 
-                Page = paginationParams.PageNumber, 
-                PageSize = paginationParams.PageSize,
-                SearchTerm = paginationParams.SearchTerm,
-                SortBy = paginationParams.SortBy,
-                SortDescending = paginationParams.SortDescending
-            };
-            
-            pagedResult = await ProjectService.GetProjectsAsync(filter);
-            
-            // Apply client-side status filtering if needed (temporary solution)
-            if (!string.IsNullOrEmpty(filterStatus) && pagedResult != null)
-            {
-                if (Enum.TryParse<ProjectStatus>(filterStatus, out var status))
-                {
-                    var filteredItems = pagedResult.Items.Where(p => p.Status == status).ToList();
-                    pagedResult = new PagedResult<ProjectDto>
-                    {
-                        Items = filteredItems,
-                        PageNumber = pagedResult.PageNumber,
-                        PageSize = pagedResult.PageSize,
-                        TotalItems = filteredItems.Count // Note: This won't be accurate for pagination
-                    };
-                }
-            }
+            var projectsData = await FetchProjectsData();
+            projects = projectsData;
+            filteredProjects = projects;
+            ApplyFiltersAndSort();
         }
         catch (Exception ex)
         {
-            await Console.Error.WriteLineAsync($"Error loading projects: {ex.Message}");
-            errorMessage = "Could not load projects. Please try again later.";
+            HandleProjectLoadError(ex);
         }
+    }
+
+    private async Task<List<ProjectDto>> FetchProjectsData()
+    {
+        var filter = new ProjectFilterDto { Page = 1, PageSize = 1000 };
+        var result = await ProjectService.GetProjectsAsync(filter);
+        return result.Items;
+    }
+
+    private void HandleProjectLoadError(Exception ex)
+    {
+        errorMessage = $"Error loading projects: {ex.Message}";
     }
 
     private async Task LoadUsers()
@@ -347,26 +327,65 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading users: {ex.Message}";
+            HandleUserLoadError(ex);
         }
     }
 
-    private async Task PreviousPage()
+    private void HandleUserLoadError(Exception ex)
     {
-        if (pagedResult?.HasPreviousPage == true)
+        errorMessage = $"Error loading users: {ex.Message}";
+    }
+
+    private void ApplyFiltersAndSort()
+    {
+        if (projects == null) return;
+
+        filteredProjects = projects.ToList();
+        ApplySearchFilter();
+        ApplyStatusFilter();
+        ApplySorting();
+    }
+
+    private void ApplySearchFilter()
+    {
+        if (string.IsNullOrEmpty(searchTerm)) return;
+
+        filteredProjects = filteredProjects.Where(ProjectMatchesSearchTerm).ToList();
+    }
+
+    private bool ProjectMatchesSearchTerm(ProjectDto project)
+    {
+        return project.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+               project.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+               (!string.IsNullOrEmpty(project.Description) && project.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+               project.OwnerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ApplyStatusFilter()
+    {
+        if (string.IsNullOrEmpty(filterStatus)) return;
+
+        if (Enum.TryParse<ProjectStatus>(filterStatus, out var status))
         {
-            paginationParams.PageNumber--;
-            await LoadData();
+            filteredProjects = filteredProjects.Where(p => p.Status == status).ToList();
         }
     }
 
-    private async Task NextPage()
+    private void ApplySorting()
     {
-        if (pagedResult?.HasNextPage == true)
+        filteredProjects = GetSortedProjects();
+    }
+
+    private List<ProjectDto> GetSortedProjects()
+    {
+        return sortBy switch
         {
-            paginationParams.PageNumber++;
-            await LoadData();
-        }
+            "name" => filteredProjects.OrderBy(p => p.Name).ToList(),
+            "status" => filteredProjects.OrderBy(p => p.Status).ThenBy(p => p.Name).ToList(),
+            "created" => filteredProjects.OrderByDescending(p => p.CreatedAt).ToList(),
+            "owner" => filteredProjects.OrderBy(p => p.OwnerName).ThenBy(p => p.Name).ToList(),
+            _ => filteredProjects.OrderBy(p => p.Name).ToList()
+        };
     }
 
     private async Task OnSearchKeyPress(KeyboardEventArgs e)
@@ -379,27 +398,27 @@
 
     private async Task SearchProjects()
     {
-        paginationParams.PageNumber = 1; // Reset to first page when searching
-        await LoadData();
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
     }
 
     private async Task ClearSearch()
     {
         searchTerm = string.Empty;
-        paginationParams.PageNumber = 1;
-        await LoadData();
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
     }
 
     private async Task FilterProjects()
     {
-        paginationParams.PageNumber = 1; // Reset to first page when filtering
-        await LoadData();
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
     }
 
     private async Task SortProjects()
     {
-        paginationParams.PageNumber = 1; // Reset to first page when sorting
-        await LoadData();
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
     }
 
     private void ShowAddForm()
@@ -555,7 +574,7 @@
     private async Task CompleteProjectSave()
     {
         HideForm();
-        await LoadData();
+        await LoadProjects();
     }
 
     private void HandleProjectSaveError(Exception ex)
@@ -590,7 +609,7 @@
             var success = await ProjectService.DeleteProjectAsync(project.Id);
             if (success)
             {
-                await LoadData();
+                await LoadProjects();
             }
             else
             {

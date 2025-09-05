@@ -174,7 +174,7 @@ public abstract class E2ETestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Navigates to the projects page and selects the project from there
+    /// Navigates to the projects page and selects the project using search functionality
     /// </summary>
     /// <param name="projectName">Name of the project to select</param>
     private async Task NavigateToProjectsPageAndSelect(string projectName)
@@ -186,14 +186,39 @@ public abstract class E2ETestBase : IAsyncLifetime
         // Wait for projects to load
         await Page.WaitForTimeoutAsync(2000);
         
-        // Try to find and click the project
+        // First try to find project on current page
+        if (await TrySelectProjectOnCurrentPage(projectName))
+        {
+            return;
+        }
+        
+        // If not found, use search to locate the project
+        await SearchForProject(projectName);
+        
+        // Try to select the project after search
+        if (await TrySelectProjectOnCurrentPage(projectName))
+        {
+            return;
+        }
+        
+        throw new Exception($"Could not find project '{projectName}' on the projects page, even after searching");
+    }
+
+    /// <summary>
+    /// Attempts to find and select a project on the current projects page
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    /// <returns>True if project was found and selected, false otherwise</returns>
+    private async Task<bool> TrySelectProjectOnCurrentPage(string projectName)
+    {
         var projectStrategies = new[]
         {
             $"a:has-text('{projectName}')",
             $"button:has-text('{projectName}')",
             $".project-card:has-text('{projectName}')",
             $".project-item:has-text('{projectName}')",
-            $"[data-project-name='{projectName}']"
+            $"[data-project-name='{projectName}']",
+            $"[data-testid='project-name-link-{projectName}']"
         };
 
         foreach (var strategy in projectStrategies)
@@ -205,7 +230,7 @@ public abstract class E2ETestBase : IAsyncLifetime
                 {
                     await projectElement.First.ClickAsync();
                     await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-                    return;
+                    return true;
                 }
             }
             catch (Exception)
@@ -214,7 +239,44 @@ public abstract class E2ETestBase : IAsyncLifetime
             }
         }
         
-        throw new Exception($"Could not find project '{projectName}' on the projects page");
+        return false;
+    }
+
+    /// <summary>
+    /// Uses the search functionality to find a specific project
+    /// </summary>
+    /// <param name="projectName">Name of the project to search for</param>
+    private async Task SearchForProject(string projectName)
+    {
+        try
+        {
+            // Find and use the search input
+            var searchInput = Page.Locator("[data-testid='search-input']");
+            if (await searchInput.CountAsync() > 0)
+            {
+                await searchInput.FillAsync(projectName);
+                
+                // Click the search button
+                var searchButton = Page.Locator("button:has(.fa-search)");
+                if (await searchButton.CountAsync() > 0)
+                {
+                    await searchButton.ClickAsync();
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Page.WaitForTimeoutAsync(1000); // Give time for search results to load
+                }
+                else
+                {
+                    // Fallback: press Enter in search input
+                    await searchInput.PressAsync("Enter");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Page.WaitForTimeoutAsync(1000);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error searching for project '{projectName}': {ex.Message}");
+        }
     }
 
     /// <summary>
