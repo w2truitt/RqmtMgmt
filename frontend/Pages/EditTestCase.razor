@@ -2,6 +2,7 @@
 @page "/testsuites/{TestSuiteId:int}/testcases/{TestCaseId:int}/edit"
 @page "/projects/{ProjectId:int}/testcases/{TestCaseId:int}/edit"
 @page "/projects/{ProjectId:int}/testsuites/{TestSuiteId:int}/testcases/{TestCaseId:int}/edit"
+@attribute [Authorize]
 @using RqmtMgmtShared
 @inject ITestCaseService TestCaseService
 @inject NavigationManager Navigation
