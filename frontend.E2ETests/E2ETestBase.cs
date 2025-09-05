@@ -113,7 +113,8 @@ public abstract class E2ETestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Selects an existing static project instead of creating a new one
+    /// Selects an existing static project instead of creating a new one.
+    /// Updated to handle the recent projects functionality by navigating to projects page if needed.
     /// </summary>
     /// <param name="projectIndex">Index of the static project (0-3)</param>
     protected async Task SelectExistingProject(int projectIndex = 0)
@@ -124,28 +125,96 @@ public abstract class E2ETestBase : IAsyncLifetime
         await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        // Click the project selector to open dropdown
-        await ClickProjectSelector();
+        // Try to select project from dropdown first (recent projects)
+        if (await TrySelectProjectFromDropdown(project.Name))
+        {
+            return;
+        }
         
-        // Wait for dropdown to appear
-        await Page.WaitForTimeoutAsync(1000);
+        // If not found in recent projects, navigate to projects page and select from there
+        await NavigateToProjectsPageAndSelect(project.Name);
+    }
+
+    /// <summary>
+    /// Attempts to select a project from the project selector dropdown
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    /// <returns>True if project was found and selected, false otherwise</returns>
+    private async Task<bool> TrySelectProjectFromDropdown(string projectName)
+    {
+        try
+        {
+            // Click the project selector to open dropdown
+            await ClickProjectSelector();
+            
+            // Wait for dropdown to appear
+            await Page.WaitForTimeoutAsync(1000);
+            
+            // Force Bootstrap dropdowns to be visible using JavaScript
+            await Page.EvaluateAsync(@"
+                const dropdowns = document.querySelectorAll('.dropdown-menu');
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.add('show');
+                    dropdown.style.display = 'block';
+                    dropdown.style.position = 'static';
+                    dropdown.style.transform = 'none';
+                });
+            ");
+            
+            // Wait for changes to take effect
+            await Page.WaitForTimeoutAsync(500);
+            
+            // Try to find and select the project
+            return await TrySelectProjectFromCurrentDropdown(projectName);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Navigates to the projects page and selects the project from there
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    private async Task NavigateToProjectsPageAndSelect(string projectName)
+    {
+        // Navigate to projects page
+        await Page.GotoAsync($"{BaseUrl}/projects");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        // Force Bootstrap dropdowns to be visible using JavaScript
-        await Page.EvaluateAsync(@"
-            const dropdowns = document.querySelectorAll('.dropdown-menu');
-            dropdowns.forEach(dropdown => {
-                dropdown.classList.add('show');
-                dropdown.style.display = 'block';
-                dropdown.style.position = 'static';
-                dropdown.style.transform = 'none';
-            });
-        ");
+        // Wait for projects to load
+        await Page.WaitForTimeoutAsync(2000);
         
-        // Wait for changes to take effect
-        await Page.WaitForTimeoutAsync(500);
+        // Try to find and click the project
+        var projectStrategies = new[]
+        {
+            $"a:has-text('{projectName}')",
+            $"button:has-text('{projectName}')",
+            $".project-card:has-text('{projectName}')",
+            $".project-item:has-text('{projectName}')",
+            $"[data-project-name='{projectName}']"
+        };
+
+        foreach (var strategy in projectStrategies)
+        {
+            try
+            {
+                var projectElement = Page.Locator(strategy);
+                if (await projectElement.CountAsync() > 0)
+                {
+                    await projectElement.First.ClickAsync();
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+        }
         
-        // Select the project by name
-        await SelectProjectByName(project.Name);
+        throw new Exception($"Could not find project '{projectName}' on the projects page");
     }
 
     /// <summary>
@@ -179,10 +248,11 @@ public abstract class E2ETestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Selects a project by name from the dropdown
+    /// Attempts to select a project from the currently visible dropdown items
     /// </summary>
     /// <param name="projectName">Name of the project to select</param>
-    private async Task SelectProjectByName(string projectName)
+    /// <returns>True if project was found and selected, false otherwise</returns>
+    private async Task<bool> TrySelectProjectFromCurrentDropdown(string projectName)
     {
         // Try multiple strategies to find the project
         var strategies = new[]
@@ -220,7 +290,7 @@ public abstract class E2ETestBase : IAsyncLifetime
                         await projectItem.First.EvaluateAsync("element => element.click()");
                     }
                     await Page.WaitForTimeoutAsync(1000);
-                    return;
+                    return true;
                 }
             }
             catch (Exception)
@@ -229,6 +299,6 @@ public abstract class E2ETestBase : IAsyncLifetime
             }
         }
         
-        throw new Exception($"Could not find project '{projectName}' in dropdown");
+        return false;
     }
 }
