@@ -114,39 +114,66 @@ namespace backend.Services
                 TotalRequirements = requirementStats.Sum(s => s.Count)
             };
 
-            // Group by status for detailed breakdown
-            var statusGroups = requirementStats.GroupBy(s => s.Status);
-            foreach (var group in statusGroups)
-            {
-                var count = group.Sum(g => g.Count);
-                stats.ByStatus[group.Key] = count;
-
-                // Map to individual status properties
-                switch (group.Key)
-                {
-                    case RequirementStatus.Draft:
-                        stats.DraftRequirements = count;
-                        break;
-                    case RequirementStatus.Approved:
-                        stats.ApprovedRequirements = count;
-                        break;
-                    case RequirementStatus.Implemented:
-                        stats.ImplementedRequirements = count;
-                        break;
-                    case RequirementStatus.Verified:
-                        stats.VerifiedRequirements = count;
-                        break;
-                }
-            }
-
-            // Group by type for type distribution
-            var typeGroups = requirementStats.GroupBy(s => s.Type);
-            foreach (var group in typeGroups)
-            {
-                stats.ByType[group.Key] = group.Sum(g => g.Count);
-            }
+            // Process status and type statistics
+            PopulateStatusStatistics(stats, requirementStats);
+            PopulateTypeStatistics(stats, requirementStats);
 
             return stats;
+        }
+
+        /// <summary>
+        /// Populates requirement statistics grouped by status.
+        /// </summary>
+        /// <param name="stats">The stats object to populate.</param>
+        /// <param name="requirementStats">The raw requirement statistics data.</param>
+        private static void PopulateStatusStatistics(RequirementStatsDto stats, IEnumerable<object> requirementStats)
+        {
+            var statusGroups = requirementStats.Cast<dynamic>().GroupBy(s => (RequirementStatus)s.Status);
+            foreach (var group in statusGroups)
+            {
+                var count = group.Sum(g => (int)g.Count);
+                stats.ByStatus[group.Key] = count;
+                MapStatusToProperty(stats, group.Key, count);
+            }
+        }
+
+        /// <summary>
+        /// Maps status counts to individual properties on the stats object.
+        /// </summary>
+        /// <param name="stats">The stats object to update.</param>
+        /// <param name="status">The requirement status.</param>
+        /// <param name="count">The count for this status.</param>
+        private static void MapStatusToProperty(RequirementStatsDto stats, RequirementStatus status, int count)
+        {
+            switch (status)
+            {
+                case RequirementStatus.Draft:
+                    stats.DraftRequirements = count;
+                    break;
+                case RequirementStatus.Approved:
+                    stats.ApprovedRequirements = count;
+                    break;
+                case RequirementStatus.Implemented:
+                    stats.ImplementedRequirements = count;
+                    break;
+                case RequirementStatus.Verified:
+                    stats.VerifiedRequirements = count;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Populates requirement statistics grouped by type.
+        /// </summary>
+        /// <param name="stats">The stats object to populate.</param>
+        /// <param name="requirementStats">The raw requirement statistics data.</param>
+        private static void PopulateTypeStatistics(RequirementStatsDto stats, IEnumerable<object> requirementStats)
+        {
+            var typeGroups = requirementStats.Cast<dynamic>().GroupBy(s => (RequirementType)s.Type);
+            foreach (var group in typeGroups)
+            {
+                stats.ByType[group.Key] = group.Sum(g => (int)g.Count);
+            }
         }
 
         /// <summary>

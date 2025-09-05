@@ -54,7 +54,7 @@ namespace RqmtMgmtShared
         public DateTime CreatedAt { get; set; }
 
         /// <summary>
-        /// Gets or sets the details of the user who created this test case.
+        /// Gets or sets the details of the user who last updated this test case.
         /// </summary>
         public UserDto? UpdatedBy { get; set; }
 

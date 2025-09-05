@@ -317,7 +317,15 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
                         Assert.True(hasUpdatedDescription, 
                             $"Updated description '{updatedDescription}' should be visible on the test case view page. Page content length: {pageContent?.Length ?? 0}");
                         
+                        // Check if "Updated By" information is displayed
+                        var hasUpdatedByInfo = pageContent != null && pageContent.Contains("Updated By");
+                        
+                        // Assert that Updated By information is visible
+                        Assert.True(hasUpdatedByInfo, 
+                            $"Updated By information should be visible on the test case view page after editing. Page content includes: {(pageContent?.Contains("Updated:") == true ? "Updated timestamp found" : "No updated timestamp found")}");
+                        
                         Output.WriteLine("✅ Test case edit functionality verified - updated description is visible");
+                        Output.WriteLine($"✅ Updated By information {(hasUpdatedByInfo ? "is" : "is NOT")} displayed on the page");
                     }
                     else
                     {

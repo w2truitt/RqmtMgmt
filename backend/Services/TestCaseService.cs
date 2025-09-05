@@ -33,6 +33,7 @@ namespace backend.Services
             var testCases = await _context.TestCases
                 .Include(tc => tc.Steps)
                 .Include(tc => tc.Creator)
+                .Include(tc => tc.UpdatedByUser)
                 .ToListAsync();
             return testCases.Select(ToDto).ToList();
         }
@@ -47,6 +48,7 @@ namespace backend.Services
             var testCase = await _context.TestCases
                 .Include(tc => tc.Steps)
                 .Include(tc => tc.Creator)
+                .Include(tc => tc.UpdatedByUser)
                 .FirstOrDefaultAsync(tc => tc.Id == id);
             return testCase == null ? null : ToDto(testCase);
         }

@@ -264,5 +264,192 @@ namespace backend.Tests
 
             await db.SaveChangesAsync();
         }
+
+        [Fact]
+        public async Task GetRequirementStatsAsync_ReturnsCorrectCounts_WithVariousStatuses()
+        {
+            // Arrange
+            using var db = GetDbContext(nameof(GetRequirementStatsAsync_ReturnsCorrectCounts_WithVariousStatuses));
+            var now = DateTime.UtcNow;
+            
+            db.Requirements.AddRange(
+                new Requirement { Id = 1, Title = "Draft Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 2, Title = "Draft Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 3, Title = "Approved Req", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 4, Title = "Implemented Req", Type = RequirementType.PRS, Status = RequirementStatus.Implemented, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 5, Title = "Verified Req", Type = RequirementType.SRS, Status = RequirementStatus.Verified, CreatedBy = 1, CreatedAt = now }
+            );
+            await db.SaveChangesAsync();
+            
+            var service = new DashboardService(db);
+
+            // Act
+            var result = await service.GetRequirementStatsAsync();
+
+            // Assert
+            Assert.Equal(5, result.TotalRequirements);
+            Assert.Equal(2, result.DraftRequirements);
+            Assert.Equal(1, result.ApprovedRequirements);
+            Assert.Equal(1, result.ImplementedRequirements);
+            Assert.Equal(1, result.VerifiedRequirements);
+            
+            Assert.Equal(2, result.ByStatus[RequirementStatus.Draft]);
+            Assert.Equal(1, result.ByStatus[RequirementStatus.Approved]);
+            Assert.Equal(1, result.ByStatus[RequirementStatus.Implemented]);
+            Assert.Equal(1, result.ByStatus[RequirementStatus.Verified]);
+            
+            Assert.Equal(3, result.ByType[RequirementType.SRS]);
+            Assert.Equal(2, result.ByType[RequirementType.PRS]);
+        }
+
+        [Fact]
+        public async Task GetRequirementStatsAsync_ReturnsZeroStats_WithEmptyDatabase()
+        {
+            // Arrange
+            using var db = GetDbContext(nameof(GetRequirementStatsAsync_ReturnsZeroStats_WithEmptyDatabase));
+            var service = new DashboardService(db);
+
+            // Act
+            var result = await service.GetRequirementStatsAsync();
+
+            // Assert
+            Assert.Equal(0, result.TotalRequirements);
+            Assert.Equal(0, result.DraftRequirements);
+            Assert.Equal(0, result.ApprovedRequirements);
+            Assert.Equal(0, result.ImplementedRequirements);
+            Assert.Equal(0, result.VerifiedRequirements);
+            Assert.Empty(result.ByStatus);
+            Assert.Empty(result.ByType);
+        }
+
+        [Fact]
+        public async Task GetTestManagementStatsAsync_ReturnsCorrectCounts()
+        {
+            // Arrange
+            using var db = GetDbContext(nameof(GetTestManagementStatsAsync_ReturnsCorrectCounts));
+            var now = DateTime.UtcNow;
+            
+            // Add test suites
+            db.TestSuites.AddRange(
+                new TestSuite { Id = 1, Name = "Suite 1", Description = "Test Suite 1", CreatedBy = 1, CreatedAt = now },
+                new TestSuite { Id = 2, Name = "Suite 2", Description = "Test Suite 2", CreatedBy = 1, CreatedAt = now }
+            );
+            
+            // Add test plans
+            db.TestPlans.AddRange(
+                new TestPlan { Id = 1, Name = "Plan 1", Description = "Test Plan 1", CreatedBy = 1, CreatedAt = now },
+                new TestPlan { Id = 2, Name = "Plan 2", Description = "Test Plan 2", CreatedBy = 1, CreatedAt = now },
+                new TestPlan { Id = 3, Name = "Plan 3", Description = "Test Plan 3", CreatedBy = 1, CreatedAt = now }
+            );
+            
+            // Add test cases
+            db.TestCases.AddRange(
+                new TestCase { Id = 1, Title = "Case 1", Description = "Test Case 1", SuiteId = 1, CreatedBy = 1, CreatedAt = now },
+                new TestCase { Id = 2, Title = "Case 2", Description = "Test Case 2", SuiteId = 1, CreatedBy = 1, CreatedAt = now },
+                new TestCase { Id = 3, Title = "Case 3", Description = "Test Case 3", SuiteId = 2, CreatedBy = 1, CreatedAt = now },
+                new TestCase { Id = 4, Title = "Case 4", Description = "Test Case 4", SuiteId = 2, CreatedBy = 1, CreatedAt = now }
+            );
+            
+            // Add requirements for coverage calculation
+            db.Requirements.AddRange(
+                new Requirement { Id = 1, Title = "Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
+            );
+            
+            // Add requirement-test case links for coverage
+            db.RequirementTestCaseLinks.AddRange(
+                new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 1 },
+                new RequirementTestCaseLink { RequirementId = 2, TestCaseId = 2 }
+            );
+            
+            await db.SaveChangesAsync();
+            var service = new DashboardService(db);
+
+            // Act
+            var result = await service.GetTestManagementStatsAsync();
+
+            // Assert
+            Assert.Equal(2, result.TotalTestSuites);
+            Assert.Equal(3, result.TotalTestPlans);
+            Assert.Equal(4, result.TotalTestCases);
+            Assert.Equal(100.0, result.TestCoveragePercentage); // 2 requirements, 2 covered = 100%
+        }
+
+        [Fact]
+        public async Task GetTestManagementStatsAsync_CalculatesCorrectCoverage_WithPartialCoverage()
+        {
+            // Arrange
+            using var db = GetDbContext(nameof(GetTestManagementStatsAsync_CalculatesCorrectCoverage_WithPartialCoverage));
+            var now = DateTime.UtcNow;
+            
+            // Add requirements
+            db.Requirements.AddRange(
+                new Requirement { Id = 1, Title = "Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 3, Title = "Req 3", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 4, Title = "Req 4", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
+            );
+            
+            // Add test cases
+            db.TestCases.AddRange(
+                new TestCase { Id = 1, Title = "Case 1", Description = "Test Case 1", CreatedBy = 1, CreatedAt = now },
+                new TestCase { Id = 2, Title = "Case 2", Description = "Test Case 2", CreatedBy = 1, CreatedAt = now }
+            );
+            
+            // Add partial coverage - only 2 out of 4 requirements covered
+            db.RequirementTestCaseLinks.AddRange(
+                new RequirementTestCaseLink { RequirementId = 1, TestCaseId = 1 },
+                new RequirementTestCaseLink { RequirementId = 2, TestCaseId = 2 }
+            );
+            
+            await db.SaveChangesAsync();
+            var service = new DashboardService(db);
+
+            // Act
+            var result = await service.GetTestManagementStatsAsync();
+
+            // Assert
+            Assert.Equal(50.0, result.TestCoveragePercentage); // 2 out of 4 requirements covered = 50%
+        }
+
+        [Fact]
+        public async Task GetTestManagementStatsAsync_ReturnsZeroCoverage_WithNoLinks()
+        {
+            // Arrange
+            using var db = GetDbContext(nameof(GetTestManagementStatsAsync_ReturnsZeroCoverage_WithNoLinks));
+            var now = DateTime.UtcNow;
+            
+            // Add requirements but no test case links
+            db.Requirements.AddRange(
+                new Requirement { Id = 1, Title = "Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
+            );
+            
+            await db.SaveChangesAsync();
+            var service = new DashboardService(db);
+
+            // Act
+            var result = await service.GetTestManagementStatsAsync();
+
+            // Assert
+            Assert.Equal(0.0, result.TestCoveragePercentage);
+        }
+
+        [Fact]
+        public async Task GetTestManagementStatsAsync_ReturnsZeroCoverage_WithNoRequirements()
+        {
+            // Arrange
+            using var db = GetDbContext(nameof(GetTestManagementStatsAsync_ReturnsZeroCoverage_WithNoRequirements));
+            var service = new DashboardService(db);
+
+            // Act
+            var result = await service.GetTestManagementStatsAsync();
+
+            // Assert
+            Assert.Equal(0.0, result.TestCoveragePercentage);
+            Assert.Equal(0, result.TotalTestSuites);
+            Assert.Equal(0, result.TotalTestPlans);
+            Assert.Equal(0, result.TotalTestCases);
+        }
     }
 }

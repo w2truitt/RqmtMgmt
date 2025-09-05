@@ -249,32 +249,15 @@ namespace backend.Services
         /// <returns>A paginated result containing users and pagination metadata.</returns>
         public async Task<PagedResult<UserDto>> GetPagedAsync(PaginationParameters parameters)
         {
-            var query = _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsQueryable();
-
-            // Apply search filter
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-            {
-                query = query.Where(u => u.UserName.Contains(parameters.SearchTerm) || 
-                                        u.Email.Contains(parameters.SearchTerm));
-            }
+            var query = BuildBaseQuery();
+            query = ApplySearchFilter(query, parameters.SearchTerm);
 
             // Get total count for pagination metadata
             var totalItems = await query.CountAsync();
 
-            // Apply sorting
-            query = !string.IsNullOrWhiteSpace(parameters.SortBy) ? parameters.SortBy.ToUpperInvariant() switch
-            {
-                "USERNAME" => parameters.SortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
-                "EMAIL" => parameters.SortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
-                "CREATEDAT" => parameters.SortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
-                _ => query.OrderBy(u => u.UserName)
-            } : query.OrderBy(u => u.UserName);
-
-            // Apply pagination
-            var users = await query
-                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-                .Take(parameters.PageSize)
-                .ToListAsync();
+            // Apply sorting and pagination
+            query = ApplySorting(query, parameters.SortBy, parameters.SortDescending);
+            var users = await ApplyPagination(query, parameters.PageNumber, parameters.PageSize);
 
             return new PagedResult<UserDto>
             {
@@ -283,6 +266,65 @@ namespace backend.Services
                 PageSize = parameters.PageSize,
                 TotalItems = totalItems
             };
+        }
+
+        /// <summary>
+        /// Builds the base query with necessary includes for user data.
+        /// </summary>
+        /// <returns>IQueryable of User entities with roles included.</returns>
+        private IQueryable<User> BuildBaseQuery()
+        {
+            return _context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).AsQueryable();
+        }
+
+        /// <summary>
+        /// Applies search filter to the user query if search term is provided.
+        /// </summary>
+        /// <param name="query">The base query to filter.</param>
+        /// <param name="searchTerm">The search term to filter by.</param>
+        /// <returns>Filtered query.</returns>
+        private static IQueryable<User> ApplySearchFilter(IQueryable<User> query, string? searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return query;
+
+            return query.Where(u => u.UserName.Contains(searchTerm) || u.Email.Contains(searchTerm));
+        }
+
+        /// <summary>
+        /// Applies sorting to the user query based on the specified criteria.
+        /// </summary>
+        /// <param name="query">The query to sort.</param>
+        /// <param name="sortBy">The field to sort by.</param>
+        /// <param name="sortDescending">Whether to sort in descending order.</param>
+        /// <returns>Sorted query.</returns>
+        private static IQueryable<User> ApplySorting(IQueryable<User> query, string? sortBy, bool sortDescending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                return query.OrderBy(u => u.UserName);
+
+            return sortBy.ToUpperInvariant() switch
+            {
+                "USERNAME" => sortDescending ? query.OrderByDescending(u => u.UserName) : query.OrderBy(u => u.UserName),
+                "EMAIL" => sortDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
+                "CREATEDAT" => sortDescending ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt),
+                _ => query.OrderBy(u => u.UserName)
+            };
+        }
+
+        /// <summary>
+        /// Applies pagination to the user query.
+        /// </summary>
+        /// <param name="query">The query to paginate.</param>
+        /// <param name="pageNumber">The page number (1-based).</param>
+        /// <param name="pageSize">The number of items per page.</param>
+        /// <returns>List of users for the specified page.</returns>
+        private static async Task<List<User>> ApplyPagination(IQueryable<User> query, int pageNumber, int pageSize)
+        {
+            return await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         /// <summary>
