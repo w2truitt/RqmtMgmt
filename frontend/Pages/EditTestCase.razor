@@ -38,19 +38,19 @@ else
     {
         if (TestSuiteId.HasValue && ProjectId.HasValue)
         {
-            Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/{TestSuiteId}/testcases");
+            Navigation.NavigateTo($"/projects/{ProjectId}/testsuites/{TestSuiteId}/testcases/{TestCaseId}");
         }
         else if (TestSuiteId.HasValue)
         {
-            Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases");
+            Navigation.NavigateTo($"/testsuites/{TestSuiteId}/testcases/{TestCaseId}");
         }
         else if (ProjectId.HasValue)
         {
-            Navigation.NavigateTo($"/projects/{ProjectId}/testcases");
+            Navigation.NavigateTo($"/projects/{ProjectId}/testcases/{TestCaseId}");
         }
         else
         {
-            Navigation.NavigateTo("/testcases");
+            Navigation.NavigateTo($"/testcases/{TestCaseId}");
         }
     }
 }
