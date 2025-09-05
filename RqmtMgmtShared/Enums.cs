@@ -34,4 +34,9 @@ namespace RqmtMgmtShared
     /// Specifies the role of a user within a project.
     /// </summary>
     public enum ProjectRole { ProjectOwner, Developer, QAEngineer, ScrumMaster, BusinessAnalyst, Stakeholder }
+
+    /// <summary>
+    /// Specifies the priority level of a test case.
+    /// </summary>
+    public enum TestCasePriority { Critical, High, Medium, Low }
 }

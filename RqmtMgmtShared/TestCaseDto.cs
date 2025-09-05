@@ -29,6 +29,11 @@ namespace RqmtMgmtShared
         public string? Description { get; set; }
 
         /// <summary>
+        /// Gets or sets the current priority of the test case (Critical, High, Medium, Low).
+        /// </summary>
+        public TestCasePriority Priority { get; set; }
+
+        /// <summary>
         /// Gets or sets the collection of test steps that define the test case execution procedure.
         /// </summary>
         public List<TestStepDto> Steps { get; set; } = new();
@@ -47,5 +52,15 @@ namespace RqmtMgmtShared
         /// Gets or sets the timestamp when the test case was created.
         /// </summary>
         public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the details of the user who created this test case.
+        /// </summary>
+        public UserDto? UpdatedBy { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp when the requirement was last updated. Null if never updated.
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
     }
 }
