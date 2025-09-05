@@ -52,7 +52,7 @@
                 @* Browse All Projects *@
                 <li>
                     <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
-                        <i class="bi bi-grid me-2"></i>Browse All Projects (@totalProjectCount)
+                        <i class="bi bi-grid me-2"></i>Browse All Projects@(totalProjectCount > 0 ? $" ({totalProjectCount})" : "")
                     </button>
                 </li>
                 <li>
@@ -105,7 +105,7 @@
                 @* Browse All Projects *@
                 <li>
                     <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
-                        <i class="bi bi-grid me-2"></i>Browse All Projects (@totalProjectCount)
+                        <i class="bi bi-grid me-2"></i>Browse All Projects@(totalProjectCount > 0 ? $" ({totalProjectCount})" : "")
                     </button>
                 </li>
             </ul>
@@ -122,12 +122,14 @@
     {
         try
         {
-            // Load recent projects and total count
+            // Load recent projects (critical for initial render)
             await LoadRecentProjects();
-            await LoadTotalProjectCount();
             
-            // Check if we're in a project context route
+            // Check project context (critical for initial render)
             await CheckProjectContext();
+            
+            // Load total count asynchronously without blocking (non-critical UI decoration)
+            _ = LoadTotalProjectCountAsync();
         }
         catch (Exception ex)
         {
@@ -148,13 +150,16 @@
         }
     }
 
-    private async Task LoadTotalProjectCount()
+    private async Task LoadTotalProjectCountAsync()
     {
         try
         {
             var filter = new ProjectFilterDto { Page = 1, PageSize = 1 };
             var result = await ProjectService.GetProjectsAsync(filter);
             totalProjectCount = result?.TotalItems ?? 0;
+            
+            // Notify UI of the update since this runs after initial render
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -186,7 +191,7 @@
     {
         try
         {
-            // First check if it's in recent projects
+            // First check if it's in recent projects (fast cache lookup)
             if (recentProjects?.Any() == true)
             {
                 currentProject = recentProjects.FirstOrDefault(p => p.Id == projectId);
@@ -195,6 +200,9 @@
                     // Track access and persist context
                     await RecentProjectsService.TrackProjectAccessAsync(currentProject);
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", projectId.ToString());
+                    
+                    // Update local recent projects list immediately without another service call
+                    UpdateLocalRecentProjects(currentProject);
                     StateHasChanged();
                     return;
                 }
@@ -207,8 +215,9 @@
                 currentProject = result;
                 await RecentProjectsService.TrackProjectAccessAsync(result);
                 await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", projectId.ToString());
-                // Refresh recent projects to include the newly accessed project
-                await LoadRecentProjects();
+                
+                // Update local recent projects list immediately
+                UpdateLocalRecentProjects(result);
                 StateHasChanged();
             }
         }
@@ -242,12 +251,36 @@
         await RecentProjectsService.TrackProjectAccessAsync(project);
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", project.Id.ToString());
         
-        // Refresh recent projects list
-        await LoadRecentProjects();
+        // Update local recent projects list immediately without service call
+        UpdateLocalRecentProjects(project);
         
         // Navigate to project dashboard
         Navigation.NavigateTo($"/projects/{project.Id}");
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Updates the local recent projects list immediately without making service calls.
+    /// This provides instant UI feedback while the service handles persistence.
+    /// </summary>
+    private void UpdateLocalRecentProjects(ProjectDto project)
+    {
+        if (recentProjects == null)
+        {
+            recentProjects = new List<ProjectDto>();
+        }
+
+        // Remove existing entry for this project if it exists
+        recentProjects.RemoveAll(p => p.Id == project.Id);
+        
+        // Add the project at the front
+        recentProjects.Insert(0, project);
+        
+        // Keep only the most recent 5 projects for display
+        if (recentProjects.Count > 5)
+        {
+            recentProjects = recentProjects.Take(5).ToList();
+        }
     }
 
     private void ViewAllProjects()

@@ -39,5 +39,12 @@ namespace frontend.Services
         /// </summary>
         /// <param name="projectId">The ID of the project to remove</param>
         Task RemoveRecentProjectAsync(int projectId);
+
+        /// <summary>
+        /// Gets the count of recently accessed projects without loading full project data.
+        /// Useful for UI display purposes.
+        /// </summary>
+        /// <returns>Number of recent projects stored</returns>
+        Task<int> GetRecentProjectsCountAsync();
     }
 }

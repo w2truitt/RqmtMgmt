@@ -6,7 +6,7 @@ namespace frontend.Services
 {
     /// <summary>
     /// Service implementation for managing user's recently accessed projects.
-    /// Uses browser localStorage to persist recent projects across sessions.
+    /// Uses browser localStorage to persist recent projects across sessions with in-memory caching for performance.
     /// </summary>
     public class RecentProjectsService : IRecentProjectsService
     {
@@ -14,6 +14,8 @@ namespace frontend.Services
         private readonly IProjectService _projectService;
         private const string STORAGE_KEY = "recentProjects";
         private const int DEFAULT_MAX_RECENT = 5;
+        private List<RecentProjectData>? _cachedRecentProjects;
+        private bool _isInitialized = false;
 
         public RecentProjectsService(IJSRuntime jsRuntime, IProjectService projectService)
         {
@@ -28,7 +30,8 @@ namespace frontend.Services
         {
             try
             {
-                var recentProjectsData = await GetRecentProjectsDataAsync();
+                await EnsureInitializedAsync();
+                var recentProjectsData = GetCachedRecentProjectsData();
                 
                 // Return the most recent projects up to maxCount
                 return recentProjectsData
@@ -51,7 +54,8 @@ namespace frontend.Services
         {
             try
             {
-                var recentProjectsData = await GetRecentProjectsDataAsync();
+                await EnsureInitializedAsync();
+                var recentProjectsData = GetCachedRecentProjectsData();
                 
                 // Remove existing entry for this project if it exists
                 recentProjectsData.RemoveAll(r => r.Project.Id == project.Id);
@@ -84,8 +88,9 @@ namespace frontend.Services
         {
             try
             {
+                await EnsureInitializedAsync();
                 // Check if we already have this project in recent list
-                var recentProjectsData = await GetRecentProjectsDataAsync();
+                var recentProjectsData = GetCachedRecentProjectsData();
                 var existingProject = recentProjectsData.FirstOrDefault(r => r.Project.Id == projectId);
                 
                 if (existingProject != null)
@@ -116,6 +121,7 @@ namespace frontend.Services
         {
             try
             {
+                _cachedRecentProjects = new List<RecentProjectData>();
                 await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", STORAGE_KEY);
             }
             catch (Exception ex)
@@ -131,7 +137,8 @@ namespace frontend.Services
         {
             try
             {
-                var recentProjectsData = await GetRecentProjectsDataAsync();
+                await EnsureInitializedAsync();
+                var recentProjectsData = GetCachedRecentProjectsData();
                 recentProjectsData.RemoveAll(r => r.Project.Id == projectId);
                 await SaveRecentProjectsDataAsync(recentProjectsData);
             }
@@ -142,40 +149,77 @@ namespace frontend.Services
         }
 
         /// <summary>
-        /// Gets the raw recent projects data from localStorage.
+        /// Gets the count of recently accessed projects without loading full project data.
         /// </summary>
-        private async Task<List<RecentProjectData>> GetRecentProjectsDataAsync()
+        public async Task<int> GetRecentProjectsCountAsync()
         {
+            try
+            {
+                await EnsureInitializedAsync();
+                return GetCachedRecentProjectsData().Count;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting recent projects count: {ex.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Ensures the service is initialized and cache is loaded from localStorage.
+        /// Only performs localStorage read once per service lifetime.
+        /// </summary>
+        private async Task EnsureInitializedAsync()
+        {
+            if (_isInitialized)
+                return;
+
             try
             {
                 var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", STORAGE_KEY);
                 
                 if (string.IsNullOrEmpty(json))
                 {
-                    return new List<RecentProjectData>();
+                    _cachedRecentProjects = new List<RecentProjectData>();
                 }
-
-                var options = new JsonSerializerOptions
+                else
                 {
-                    PropertyNameCaseInsensitive = true
-                };
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
 
-                return JsonSerializer.Deserialize<List<RecentProjectData>>(json, options) ?? new List<RecentProjectData>();
+                    _cachedRecentProjects = JsonSerializer.Deserialize<List<RecentProjectData>>(json, options) ?? new List<RecentProjectData>();
+                }
+                
+                _isInitialized = true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error deserializing recent projects data: {ex.Message}");
-                return new List<RecentProjectData>();
+                Console.WriteLine($"Error initializing recent projects cache: {ex.Message}");
+                _cachedRecentProjects = new List<RecentProjectData>();
+                _isInitialized = true;
             }
         }
 
         /// <summary>
-        /// Saves the recent projects data to localStorage.
+        /// Gets the cached recent projects data without localStorage access.
+        /// </summary>
+        private List<RecentProjectData> GetCachedRecentProjectsData()
+        {
+            return _cachedRecentProjects ?? new List<RecentProjectData>();
+        }
+
+        /// <summary>
+        /// Saves the recent projects data to localStorage and updates the cache.
         /// </summary>
         private async Task SaveRecentProjectsDataAsync(List<RecentProjectData> recentProjectsData)
         {
             try
             {
+                // Update the cache first
+                _cachedRecentProjects = recentProjectsData;
+                
                 var options = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
