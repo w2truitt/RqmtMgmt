@@ -156,7 +156,7 @@
                                                     title="View Test Plan" data-testid="view-testplan">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button class="btn btn-outline-secondary" @onclick="async () => await EditTestPlan(testPlan.Id)" 
+                                            <button class="btn btn-outline-secondary" @onclick="() => EditTestPlan(testPlan.Id)" 
                                                     title="Edit Test Plan" data-testid="edit-testplan">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
@@ -437,7 +437,7 @@
         }
     }
 
-    private async Task EditTestPlan(int testPlanId)
+    private void EditTestPlan(int testPlanId)
     {
         try
         {

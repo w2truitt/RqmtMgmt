@@ -34,7 +34,7 @@ public class ProjectSelectionWorkflowTests : AuthenticatedE2ETestBase
         await Page.GotoAsync($"{BaseUrl}");
         
         // Use existing static project
-        await SelectExistingProject(1); // Use project index 1 (E2E Test Project 3625e50c)
+        await SelectExistingProject(2); // Use project index 2 (E2E Test Project 69633ddf)
         
         // Act - Navigate to project requirements
         await ClickProjectAwareRequirementsLink();

@@ -1,4 +1,5 @@
 @inject IProjectService ProjectService
+@inject IRecentProjectsService RecentProjectsService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @implements IDisposable
@@ -20,9 +21,13 @@
                 <li><h6 class="dropdown-header">Switch Project</h6></li>
                 <li><hr class="dropdown-divider"></li>
                 
-                @if (availableProjects?.Any() == true)
+                @* Recent Projects Section *@
+                @if (recentProjects?.Any() == true)
                 {
-                    @foreach (var project in availableProjects)
+                    <li><h6 class="dropdown-header text-primary">
+                        <i class="bi bi-clock-history me-1"></i>Recent
+                    </h6></li>
+                    @foreach (var project in recentProjects)
                     {
                         <li>
                             <button class="dropdown-item @(project.Id == currentProject.Id ? "active" : "")" 
@@ -44,9 +49,10 @@
                     <li><hr class="dropdown-divider"></li>
                 }
                 
+                @* Browse All Projects *@
                 <li>
                     <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
-                        <i class="bi bi-grid me-2"></i>View All Projects
+                        <i class="bi bi-grid me-2"></i>Browse All Projects (@totalProjectCount)
                     </button>
                 </li>
                 <li>
@@ -72,9 +78,13 @@
                 <li><h6 class="dropdown-header">Select Project</h6></li>
                 <li><hr class="dropdown-divider"></li>
                 
-                @if (availableProjects?.Any() == true)
+                @* Recent Projects Section *@
+                @if (recentProjects?.Any() == true)
                 {
-                    @foreach (var project in availableProjects)
+                    <li><h6 class="dropdown-header text-primary">
+                        <i class="bi bi-clock-history me-1"></i>Recent
+                    </h6></li>
+                    @foreach (var project in recentProjects)
                     {
                         <li>
                             <button class="dropdown-item" 
@@ -91,17 +101,11 @@
                     }
                     <li><hr class="dropdown-divider"></li>
                 }
-                else
-                {
-                    <li>
-                        <span class="dropdown-item-text text-muted">No projects available</span>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                }
                 
+                @* Browse All Projects *@
                 <li>
                     <button class="dropdown-item" type="button" @onclick="ViewAllProjects">
-                        <i class="bi bi-grid me-2"></i>View All Projects
+                        <i class="bi bi-grid me-2"></i>Browse All Projects (@totalProjectCount)
                     </button>
                 </li>
             </ul>
@@ -111,14 +115,16 @@
 
 @code {
     private ProjectDto? currentProject;
-    private List<ProjectDto>? availableProjects;
+    private List<ProjectDto>? recentProjects;
+    private int totalProjectCount;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            // Load available projects
-            await LoadProjects();
+            // Load recent projects and total count
+            await LoadRecentProjects();
+            await LoadTotalProjectCount();
             
             // Check if we're in a project context route
             await CheckProjectContext();
@@ -129,20 +135,31 @@
         }
     }
 
-    private async Task LoadProjects()
+    private async Task LoadRecentProjects()
     {
         try
         {
-            var filter = new ProjectFilterDto { Page = 1, PageSize = 50 };
-            var result = await ProjectService.GetProjectsAsync(filter);
-            if (result != null)
-            {
-                availableProjects = result.Items.ToList();
-            }
+            recentProjects = await RecentProjectsService.GetRecentProjectsAsync(5);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading projects: {ex}");
+            Console.WriteLine($"Error loading recent projects: {ex}");
+            recentProjects = new List<ProjectDto>();
+        }
+    }
+
+    private async Task LoadTotalProjectCount()
+    {
+        try
+        {
+            var filter = new ProjectFilterDto { Page = 1, PageSize = 1 };
+            var result = await ProjectService.GetProjectsAsync(filter);
+            totalProjectCount = result?.TotalItems ?? 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading project count: {ex}");
+            totalProjectCount = 0;
         }
     }
 
@@ -169,24 +186,29 @@
     {
         try
         {
-            if (availableProjects?.Any() == true)
+            // First check if it's in recent projects
+            if (recentProjects?.Any() == true)
             {
-                currentProject = availableProjects.FirstOrDefault(p => p.Id == projectId);
+                currentProject = recentProjects.FirstOrDefault(p => p.Id == projectId);
                 if (currentProject != null)
                 {
-                    // Persist project context in local storage
+                    // Track access and persist context
+                    await RecentProjectsService.TrackProjectAccessAsync(currentProject);
                     await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", projectId.ToString());
                     StateHasChanged();
                     return;
                 }
             }
 
-            // Fallback: try to load the specific project
+            // Fallback: load the specific project
             var result = await ProjectService.GetProjectByIdAsync(projectId);
             if (result != null)
             {
                 currentProject = result;
+                await RecentProjectsService.TrackProjectAccessAsync(result);
                 await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", projectId.ToString());
+                // Refresh recent projects to include the newly accessed project
+                await LoadRecentProjects();
                 StateHasChanged();
             }
         }
@@ -215,7 +237,13 @@
     private async Task SelectProject(ProjectDto project)
     {
         currentProject = project;
+        
+        // Track project access for recent projects
+        await RecentProjectsService.TrackProjectAccessAsync(project);
         await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentProjectId", project.Id.ToString());
+        
+        // Refresh recent projects list
+        await LoadRecentProjects();
         
         // Navigate to project dashboard
         Navigation.NavigateTo($"/projects/{project.Id}");

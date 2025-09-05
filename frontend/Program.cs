@@ -66,5 +66,6 @@ builder.Services.AddScoped<ITestRunSessionDataService, TestRunSessionDataService
 builder.Services.AddScoped<ITestExecutionDataService, TestExecutionDataService>();
 builder.Services.AddScoped<IProjectService, ProjectsDataService>();
 builder.Services.AddScoped<IProjectContextService, ProjectContextService>();
+builder.Services.AddScoped<IRecentProjectsService, RecentProjectsService>();
 
 await builder.Build().RunAsync();
