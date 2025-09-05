@@ -125,7 +125,7 @@ namespace frontend.Services
             };
 
             var queryString = BuildQueryString(queryParams);
-            var result = await GetAsync<PagedResult<UserDto>>($"/api/User{queryString}");
+            var result = await GetAsync<PagedResult<UserDto>>($"/api/User/paged{queryString}");
             return result ?? new PagedResult<UserDto>();
         }
     }
