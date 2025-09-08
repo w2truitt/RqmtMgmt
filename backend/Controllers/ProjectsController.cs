@@ -38,6 +38,27 @@ namespace backend.Controllers
         {
             try
             {
+                // Extract current user ID from JWT token for UserIsMember filter
+                if (filter.UserIsMember.HasValue && filter.UserIsMember.Value)
+                {
+                    var currentUserId = GetCurrentUserId();
+                    if (currentUserId.HasValue)
+                    {
+                        filter.CurrentUserId = currentUserId.Value;
+                    }
+                    else
+                    {
+                        // If UserIsMember is requested but no valid user ID found, return empty result
+                        return Ok(new PagedResult<ProjectDto>
+                        {
+                            Items = new List<ProjectDto>(),
+                            TotalItems = 0,
+                            PageNumber = filter.Page,
+                            PageSize = filter.PageSize
+                        });
+                    }
+                }
+
                 var result = await _projectService.GetProjectsAsync(filter);
                 return Ok(result);
             }
@@ -253,6 +274,30 @@ namespace backend.Controllers
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Extracts the current user ID from the JWT token claims.
+        /// </summary>
+        /// <returns>The current user ID if found and valid; otherwise, null.</returns>
+        private int? GetCurrentUserId()
+        {
+            // Try to get user ID from 'sub' claim (standard JWT claim for subject)
+            var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("user_id") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+            
+            // Also check for X-User-Id header for development/testing scenarios
+            if (HttpContext.Items.TryGetValue("UserId", out var impersonatedUserId) && 
+                int.TryParse(impersonatedUserId?.ToString(), out var impersonatedId))
+            {
+                return impersonatedId;
+            }
+            
+            return null;
         }
 
         /// <summary>

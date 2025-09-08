@@ -273,6 +273,7 @@
     private List<UserDto>? users;
     private string searchTerm = string.Empty;
     private string filterStatus = string.Empty;
+    private string filterMembership = string.Empty;
     private string sortBy = "name";
     private string errorMessage = string.Empty;
     private string formErrorMessage = string.Empty;
@@ -309,7 +310,12 @@
 
     private async Task<List<ProjectDto>> FetchProjectsData()
     {
-        var filter = new ProjectFilterDto { Page = 1, PageSize = 1000 };
+        var filter = new ProjectFilterDto
+        {
+            Page = 1,
+            PageSize = 1000,
+            UserIsMember = filterMembership == "member" ? true : null
+        };
         var result = await ProjectService.GetProjectsAsync(filter);
         return result.Items;
     }

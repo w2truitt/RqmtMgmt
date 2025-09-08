@@ -46,8 +46,23 @@ namespace backend.Services
 
             if (filter.UserIsMember.HasValue && filter.UserIsMember.Value)
             {
-                // This would need the current user ID to be passed in the filter
-                // For now, we'll skip this filter
+                // FEATURE: UserIsMember Filter - Filter projects
+                // where the current user is a team member. This filter
+                // requires the CurrentUserId to be populated by the
+                // controller from JWT claims Filter projects where
+                // the current user is a team member
+                if (filter.CurrentUserId.HasValue)
+                {
+                    query = query.Where(p => _context.ProjectTeamMembers
+                        .Any(tm => tm.ProjectId == p.Id && 
+                                   tm.UserId == filter.CurrentUserId.Value && 
+                                   tm.IsActive));
+                }
+                else
+                {
+                    // If UserIsMember is requested but no CurrentUserId provided, return no results
+                    query = query.Where(p => false);
+                }
             }
 
             var totalCount = await query.CountAsync();

@@ -39,6 +39,59 @@ namespace backend.Tests
             Assert.Equal(2, result.Items.Count);
         }
 
+            [Fact]
+            public async Task GetProjectsAsync_UserIsMemberFilter_WorksCorrectly()
+            {
+                using var db = TestDataHelper.GetDbContext(nameof(GetProjectsAsync_UserIsMemberFilter_WorksCorrectly));
+            
+                // Create test users
+                var owner = new User { UserName = "owner", Email = "owner@example.com", CreatedAt = DateTime.UtcNow };
+                var member = new User { UserName = "member", Email = "member@example.com", CreatedAt = DateTime.UtcNow };
+                var nonMember = new User { UserName = "nonmember", Email = "nonmember@example.com", CreatedAt = DateTime.UtcNow };
+                db.Users.AddRange(owner, member, nonMember);
+                await db.SaveChangesAsync();
+            
+                // Create test projects
+                var project1 = new Project { Name = "Project1", Code = "PROJ1", Status = ProjectStatus.Active, OwnerId = owner.Id, CreatedAt = DateTime.UtcNow };
+                var project2 = new Project { Name = "Project2", Code = "PROJ2", Status = ProjectStatus.Active, OwnerId = owner.Id, CreatedAt = DateTime.UtcNow };
+                var project3 = new Project { Name = "Project3", Code = "PROJ3", Status = ProjectStatus.Active, OwnerId = owner.Id, CreatedAt = DateTime.UtcNow };
+                db.Projects.AddRange(project1, project2, project3);
+                await db.SaveChangesAsync();
+            
+                // Add team members: member is part of project1 and project2, but not project3
+                var teamMember1 = new ProjectTeamMember { ProjectId = project1.Id, UserId = member.Id, Role = ProjectRole.Developer, JoinedAt = DateTime.UtcNow, IsActive = true };
+                var teamMember2 = new ProjectTeamMember { ProjectId = project2.Id, UserId = member.Id, Role = ProjectRole.QAEngineer, JoinedAt = DateTime.UtcNow, IsActive = true };
+                // Add inactive team member to test IsActive filter
+                var inactiveTeamMember = new ProjectTeamMember { ProjectId = project3.Id, UserId = member.Id, Role = ProjectRole.Developer, JoinedAt = DateTime.UtcNow, IsActive = false };
+                db.ProjectTeamMembers.AddRange(teamMember1, teamMember2, inactiveTeamMember);
+                await db.SaveChangesAsync();
+            
+                var service = new ProjectService(db);
+            
+                // Test UserIsMember filter for member user - should return 2 projects (project1 and project2)
+                var filter = new ProjectFilterDto { Page = 1, PageSize = 10, UserIsMember = true, CurrentUserId = member.Id };
+                var result = await service.GetProjectsAsync(filter);
+                Assert.Equal(2, result.Items.Count);
+                Assert.Contains(result.Items, p => p.Name == "Project1");
+                Assert.Contains(result.Items, p => p.Name == "Project2");
+                Assert.DoesNotContain(result.Items, p => p.Name == "Project3");
+            
+                // Test UserIsMember filter for non-member user - should return 0 projects
+                filter = new ProjectFilterDto { Page = 1, PageSize = 10, UserIsMember = true, CurrentUserId = nonMember.Id };
+                result = await service.GetProjectsAsync(filter);
+                Assert.Empty(result.Items);
+            
+                // Test UserIsMember filter without CurrentUserId - should return 0 projects
+                filter = new ProjectFilterDto { Page = 1, PageSize = 10, UserIsMember = true, CurrentUserId = null };
+                result = await service.GetProjectsAsync(filter);
+                Assert.Empty(result.Items);
+            
+                // Test without UserIsMember filter - should return all projects
+                filter = new ProjectFilterDto { Page = 1, PageSize = 10, UserIsMember = null };
+                result = await service.GetProjectsAsync(filter);
+                Assert.Equal(3, result.Items.Count);
+            }
+
         [Fact]
         public async Task UpdateProjectAsync_NonExistentProject_ReturnsNull()
         {
