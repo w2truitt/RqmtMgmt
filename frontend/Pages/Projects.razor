@@ -22,7 +22,7 @@
 
     <!-- Search and Filter Controls -->
     <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="input-group">
                 <input type="text" class="form-control" placeholder="Search projects..." 
                        @bind="searchTerm" @onkeypress="OnSearchKeyPress" data-testid="search-input" />
@@ -37,13 +37,19 @@
                 }
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select class="form-select" @bind="filterStatus" @bind:after="FilterProjects">
                 <option value="">All Statuses</option>
                 <option value="Planning">Planning</option>
                 <option value="Active">Active</option>
                 <option value="OnHold">On Hold</option>
                 <option value="Archived">Archived</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="filterMembership" @bind:after="FilterProjects" data-testid="membership-filter">
+                <option value="">All Projects</option>
+                <option value="member">My Projects Only</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -64,7 +70,7 @@
         </div>
     }
 
-    @if (projects == null)
+    @if (pagedResult == null)
     {
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -75,7 +81,7 @@
     }
     else
     {
-        @if (!filteredProjects.Any())
+        @if (!pagedResult.Items.Any())
         {
             <div class="text-center py-3 mb-3">
                 <i class="fas fa-folder fa-2x text-muted mb-2"></i>
@@ -109,7 +115,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var project in filteredProjects)
+                            @foreach (var project in pagedResult.Items)
                             {
                                 <tr data-testid="project-row">
                                     <td class="align-middle">@project.Id</td>
@@ -172,16 +178,43 @@
                     </table>
                 </div>
             </div>
-            <div class="card-footer bg-light">
+            <div class="card-footer bg-light d-flex justify-content-between align-items-center">
                 <small class="text-muted">
-                    Showing @filteredProjects.Count of @projects.Count project@(projects.Count == 1 ? "" : "s")
-                    @if (projects.Any())
+                    Showing @pagedResult.FirstItemIndex-@pagedResult.LastItemIndex of @pagedResult.TotalItems project@(pagedResult.TotalItems == 1 ? "" : "s")
+                    @if (pagedResult.Items.Any())
                     {
-                        <span class="ms-3">Total Requirements: @projects.Sum(p => p.RequirementCount)</span>
-                        <span class="ms-3">Total Test Suites: @projects.Sum(p => p.TestSuiteCount)</span>
-                        <span class="ms-3">Total Test Plans: @projects.Sum(p => p.TestPlanCount)</span>
+                        <span class="ms-3">Page Requirements: @pagedResult.Items.Sum(p => p.RequirementCount)</span>
+                        <span class="ms-3">Page Test Suites: @pagedResult.Items.Sum(p => p.TestSuiteCount)</span>
+                        <span class="ms-3">Page Test Plans: @pagedResult.Items.Sum(p => p.TestPlanCount)</span>
                     }
                 </small>
+                
+                @if (pagedResult.TotalPages > 1)
+                {
+                    <nav aria-label="Projects pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(pagedResult.HasPreviousPage ? "" : "disabled")">
+                                <button class="page-link" @onclick="PreviousPage" disabled="@(!pagedResult.HasPreviousPage)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                            </li>
+                            
+                            @for (int page = Math.Max(1, currentPage - 2); page <= Math.Min(pagedResult.TotalPages, currentPage + 2); page++)
+                            {
+                                var pageNumber = page; // Capture for closure
+                                <li class="page-item @(currentPage == page ? "active" : "")">
+                                    <button class="page-link" @onclick="() => GoToPage(pageNumber)">@pageNumber</button>
+                                </li>
+                            }
+                            
+                            <li class="page-item @(pagedResult.HasNextPage ? "" : "disabled")">
+                                <button class="page-link" @onclick="NextPage" disabled="@(!pagedResult.HasNextPage)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                }
             </div>
         </div>
     }
@@ -268,9 +301,10 @@
 }
 
 @code {
-    private List<ProjectDto>? projects;
-    private List<ProjectDto> filteredProjects = new();
+    private PagedResult<ProjectDto>? pagedResult;
     private List<UserDto>? users;
+    private int currentPage = 1;
+    private const int pageSize = 20;
     private string searchTerm = string.Empty;
     private string filterStatus = string.Empty;
     private string filterMembership = string.Empty;
@@ -297,27 +331,32 @@
     {
         try
         {
-            var projectsData = await FetchProjectsData();
-            projects = projectsData;
-            filteredProjects = projects;
-            ApplyFiltersAndSort();
+            errorMessage = string.Empty;
+            
+            ProjectStatus? statusFilter = null;
+            if (!string.IsNullOrEmpty(filterStatus) && Enum.TryParse<ProjectStatus>(filterStatus, out var status))
+            {
+                statusFilter = status;
+            }
+
+            var filter = new ProjectFilterDto
+            {
+                Page = currentPage,
+                PageSize = pageSize,
+                SearchTerm = string.IsNullOrEmpty(searchTerm) ? null : searchTerm,
+                Status = statusFilter,
+                UserIsMember = filterMembership == "member" ? true : null,
+                SortBy = sortBy,
+                SortDescending = false
+            };
+
+            pagedResult = await ProjectService.GetProjectsAsync(filter);
         }
         catch (Exception ex)
         {
             HandleProjectLoadError(ex);
+            pagedResult = new PagedResult<ProjectDto> { Items = new List<ProjectDto>(), TotalItems = 0 };
         }
-    }
-
-    private async Task<List<ProjectDto>> FetchProjectsData()
-    {
-        var filter = new ProjectFilterDto
-        {
-            Page = 1,
-            PageSize = 1000,
-            UserIsMember = filterMembership == "member" ? true : null
-        };
-        var result = await ProjectService.GetProjectsAsync(filter);
-        return result.Items;
     }
 
     private void HandleProjectLoadError(Exception ex)
@@ -342,58 +381,6 @@
         errorMessage = $"Error loading users: {ex.Message}";
     }
 
-    private void ApplyFiltersAndSort()
-    {
-        if (projects == null) return;
-
-        filteredProjects = projects.ToList();
-        ApplySearchFilter();
-        ApplyStatusFilter();
-        ApplySorting();
-    }
-
-    private void ApplySearchFilter()
-    {
-        if (string.IsNullOrEmpty(searchTerm)) return;
-
-        filteredProjects = filteredProjects.Where(ProjectMatchesSearchTerm).ToList();
-    }
-
-    private bool ProjectMatchesSearchTerm(ProjectDto project)
-    {
-        return project.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-               project.Code.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-               (!string.IsNullOrEmpty(project.Description) && project.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
-               project.OwnerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void ApplyStatusFilter()
-    {
-        if (string.IsNullOrEmpty(filterStatus)) return;
-
-        if (Enum.TryParse<ProjectStatus>(filterStatus, out var status))
-        {
-            filteredProjects = filteredProjects.Where(p => p.Status == status).ToList();
-        }
-    }
-
-    private void ApplySorting()
-    {
-        filteredProjects = GetSortedProjects();
-    }
-
-    private List<ProjectDto> GetSortedProjects()
-    {
-        return sortBy switch
-        {
-            "name" => filteredProjects.OrderBy(p => p.Name).ToList(),
-            "status" => filteredProjects.OrderBy(p => p.Status).ThenBy(p => p.Name).ToList(),
-            "created" => filteredProjects.OrderByDescending(p => p.CreatedAt).ToList(),
-            "owner" => filteredProjects.OrderBy(p => p.OwnerName).ThenBy(p => p.Name).ToList(),
-            _ => filteredProjects.OrderBy(p => p.Name).ToList()
-        };
-    }
-
     private async Task OnSearchKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
@@ -404,27 +391,52 @@
 
     private async Task SearchProjects()
     {
-        ApplyFiltersAndSort();
-        await Task.CompletedTask;
+        currentPage = 1; // Reset to first page on new search
+        await LoadProjects();
     }
 
     private async Task ClearSearch()
     {
         searchTerm = string.Empty;
-        ApplyFiltersAndSort();
-        await Task.CompletedTask;
+        currentPage = 1; // Reset to first page on clear search
+        await LoadProjects();
     }
 
     private async Task FilterProjects()
     {
-        ApplyFiltersAndSort();
-        await Task.CompletedTask;
+        currentPage = 1; // Reset to first page on new filter
+        await LoadProjects();
     }
 
     private async Task SortProjects()
     {
-        ApplyFiltersAndSort();
-        await Task.CompletedTask;
+        currentPage = 1; // Reset to first page on new sort
+        await LoadProjects();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= (pagedResult?.TotalPages ?? 1) && page != currentPage)
+        {
+            currentPage = page;
+            await LoadProjects();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (pagedResult?.HasPreviousPage == true)
+        {
+            await GoToPage(currentPage - 1);
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (pagedResult?.HasNextPage == true)
+        {
+            await GoToPage(currentPage + 1);
+        }
     }
 
     private void ShowAddForm()
