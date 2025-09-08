@@ -81,7 +81,7 @@ namespace backend.Data
                         await context.UserRoles.AddAsync(userRole);
                     }
                 }
-                
+
                 await context.SaveChangesAsync();
             }
 
@@ -267,6 +267,58 @@ namespace backend.Data
 
             await context.TestRuns.AddAsync(testRun);
             await context.SaveChangesAsync();
+
+	    // Create project team members for testing the membership filter
+	    var testerUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "tester@rqmtmgmt.local");
+	    var devUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "dev@rqmtmgmt.local");
+	    var pmUser = await context.Users.FirstOrDefaultAsync(u => u.Email == "pm@rqmtmgmt.local");
+
+	    var projectTeamMembers = new List<ProjectTeamMember>();
+
+	    // Add tester as QA Engineer
+	    if (testerUser != null)
+	    {
+		projectTeamMembers.Add(new ProjectTeamMember
+		{
+		    ProjectId = defaultProject.Id,
+		    UserId = testerUser.Id,
+		    Role = ProjectRole.QAEngineer,
+		    JoinedAt = DateTime.UtcNow,
+		    IsActive = true
+		});
+	    }
+
+	    // Add developer as Engineer
+	    if (devUser != null)
+	    {
+		projectTeamMembers.Add(new ProjectTeamMember
+		{
+		    ProjectId = defaultProject.Id,
+		    UserId = devUser.Id,
+		    Role = ProjectRole.Developer,
+		    JoinedAt = DateTime.UtcNow,
+		    IsActive = true
+		});
+	    }
+
+	    // Add PM as Product Owner
+	    if (pmUser != null)
+	    {
+		projectTeamMembers.Add(new ProjectTeamMember
+		{
+		    ProjectId = defaultProject.Id,
+		    UserId = pmUser.Id,
+		    Role = ProjectRole.ProjectOwner,
+		    JoinedAt = DateTime.UtcNow,
+		    IsActive = true
+		});
+	    }
+
+	    if (projectTeamMembers.Any())
+	    {
+		await context.ProjectTeamMembers.AddRangeAsync(projectTeamMembers);
+		await context.SaveChangesAsync();
+	    }
 
             // Sample Audit Log
             var auditLog = new AuditLog

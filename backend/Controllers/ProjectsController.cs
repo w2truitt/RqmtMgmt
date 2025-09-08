@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RqmtMgmtShared;
+using backend.Data;
 
 namespace backend.Controllers
 {
@@ -38,17 +39,21 @@ namespace backend.Controllers
         {
             try
             {
-                // Extract current user ID from JWT token for UserIsMember filter
+                // Extract current user ID from JWT token for
+                // UserIsMember filter
                 if (filter.UserIsMember.HasValue && filter.UserIsMember.Value)
                 {
                     var currentUserId = GetCurrentUserId();
                     if (currentUserId.HasValue)
                     {
+			Console.WriteLine($"[DEBUG] GetProjects - Setting CurrentUserId to: {currentUserId.Value}");
                         filter.CurrentUserId = currentUserId.Value;
                     }
                     else
                     {
-                        // If UserIsMember is requested but no valid user ID found, return empty result
+                        // If UserIsMember is requested but no valid
+                        // user ID found, return empty result
+			Console.WriteLine("[DEBUG] GetProjects - No valid user ID found, returning empty result");
                         return Ok(new PagedResult<ProjectDto>
                         {
                             Items = new List<ProjectDto>(),
@@ -60,6 +65,7 @@ namespace backend.Controllers
                 }
 
                 var result = await _projectService.GetProjectsAsync(filter);
+		Console.WriteLine($"[DEBUG] GetProjects - Returning {result.Items.Count} projects (Total: {result.TotalItems})");
                 return Ok(result);
             }
             catch (Exception ex)
@@ -280,25 +286,102 @@ namespace backend.Controllers
         /// Extracts the current user ID from the JWT token claims.
         /// </summary>
         /// <returns>The current user ID if found and valid; otherwise, null.</returns>
-        private int? GetCurrentUserId()
-        {
-            // Try to get user ID from 'sub' claim (standard JWT claim for subject)
-            var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("user_id") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+	private int? GetCurrentUserId()
+	{
+	    // Enhanced debugging for user ID extraction from JWT
+	    // token claims
+	    var allClaims = User.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+	    Console.WriteLine($"[DEBUG] GetCurrentUserId - All available claims: {string.Join(", ", allClaims)}");
+    
+	    // Try to get user ID from 'sub' claim (standard JWT claim
+	    // for subject)
+	    var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("user_id") ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+    
+	    if (userIdClaim != null)
+	    {
+		Console.WriteLine($"[DEBUG] GetCurrentUserId - Found user ID claim: {userIdClaim.Type}={userIdClaim.Value}");
+        
+		// First try: Parse as integer (for tokens that
+		// already include integer user IDs)
+		if (int.TryParse(userIdClaim.Value, out var userId))
+		{
+		    Console.WriteLine($"[DEBUG] GetCurrentUserId - Successfully parsed user ID: {userId}");
+		    return userId;
+		}
+		else
+		{
+		    Console.WriteLine($"[DEBUG] GetCurrentUserId - Failed to parse user ID claim value: {userIdClaim.Value}");
             
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
-            {
-                return userId;
-            }
+		    // Second try: If sub claim is not an integer, try
+		    // to look up user by email This handles cases
+		    // where the sub claim contains the user's email
+		    try
+		    {
+			using var scope = HttpContext.RequestServices.CreateScope();
+			var context = scope.ServiceProvider.GetRequiredService<backend.Data.RqmtMgmtDbContext>();
+                
+			var user = context.Users
+			    .Where(u => u.UserName == userIdClaim.Value || u.Email == userIdClaim.Value)
+			    .Select(u => new { u.Id })
+			    .FirstOrDefault();
+                    
+			if (user != null)
+			{
+			    Console.WriteLine($"[DEBUG] GetCurrentUserId - Found user by sub claim lookup: {user.Id}");
+			    return user.Id;
+			}
+		    }
+		    catch (Exception ex)
+		    {
+			Console.WriteLine($"[DEBUG] GetCurrentUserId - Database lookup error: {ex.Message}");
+		    }
+		}
+	    }
+	    else
+	    {
+		Console.WriteLine("[DEBUG] GetCurrentUserId - No user ID claim found in standard locations");
+	    }
+    
+	    // Third try: Get user ID by looking up the user by email
+	    // from the token
+	    var emailClaim = User.FindFirst("email") ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email);
+	    if (emailClaim != null)
+	    {
+		Console.WriteLine($"[DEBUG] GetCurrentUserId - Found email claim: {emailClaim.Value}, attempting user lookup");
+		try
+		{
+		    using var scope = HttpContext.RequestServices.CreateScope();
+		    var context = scope.ServiceProvider.GetRequiredService<backend.Data.RqmtMgmtDbContext>();
             
-            // Also check for X-User-Id header for development/testing scenarios
-            if (HttpContext.Items.TryGetValue("UserId", out var impersonatedUserId) && 
-                int.TryParse(impersonatedUserId?.ToString(), out var impersonatedId))
-            {
-                return impersonatedId;
-            }
-            
-            return null;
-        }
+		    var user = context.Users
+			.Where(u => u.Email == emailClaim.Value)
+			.Select(u => new { u.Id })
+			.FirstOrDefault();
+                
+		    if (user != null)
+		    {
+			Console.WriteLine($"[DEBUG] GetCurrentUserId - Found user by email lookup: {user.Id}");
+			return user.Id;
+		    }
+		}
+		catch (Exception ex)
+		{
+		    Console.WriteLine($"[DEBUG] GetCurrentUserId - Email lookup error: {ex.Message}");
+		}
+	    }
+    
+	    // Fourth try: Check for X-User-Id header for
+	    // development/testing scenarios
+	    if (HttpContext.Items.TryGetValue("UserId", out var impersonatedUserId) && 
+		int.TryParse(impersonatedUserId?.ToString(), out var impersonatedId))
+	    {
+		Console.WriteLine($"[DEBUG] GetCurrentUserId - Using impersonated user ID: {impersonatedId}");
+		return impersonatedId;
+	    }
+    
+	    Console.WriteLine("[DEBUG] GetCurrentUserId - No valid user ID found, returning null");
+	    return null;
+	}
 
         /// <summary>
         /// Gets all projects that a user is a member of.
