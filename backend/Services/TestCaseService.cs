@@ -33,6 +33,7 @@ namespace backend.Services
             var testCases = await _context.TestCases
                 .Include(tc => tc.Steps)
                 .Include(tc => tc.Creator)
+                .Include(tc => tc.UpdatedByUser)
                 .ToListAsync();
             return testCases.Select(ToDto).ToList();
         }
@@ -47,6 +48,7 @@ namespace backend.Services
             var testCase = await _context.TestCases
                 .Include(tc => tc.Steps)
                 .Include(tc => tc.Creator)
+                .Include(tc => tc.UpdatedByUser)
                 .FirstOrDefaultAsync(tc => tc.Id == id);
             return testCase == null ? null : ToDto(testCase);
         }
@@ -107,6 +109,13 @@ namespace backend.Services
             // Update the entity properties
             UpdateTestCaseProperties(tracked, testCase);
 
+            // Set update tracking fields
+            tracked.UpdatedAt = DateTime.UtcNow;
+            if (testCase.UpdatedBy?.Id > 0)
+            {
+                tracked.UpdatedBy = testCase.UpdatedBy.Id;
+            }
+
             // Replace the test steps
             ReplaceTestSteps(tracked, testCase.Steps);
 
@@ -154,6 +163,7 @@ namespace backend.Services
             entity.Title = testCase.Title;
             entity.Description = testCase.Description;
             entity.SuiteId = testCase.SuiteId;
+            entity.Priority = testCase.Priority;
         }
 
         /// <summary>
@@ -346,6 +356,7 @@ namespace backend.Services
             SuiteId = tc.SuiteId,
             Title = tc.Title,
             Description = tc.Description,
+            Priority = tc.Priority,
             Steps = tc.Steps != null
                 ? tc.Steps.Select(s => new TestStepDto
                 {
@@ -362,7 +373,15 @@ namespace backend.Services
                 Email = tc.Creator.Email,
                 Roles = new List<string>() // Roles are not loaded in this context for performance
             } : null,
-            CreatedAt = tc.CreatedAt
+            CreatedAt = tc.CreatedAt,
+            UpdatedBy = tc.UpdatedByUser != null ? new UserDto
+            {
+                Id = tc.UpdatedByUser.Id,
+                UserName = tc.UpdatedByUser.UserName,
+                Email = tc.UpdatedByUser.Email,
+                Roles = new List<string>() // Roles are not loaded in this context for performance
+            } : null,
+            UpdatedAt = tc.UpdatedAt
         };
 
         /// <summary>
@@ -379,8 +398,11 @@ namespace backend.Services
                 SuiteId = testCaseDto.SuiteId,
                 Title = testCaseDto.Title,
                 Description = testCaseDto.Description,
+                Priority = testCaseDto.Priority == 0 ? TestCasePriority.Medium : testCaseDto.Priority,
                 CreatedBy = testCaseDto.CreatedBy,
                 CreatedAt = testCaseDto.CreatedAt,
+                UpdatedBy = testCaseDto.UpdatedBy?.Id,
+                UpdatedAt = testCaseDto.UpdatedAt,
                 Steps = new List<TestStep>()
             };
             if (testCaseDto.Steps != null)

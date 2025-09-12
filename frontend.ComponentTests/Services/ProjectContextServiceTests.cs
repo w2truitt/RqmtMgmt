@@ -97,7 +97,7 @@ public class ProjectContextServiceTests
         };
 
         _mockJSRuntime
-            .Setup(x => x.InvokeAsync<string>("localStorage.getItem", It.IsAny<object[]>()))
+            .Setup(x => x.InvokeAsync<string?>("localStorage.getItem", It.IsAny<object[]>()))
             .ReturnsAsync("123");
 
         _mockProjectService
@@ -120,7 +120,7 @@ public class ProjectContextServiceTests
     {
         // Arrange
         _mockJSRuntime
-            .Setup(x => x.InvokeAsync<string>("localStorage.getItem", It.IsAny<object[]>()))
+            .Setup(x => x.InvokeAsync<string?>("localStorage.getItem", It.IsAny<object[]>()))
             .ReturnsAsync("invalid");
 
         // Act
@@ -139,7 +139,7 @@ public class ProjectContextServiceTests
     {
         // Arrange
         _mockJSRuntime
-            .Setup(x => x.InvokeAsync<string>("localStorage.getItem", It.IsAny<object[]>()))
+            .Setup(x => x.InvokeAsync<string?>("localStorage.getItem", It.IsAny<object[]>()))
             .ReturnsAsync((string?)null);
 
         // Act

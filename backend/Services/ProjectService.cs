@@ -46,15 +46,32 @@ namespace backend.Services
 
             if (filter.UserIsMember.HasValue && filter.UserIsMember.Value)
             {
-                // This would need the current user ID to be passed in the filter
-                // For now, we'll skip this filter
+                // FEATURE: UserIsMember Filter - Filter projects
+                // where the current user is a team member. This filter
+                // requires the CurrentUserId to be populated by the
+                // controller from JWT claims Filter projects where
+                // the current user is a team member
+                if (filter.CurrentUserId.HasValue)
+                {
+                    query = query.Where(p => _context.ProjectTeamMembers
+                        .Any(tm => tm.ProjectId == p.Id && 
+                                   tm.UserId == filter.CurrentUserId.Value && 
+                                   tm.IsActive));
+                }
+                else
+                {
+                    // If UserIsMember is requested but no CurrentUserId provided, return no results
+                    query = query.Where(p => false);
+                }
             }
 
             var totalCount = await query.CountAsync();
 
             // PERFORMANCE OPTIMIZATION: Use projection to load only necessary data for list view
-            var projects = await query
-                .OrderBy(p => p.Name)
+            // Apply sorting
+            var orderedQuery = ApplySorting(query, filter.SortBy, filter.SortDescending);
+
+            var projects = await orderedQuery
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .Select(p => new ProjectDto
@@ -405,6 +422,21 @@ namespace backend.Services
                 Role = teamMember.Role,
                 JoinedAt = teamMember.JoinedAt,
                 IsActive = teamMember.IsActive
+            };
+        }
+
+        /// <summary>
+        /// Apply sorting to the project query based on the sort parameters.
+        /// </summary>
+        private static IQueryable<Project> ApplySorting(IQueryable<Project> query, string? sortBy, bool sortDescending)
+        {
+            return sortBy?.ToLower() switch
+            {
+                "name" => sortDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name),
+                "status" => sortDescending ? query.OrderByDescending(p => p.Status).ThenBy(p => p.Name) : query.OrderBy(p => p.Status).ThenBy(p => p.Name),
+                "created" => sortDescending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt),
+                "owner" => sortDescending ? query.OrderByDescending(p => p.Owner!.UserName).ThenBy(p => p.Name) : query.OrderBy(p => p.Owner!.UserName).ThenBy(p => p.Name),
+                _ => query.OrderBy(p => p.Name) // Default sort by name
             };
         }
     }

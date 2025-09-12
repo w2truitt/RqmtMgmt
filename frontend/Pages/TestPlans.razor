@@ -156,7 +156,7 @@
                                                     title="View Test Plan" data-testid="view-testplan">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button class="btn btn-outline-secondary" @onclick="async () => await EditTestPlan(testPlan.Id)" 
+                                            <button class="btn btn-outline-secondary" @onclick="() => EditTestPlan(testPlan.Id)" 
                                                     title="Edit Test Plan" data-testid="edit-testplan">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
@@ -201,7 +201,6 @@
             </nav>
         }
     }
-}
 
 <!-- Create/Edit Test Plan Modal -->
 <div class="modal fade @(showTestPlanModal ? "show" : "")" style="display: @(showTestPlanModal ? "block" : "none")" tabindex="-1" role="dialog">
@@ -437,7 +436,7 @@
         }
     }
 
-    private async Task EditTestPlan(int testPlanId)
+    private void EditTestPlan(int testPlanId)
     {
         try
         {

@@ -62,11 +62,11 @@ public class NavMenuTests : ComponentTestBase
         var navLinks = component.FindAll("a.nav-link");
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "projects/123/requirements" && link.TextContent.Contains("Requirements"));
         
-        // Verify other navigation links are still present
+        // Verify other navigation links are present with project-aware URLs for test management
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "/" && link.TextContent.Contains("Home"));
-        Assert.Contains(navLinks, link => link.GetAttribute("href") == "testsuites" && link.TextContent.Contains("Test Suites"));
-        Assert.Contains(navLinks, link => link.GetAttribute("href") == "testcases" && link.TextContent.Contains("Test Cases"));
-        Assert.Contains(navLinks, link => link.GetAttribute("href") == "testplans" && link.TextContent.Contains("Test Plans"));
+        Assert.Contains(navLinks, link => link.GetAttribute("href") == "projects/123/testsuites" && link.TextContent.Contains("Test Suites"));
+        Assert.Contains(navLinks, link => link.GetAttribute("href") == "projects/123/testcases" && link.TextContent.Contains("Test Cases"));
+        Assert.Contains(navLinks, link => link.GetAttribute("href") == "projects/123/testplans" && link.TextContent.Contains("Test Plans"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "test-run-sessions" && link.TextContent.Contains("Test Execution"));
         Assert.Contains(navLinks, link => link.GetAttribute("href") == "users" && link.TextContent.Contains("Users"));
     }

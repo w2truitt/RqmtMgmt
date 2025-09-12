@@ -87,7 +87,7 @@ namespace frontend.Services
             if (parameters.SortDescending)
                 queryString += "&sortDescending=true";
 
-            var result = await _http.GetFromJsonAsync<PagedResult<TestPlanDto>>($"/api/TestPlan{queryString}");
+            var result = await _http.GetFromJsonAsync<PagedResult<TestPlanDto>>($"/api/TestPlan/paged{queryString}");
             return result ?? new PagedResult<TestPlanDto>();
         }
 

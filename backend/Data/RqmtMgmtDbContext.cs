@@ -90,6 +90,17 @@ namespace backend.Data
                 .HasForeignKey(tc => tc.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<TestCase>()
+                .HasOne(tc => tc.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(tc => tc.UpdatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure TestCase.Priority to be stored as string (like RequirementStatus)
+            modelBuilder.Entity<TestCase>()
+                .Property(tc => tc.Priority)
+                .HasConversion<string>();
+
             // TestSuite <-> User
             modelBuilder.Entity<TestSuite>()
                 .HasOne(ts => ts.Creator)

@@ -59,7 +59,7 @@ namespace backend.Migrations
                     b.HasIndex("Entity", "EntityId")
                         .HasDatabaseName("IX_AuditLogs_Entity_EntityId");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("backend.Models.Project", b =>
@@ -97,7 +97,7 @@ namespace backend.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("backend.Models.ProjectTeamMember", b =>
@@ -121,7 +121,7 @@ namespace backend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectTeamMembers", (string)null);
+                    b.ToTable("ProjectTeamMembers");
                 });
 
             modelBuilder.Entity("backend.Models.Requirement", b =>
@@ -183,7 +183,7 @@ namespace backend.Migrations
                     b.HasIndex("Type", "Status")
                         .HasDatabaseName("IX_Requirements_Type_Status");
 
-                    b.ToTable("Requirements", (string)null);
+                    b.ToTable("Requirements");
                 });
 
             modelBuilder.Entity("backend.Models.RequirementLink", b =>
@@ -210,7 +210,7 @@ namespace backend.Migrations
 
                     b.HasIndex("ToRequirementId");
 
-                    b.ToTable("RequirementLinks", (string)null);
+                    b.ToTable("RequirementLinks");
                 });
 
             modelBuilder.Entity("backend.Models.RequirementTestCaseLink", b =>
@@ -225,7 +225,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TestCaseId");
 
-                    b.ToTable("RequirementTestCaseLinks", (string)null);
+                    b.ToTable("RequirementTestCaseLinks");
                 });
 
             modelBuilder.Entity("backend.Models.RequirementVersion", b =>
@@ -268,7 +268,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RequirementVersions", (string)null);
+                    b.ToTable("RequirementVersions");
                 });
 
             modelBuilder.Entity("backend.Models.Role", b =>
@@ -285,7 +285,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("backend.Models.TestCase", b =>
@@ -305,12 +305,22 @@ namespace backend.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("SuiteId")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -319,10 +329,12 @@ namespace backend.Migrations
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("UpdatedBy");
+
                     b.HasIndex("SuiteId", "Id")
                         .HasDatabaseName("IX_TestCases_SuiteId_Id");
 
-                    b.ToTable("TestCases", (string)null);
+                    b.ToTable("TestCases");
                 });
 
             modelBuilder.Entity("backend.Models.TestCaseExecution", b =>
@@ -369,7 +381,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TestRunSessionId");
 
-                    b.ToTable("TestCaseExecutions", (string)null);
+                    b.ToTable("TestCaseExecutions");
                 });
 
             modelBuilder.Entity("backend.Models.TestCaseVersion", b =>
@@ -407,7 +419,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TestCaseVersions", (string)null);
+                    b.ToTable("TestCaseVersions");
                 });
 
             modelBuilder.Entity("backend.Models.TestPlan", b =>
@@ -445,7 +457,7 @@ namespace backend.Migrations
                     b.HasIndex("ProjectId", "Id")
                         .HasDatabaseName("IX_TestPlans_ProjectId_Id");
 
-                    b.ToTable("TestPlans", (string)null);
+                    b.ToTable("TestPlans");
                 });
 
             modelBuilder.Entity("backend.Models.TestPlanTestCase", b =>
@@ -460,7 +472,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TestCaseId");
 
-                    b.ToTable("TestPlanTestCases", (string)null);
+                    b.ToTable("TestPlanTestCases");
                 });
 
             modelBuilder.Entity("backend.Models.TestRun", b =>
@@ -508,7 +520,7 @@ namespace backend.Migrations
                     b.HasIndex("TestCaseId", "Id")
                         .HasDatabaseName("IX_TestRuns_TestCaseId_Id");
 
-                    b.ToTable("TestRuns", (string)null);
+                    b.ToTable("TestRuns");
                 });
 
             modelBuilder.Entity("backend.Models.TestRunSession", b =>
@@ -560,7 +572,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TestPlanId");
 
-                    b.ToTable("TestRunSessions", (string)null);
+                    b.ToTable("TestRunSessions");
                 });
 
             modelBuilder.Entity("backend.Models.TestStep", b =>
@@ -586,7 +598,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TestCaseId");
 
-                    b.ToTable("TestSteps", (string)null);
+                    b.ToTable("TestSteps");
                 });
 
             modelBuilder.Entity("backend.Models.TestStepExecution", b =>
@@ -625,7 +637,7 @@ namespace backend.Migrations
 
                     b.HasIndex("TestStepId");
 
-                    b.ToTable("TestStepExecutions", (string)null);
+                    b.ToTable("TestStepExecutions");
                 });
 
             modelBuilder.Entity("backend.Models.TestSuite", b =>
@@ -659,7 +671,7 @@ namespace backend.Migrations
                     b.HasIndex("ProjectId", "Id")
                         .HasDatabaseName("IX_TestSuites_ProjectId_Id");
 
-                    b.ToTable("TestSuites", (string)null);
+                    b.ToTable("TestSuites");
                 });
 
             modelBuilder.Entity("backend.Models.User", b =>
@@ -687,7 +699,7 @@ namespace backend.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Users_Email");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("backend.Models.UserRole", b =>
@@ -702,7 +714,7 @@ namespace backend.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRoles", (string)null);
+                    b.ToTable("UserRoles");
                 });
 
             modelBuilder.Entity("backend.Models.AuditLog", b =>
@@ -819,9 +831,16 @@ namespace backend.Migrations
                         .HasForeignKey("SuiteId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("backend.Models.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Creator");
 
                     b.Navigation("Suite");
+
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("backend.Models.TestCaseExecution", b =>

@@ -84,6 +84,20 @@
         <div class="nav-item px-3">
             @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
             {
+                <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/testcases")">
+                    <span class="bi bi-file-earmark-check-nav-menu" aria-hidden="true"></span> Test Cases
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="testcases">
+                    <span class="bi bi-file-earmark-check-nav-menu" aria-hidden="true"></span> Test Cases
+                </NavLink>
+            }
+        </div>
+        <div class="nav-item px-3">
+            @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+            {
                 <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/testplans")">
                     <span class="bi bi-journal-code-nav-menu" aria-hidden="true"></span> Test Plans
                 </NavLink>

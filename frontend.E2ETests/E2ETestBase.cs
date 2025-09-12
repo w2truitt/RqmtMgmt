@@ -1,79 +1,55 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using frontend.E2ETests.Fixtures;
 using Microsoft.Playwright;
 using Xunit;
 
 namespace frontend.E2ETests;
 
 /// <summary>
-/// Base class for end-to-end tests using Playwright
+/// Optimized base class for E2E tests using shared browser with isolated contexts per test.
+/// Creates lightweight BrowserContext + Page instead of expensive full browser creation.
+/// 
+/// Performance improvement: ~2-3 seconds saved per test by reusing browser instance.
 /// </summary>
+[Collection("Playwright")]
 public abstract class E2ETestBase : IAsyncLifetime
 {
-    private static readonly string[] BrowserArgs = {
-        "--no-sandbox",
-        "--disable-setuid-sandbox", 
-        "--disable-dev-shm-usage", // Use /tmp instead of /dev/shm for shared memory
-        "--disable-gpu",
-        "--disable-web-security",
-        "--ignore-certificate-errors", // Trust self-signed certificates
-        "--ignore-ssl-errors", // Ignore SSL errors
-        "--ignore-certificate-errors-spki-list", // Ignore certificate pinning
-        "--ignore-certificate-errors-skip-list", // Skip certificate error list
-        "--memory-pressure-off", // Disable memory pressure simulation
-        "--max_old_space_size=512" // Limit V8 memory usage
-    };
-    protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
-    protected IPlaywright PlaywrightInstance { get; private set; } = null!;
-    protected IBrowser Browser { get; private set; } = null!;
-    protected IPage Page { get; private set; } = null!;
-    protected string BaseUrl { get; private set; } = null!;
-    
-    /// <summary>
-    /// Initialize test setup
-    /// </summary>
-    public async Task InitializeAsync()
+    protected readonly PlaywrightFixture Fixture;
+    public IBrowserContext Context { get; protected set; } = null!;
+    public IPage Page { get; protected set; } = null!;
+    protected string BaseUrl { get; } = "https://rqmtmgmt.local";
+
+    protected E2ETestBase(PlaywrightFixture fixture)
     {
-        // Initialize Playwright with resource-optimized settings
-        PlaywrightInstance = await Playwright.CreateAsync();
-        Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        Fixture = fixture;
+    }
+
+    /// <summary>
+    /// Creates isolated browser context and page per test.
+    /// This is a fast operation (~100ms) compared to browser creation (~2-3s).
+    /// Provides complete test isolation while sharing the expensive browser instance.
+    /// </summary>
+    public virtual async Task InitializeAsync()
+    {
+        Context = await Fixture.Browser.NewContextAsync(new BrowserNewContextOptions
         {
-            Headless = true, // Always headless for resource efficiency
-            Args = BrowserArgs
-        });
-        
-        // Create a new page for each test with explicit viewport for desktop navigation
-        Page = await Browser.NewPageAsync(new BrowserNewPageOptions
-        {
-            ViewportSize = new ViewportSize
-            {
-                Width = 1280,
-                Height = 720
-            },
-            IgnoreHTTPSErrors = true // Ignore HTTPS certificate errors
+            IgnoreHTTPSErrors = true,
+            ViewportSize = new ViewportSize { Width = 1280, Height = 720 }
         });
 
-        // Set shorter timeouts to avoid hanging tests
-        Page.SetDefaultTimeout(30000); // 30 seconds instead of default 60
+        Page = await Context.NewPageAsync();
+        Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
-        
-        // Use HTTPS URL for testing with proper domain
-        BaseUrl = "https://rqmtmgmt.local";
-        
-        // Create a minimal factory just for cleanup purposes (some tests might reference it)
-        Factory = new WebApplicationFactory<Program>();
     }
-    
+
     /// <summary>
-    /// Cleanup test resources
+    /// Cleanup context and page after each test.
+    /// Fast operation that maintains test isolation.
     /// </summary>
-    public async Task DisposeAsync()
+    public virtual async Task DisposeAsync()
     {
         try
         {
-            // Close page first to free browser resources quickly
-            if (Page != null)
+            if (Page != null && !Page.IsClosed)
             {
                 await Page.CloseAsync();
             }
@@ -85,43 +61,17 @@ public abstract class E2ETestBase : IAsyncLifetime
         
         try
         {
-            // Close browser and free memory
-            if (Browser != null)
+            if (Context != null)
             {
-                await Browser.CloseAsync();
+                await Context.DisposeAsync();
             }
         }
         catch (Exception)
         {
             // Ignore cleanup errors
         }
-        
-        try
-        {
-            // Dispose Playwright instance
-            PlaywrightInstance?.Dispose();
-        }
-        catch (Exception)
-        {
-            // Ignore cleanup errors
-        }
-        
-        try
-        {
-            // Dispose factory last
-            Factory?.Dispose();
-        }
-        catch (Exception)
-        {
-            // Ignore cleanup errors
-        }
-        
-        // Force garbage collection to free memory immediately
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
     }
-    
+
     /// <summary>
     /// Creates a unique test identifier for test isolation
     /// </summary>
@@ -163,7 +113,8 @@ public abstract class E2ETestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Selects an existing static project instead of creating a new one
+    /// Selects an existing static project instead of creating a new one.
+    /// Updated to handle the recent projects functionality by navigating to projects page if needed.
     /// </summary>
     /// <param name="projectIndex">Index of the static project (0-3)</param>
     protected async Task SelectExistingProject(int projectIndex = 0)
@@ -174,28 +125,158 @@ public abstract class E2ETestBase : IAsyncLifetime
         await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        // Click the project selector to open dropdown
-        await ClickProjectSelector();
+        // Try to select project from dropdown first (recent projects)
+        if (await TrySelectProjectFromDropdown(project.Name))
+        {
+            return;
+        }
         
-        // Wait for dropdown to appear
-        await Page.WaitForTimeoutAsync(1000);
+        // If not found in recent projects, navigate to projects page and select from there
+        await NavigateToProjectsPageAndSelect(project.Name);
+    }
+
+    /// <summary>
+    /// Attempts to select a project from the project selector dropdown
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    /// <returns>True if project was found and selected, false otherwise</returns>
+    private async Task<bool> TrySelectProjectFromDropdown(string projectName)
+    {
+        try
+        {
+            // Click the project selector to open dropdown
+            await ClickProjectSelector();
+            
+            // Wait for dropdown to appear
+            await Page.WaitForTimeoutAsync(1000);
+            
+            // Force Bootstrap dropdowns to be visible using JavaScript
+            await Page.EvaluateAsync(@"
+                const dropdowns = document.querySelectorAll('.dropdown-menu');
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.add('show');
+                    dropdown.style.display = 'block';
+                    dropdown.style.position = 'static';
+                    dropdown.style.transform = 'none';
+                });
+            ");
+            
+            // Wait for changes to take effect
+            await Page.WaitForTimeoutAsync(500);
+            
+            // Try to find and select the project
+            return await TrySelectProjectFromCurrentDropdown(projectName);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Navigates to the projects page and selects the project using search functionality
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    private async Task NavigateToProjectsPageAndSelect(string projectName)
+    {
+        // Navigate to projects page
+        await Page.GotoAsync($"{BaseUrl}/projects");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        // Force Bootstrap dropdowns to be visible using JavaScript
-        await Page.EvaluateAsync(@"
-            const dropdowns = document.querySelectorAll('.dropdown-menu');
-            dropdowns.forEach(dropdown => {
-                dropdown.classList.add('show');
-                dropdown.style.display = 'block';
-                dropdown.style.position = 'static';
-                dropdown.style.transform = 'none';
-            });
-        ");
+        // Wait for projects to load
+        await Page.WaitForTimeoutAsync(2000);
         
-        // Wait for changes to take effect
-        await Page.WaitForTimeoutAsync(500);
+        // First try to find project on current page
+        if (await TrySelectProjectOnCurrentPage(projectName))
+        {
+            return;
+        }
         
-        // Select the project by name
-        await SelectProjectByName(project.Name);
+        // If not found, use search to locate the project
+        await SearchForProject(projectName);
+        
+        // Try to select the project after search
+        if (await TrySelectProjectOnCurrentPage(projectName))
+        {
+            return;
+        }
+        
+        throw new Exception($"Could not find project '{projectName}' on the projects page, even after searching");
+    }
+
+    /// <summary>
+    /// Attempts to find and select a project on the current projects page
+    /// </summary>
+    /// <param name="projectName">Name of the project to select</param>
+    /// <returns>True if project was found and selected, false otherwise</returns>
+    private async Task<bool> TrySelectProjectOnCurrentPage(string projectName)
+    {
+        var projectStrategies = new[]
+        {
+            $"a:has-text('{projectName}')",
+            $"button:has-text('{projectName}')",
+            $".project-card:has-text('{projectName}')",
+            $".project-item:has-text('{projectName}')",
+            $"[data-project-name='{projectName}']",
+            $"[data-testid='project-name-link-{projectName}']"
+        };
+
+        foreach (var strategy in projectStrategies)
+        {
+            try
+            {
+                var projectElement = Page.Locator(strategy);
+                if (await projectElement.CountAsync() > 0)
+                {
+                    await projectElement.First.ClickAsync();
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Uses the search functionality to find a specific project
+    /// </summary>
+    /// <param name="projectName">Name of the project to search for</param>
+    private async Task SearchForProject(string projectName)
+    {
+        try
+        {
+            // Find and use the search input
+            var searchInput = Page.Locator("[data-testid='search-input']");
+            if (await searchInput.CountAsync() > 0)
+            {
+                await searchInput.FillAsync(projectName);
+                
+                // Click the search button
+                var searchButton = Page.Locator("button:has(.fa-search)");
+                if (await searchButton.CountAsync() > 0)
+                {
+                    await searchButton.ClickAsync();
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Page.WaitForTimeoutAsync(1000); // Give time for search results to load
+                }
+                else
+                {
+                    // Fallback: press Enter in search input
+                    await searchInput.PressAsync("Enter");
+                    await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    await Page.WaitForTimeoutAsync(1000);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error searching for project '{projectName}': {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -229,10 +310,11 @@ public abstract class E2ETestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Selects a project by name from the dropdown
+    /// Attempts to select a project from the currently visible dropdown items
     /// </summary>
     /// <param name="projectName">Name of the project to select</param>
-    private async Task SelectProjectByName(string projectName)
+    /// <returns>True if project was found and selected, false otherwise</returns>
+    private async Task<bool> TrySelectProjectFromCurrentDropdown(string projectName)
     {
         // Try multiple strategies to find the project
         var strategies = new[]
@@ -270,7 +352,7 @@ public abstract class E2ETestBase : IAsyncLifetime
                         await projectItem.First.EvaluateAsync("element => element.click()");
                     }
                     await Page.WaitForTimeoutAsync(1000);
-                    return;
+                    return true;
                 }
             }
             catch (Exception)
@@ -279,6 +361,6 @@ public abstract class E2ETestBase : IAsyncLifetime
             }
         }
         
-        throw new Exception($"Could not find project '{projectName}' in dropdown");
+        return false;
     }
 }

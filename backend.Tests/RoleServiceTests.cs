@@ -72,5 +72,115 @@ namespace backend.Tests
             var result = await service.DeleteRoleAsync(999);
             Assert.False(result);
         }
+
+        [Fact]
+        public async Task CreateRoleAsync_ReturnsNull_WhenRoleNameIsNull()
+        {
+            using var db = GetDbContext(nameof(CreateRoleAsync_ReturnsNull_WhenRoleNameIsNull));
+            var service = new RoleService(db);
+            
+            var result = await service.CreateRoleAsync(null!);
+            
+            Assert.Null(result);
+            Assert.Empty(await db.Roles.ToListAsync());
+        }
+
+        [Fact]
+        public async Task CreateRoleAsync_ReturnsNull_WhenRoleNameIsEmpty()
+        {
+            using var db = GetDbContext(nameof(CreateRoleAsync_ReturnsNull_WhenRoleNameIsEmpty));
+            var service = new RoleService(db);
+            
+            var result = await service.CreateRoleAsync("");
+            
+            Assert.Null(result);
+            Assert.Empty(await db.Roles.ToListAsync());
+        }
+
+        [Fact]
+        public async Task CreateRoleAsync_ReturnsNull_WhenRoleNameIsWhitespace()
+        {
+            using var db = GetDbContext(nameof(CreateRoleAsync_ReturnsNull_WhenRoleNameIsWhitespace));
+            var service = new RoleService(db);
+            
+            var result = await service.CreateRoleAsync("   ");
+            
+            Assert.Null(result);
+            Assert.Empty(await db.Roles.ToListAsync());
+        }
+
+        [Fact]
+        public async Task CreateRoleAsync_ReturnsExisting_WhenRoleAlreadyExists()
+        {
+            using var db = GetDbContext(nameof(CreateRoleAsync_ReturnsExisting_WhenRoleAlreadyExists));
+            var existingRole = new Role { Name = "ExistingRole" };
+            db.Roles.Add(existingRole);
+            await db.SaveChangesAsync();
+            var service = new RoleService(db);
+            
+            var result = await service.CreateRoleAsync("ExistingRole");
+            
+            Assert.NotNull(result);
+            Assert.Equal(existingRole.Id, result.Id);
+            Assert.Equal("ExistingRole", result.Name);
+            Assert.Single(await db.Roles.ToListAsync()); // Still only one role
+        }
+
+        [Fact]
+        public async Task CreateRoleAsync_HandlesCaseInsensitiveDuplicates()
+        {
+            using var db = GetDbContext(nameof(CreateRoleAsync_HandlesCaseInsensitiveDuplicates));
+            var existingRole = new Role { Name = "Admin" };
+            db.Roles.Add(existingRole);
+            await db.SaveChangesAsync();
+            var service = new RoleService(db);
+            
+            var result = await service.CreateRoleAsync("ADMIN"); // Different case
+            
+            Assert.NotNull(result);
+            Assert.Equal(existingRole.Id, result.Id);
+            Assert.Equal("Admin", result.Name); // Should return original case
+            Assert.Single(await db.Roles.ToListAsync()); // Still only one role
+        }
+
+        [Fact]
+        public async Task DeleteRoleAsync_ReturnsFalse_WhenRoleHasAssignedUsers()
+        {
+            using var db = GetDbContext(nameof(DeleteRoleAsync_ReturnsFalse_WhenRoleHasAssignedUsers));
+            
+            var role = new Role { Name = "RoleWithUsers" };
+            var user = new User 
+            { 
+                UserName = "testuser",
+                Email = "test@example.com",
+                CreatedAt = System.DateTime.UtcNow
+            };
+            
+            db.Roles.Add(role);
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+
+            // Create user-role relationship
+            var userRole = new UserRole { UserId = user.Id, RoleId = role.Id };
+            db.UserRoles.Add(userRole);
+            await db.SaveChangesAsync();
+            
+            var service = new RoleService(db);
+            var result = await service.DeleteRoleAsync(role.Id);
+            
+            Assert.False(result);
+            Assert.Single(await db.Roles.ToListAsync()); // Role should still exist
+        }
+
+        [Fact]
+        public async Task GetAllRolesAsync_ReturnsEmptyList_WhenNoRoles()
+        {
+            using var db = GetDbContext(nameof(GetAllRolesAsync_ReturnsEmptyList_WhenNoRoles));
+            var service = new RoleService(db);
+            
+            var result = await service.GetAllRolesAsync();
+            
+            Assert.Empty(result);
+        }
     }
 }

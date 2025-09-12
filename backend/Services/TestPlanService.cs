@@ -47,19 +47,41 @@ namespace backend.Services
 
         /// <summary>
         /// Creates a new test plan with the provided data and enum type conversion.
+        /// Validates input data before creation to ensure data integrity.
         /// </summary>
         /// <param name="testPlan">The test plan data to create.</param>
         /// <returns>The created test plan DTO if successful; otherwise, null.</returns>
         public async Task<TestPlanDto?> CreateAsync(TestPlanDto testPlan)
         {
-            var entity = FromDto(testPlan);
-            _context.TestPlans.Add(entity);
-            await _context.SaveChangesAsync();
-            return ToDto(entity);
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(testPlan.Name))
+                return null;
+
+            if (testPlan.CreatedBy <= 0)
+                return null;
+
+            // Validate test plan type
+            if (string.IsNullOrWhiteSpace(testPlan.Type) || 
+                !Enum.TryParse<TestPlanType>(testPlan.Type, out _))
+                return null;
+
+            try
+            {
+                var entity = FromDto(testPlan);
+                _context.TestPlans.Add(entity);
+                await _context.SaveChangesAsync();
+                return ToDto(entity);
+            }
+            catch (Exception)
+            {
+                // Log the exception in a real application
+                return null;
+            }
         }
 
         /// <summary>
         /// Updates an existing test plan with new data including type conversion.
+        /// Validates input data before update to ensure data integrity.
         /// </summary>
         /// <param name="testPlan">The test plan data to update.</param>
         /// <returns>True if the update was successful; otherwise, false.</returns>
@@ -68,14 +90,33 @@ namespace backend.Services
             var tracked = await _context.TestPlans.FindAsync(testPlan.Id);
             if (tracked == null) return false;
             
-            tracked.Name = testPlan.Name;
-            // Safe enum parsing with fallback to current value
-            tracked.Type = Enum.TryParse<TestPlanType>(testPlan.Type, out var t) ? t : tracked.Type;
-            tracked.Description = testPlan.Description;
-            tracked.CreatedBy = testPlan.CreatedBy;
-            tracked.CreatedAt = testPlan.CreatedAt;
-            await _context.SaveChangesAsync();
-            return true;
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(testPlan.Name))
+                return false;
+
+            if (testPlan.CreatedBy <= 0)
+                return false;
+
+            // Validate test plan type
+            if (string.IsNullOrWhiteSpace(testPlan.Type) || 
+                !Enum.TryParse<TestPlanType>(testPlan.Type, out var parsedType))
+                return false;
+
+            try
+            {
+                tracked.Name = testPlan.Name;
+                tracked.Type = parsedType;
+                tracked.Description = testPlan.Description;
+                tracked.CreatedBy = testPlan.CreatedBy;
+                tracked.CreatedAt = testPlan.CreatedAt;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                // Log the exception in a real application
+                return false;
+            }
         }
 
         /// <summary>

@@ -96,6 +96,105 @@ namespace backend.ApiTests
         }
 
         [Fact]
+        public async Task UpdateTestCase_DescriptionPersistence_ShouldUpdateDescription()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Create initial test case with specific description
+            var originalDescription = "Original test case description for API test";
+            var updatedDescription = "Updated test case description - this should be persisted";
+            
+            var createDto = new TestCaseDto
+            {
+                Title = "Description Persistence Test",
+                Description = originalDescription,
+                Steps = new List<TestStepDto> {
+                    new TestStepDto { Description = "Test Step", ExpectedResult = "Expected Result" }
+                },
+                SuiteId = 1,
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            var createResponse = await _client.PostAsJsonAsync("/api/testcase", createDto, _jsonOptions);
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
+            Assert.NotNull(created);
+            Assert.Equal(originalDescription, created.Description);
+
+            // Update only the description (keep everything else the same)
+            created.Description = updatedDescription;
+            
+            var putResponse = await _client.PutAsJsonAsync($"/api/testcase/{created.Id}", created, _jsonOptions);
+            putResponse.EnsureSuccessStatusCode();
+            
+            // Fetch the test case again to verify the description was actually updated
+            var getResponse = await _client.GetAsync($"/api/testcase/{created.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var retrieved = await getResponse.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
+            
+            // Verify the description was properly updated and persisted
+            Assert.NotNull(retrieved);
+            Assert.Equal(updatedDescription, retrieved.Description);
+            Assert.NotEqual(originalDescription, retrieved.Description);
+            
+            // Verify other fields remain unchanged
+            Assert.Equal(created.Title, retrieved.Title);
+            Assert.Equal(created.SuiteId, retrieved.SuiteId);
+            Assert.Equal(created.Steps.Count, retrieved.Steps.Count);
+        }
+
+        [Fact]
+        public async Task UpdateTestCase_MultipleFields_ShouldPersistAllChanges()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Create test case
+            var createDto = new TestCaseDto
+            {
+                Title = "Multi-field Update Test",
+                Description = "Original description",
+                Steps = new List<TestStepDto> {
+                    new TestStepDto { Description = "Original Step", ExpectedResult = "Original Result" }
+                },
+                SuiteId = 1,
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            var createResponse = await _client.PostAsJsonAsync("/api/testcase", createDto, _jsonOptions);
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
+            Assert.NotNull(created);
+
+            // Update multiple fields simultaneously
+            created.Title = "Updated Multi-field Test";
+            created.Description = "Updated description with multiple changes";
+            created.Steps.Clear();
+            created.Steps.Add(new TestStepDto { Description = "Updated Step 1", ExpectedResult = "Updated Result 1" });
+            created.Steps.Add(new TestStepDto { Description = "New Step 2", ExpectedResult = "New Result 2" });
+            
+            var putResponse = await _client.PutAsJsonAsync($"/api/testcase/{created.Id}", created, _jsonOptions);
+            putResponse.EnsureSuccessStatusCode();
+            
+            // Verify all changes were persisted
+            var getResponse = await _client.GetAsync($"/api/testcase/{created.Id}");
+            getResponse.EnsureSuccessStatusCode();
+            var retrieved = await getResponse.Content.ReadFromJsonAsync<TestCaseDto>(_jsonOptions);
+            
+            Assert.NotNull(retrieved);
+            Assert.Equal("Updated Multi-field Test", retrieved.Title);
+            Assert.Equal("Updated description with multiple changes", retrieved.Description);
+            Assert.Equal(2, retrieved.Steps.Count);
+            Assert.Equal("Updated Step 1", retrieved.Steps[0].Description);
+            Assert.Equal("Updated Result 1", retrieved.Steps[0].ExpectedResult);
+            Assert.Equal("New Step 2", retrieved.Steps[1].Description);
+            Assert.Equal("New Result 2", retrieved.Steps[1].ExpectedResult);
+        }
+
+        [Fact]
         public async Task CanDeleteTestCase()
         {
             // Arrange
@@ -197,6 +296,34 @@ namespace backend.ApiTests
 
             var resp = await _client.DeleteAsync("/api/testcase/1/steps/9999999");
             Assert.Equal(System.Net.HttpStatusCode.NotFound, resp.StatusCode);
+        }
+
+        [Fact]
+        public async Task CanGetPagedTestCasesWithPriorityEnum()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/testcase/paged?page=1&pageSize=10");
+            
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var rawJson = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Raw JSON Response: {rawJson}");
+            
+            var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<TestCaseDto>>(_jsonOptions);
+            Assert.NotNull(pagedResult);
+            Assert.NotNull(pagedResult.Items);
+            
+            // Check that we can deserialize TestCases with Priority enum
+            if (pagedResult.Items.Count > 0)
+            {
+                var firstTestCase = pagedResult.Items[0];
+                Console.WriteLine($"First TestCase Priority: {firstTestCase.Priority}");
+                // Priority should be a valid TestCasePriority enum value
+                Assert.True(Enum.IsDefined(typeof(TestCasePriority), firstTestCase.Priority));
+            }
         }
     }
 }
