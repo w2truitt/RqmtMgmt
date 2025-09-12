@@ -4,7 +4,7 @@ namespace backend.ApiTests
 {
     /// <summary>
     /// Collection definition for integration tests to ensure they run sequentially
-    /// and don't interfere with each other when using the shared docker-compose instance.
+    /// and don't interfere with each other when using the shared Kubernetes instance.
     /// </summary>
     [CollectionDefinition("Integration Tests")]
     public class IntegrationTestCollection : ICollectionFixture<IntegrationTestFixture>
@@ -15,29 +15,35 @@ namespace backend.ApiTests
     }
 
     /// <summary>
-    /// Fixture for integration tests that ensures the docker-compose instance is available.
+    /// Fixture for integration tests that ensures the Kubernetes instance is available.
     /// </summary>
     public class IntegrationTestFixture : IAsyncLifetime
     {
         public async Task InitializeAsync()
         {
-            // Verify the docker-compose instance is running before any tests start
-            using var client = new HttpClient();
-            client.BaseAddress = new Uri("https://localhost");
+            // Verify the Kubernetes instance is running before any tests start
+            // Create HttpClientHandler that bypasses SSL certificate validation for local development
+            var handler = new HttpClientHandler()
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            
+            using var client = new HttpClient(handler);
+            client.BaseAddress = new Uri("https://rqmtmgmt.local");
             
             try
             {
                 var healthResponse = await client.GetAsync("/health");
                 if (!healthResponse.IsSuccessStatusCode)
                 {
-                    throw new InvalidOperationException("Docker-compose instance health check failed");
+                    throw new InvalidOperationException("Kubernetes instance health check failed");
                 }
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    "Integration tests require docker-compose.identity.yml to be running. " +
-                    "Start it with: cd docker-compose && docker-compose -f docker-compose.identity.yml up -d", ex);
+                    "Integration tests require Kubernetes deployment to be running. " +
+                    "Start it with: ./scripts/deploy-local-k8s.sh", ex);
             }
         }
 

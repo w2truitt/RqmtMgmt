@@ -1,0 +1,76 @@
+# Multi-stage production Dockerfile for Blazor WebAssembly
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy project files and restore dependencies
+COPY ["frontend/frontend.csproj", "frontend/"]
+COPY ["RqmtMgmtShared/RqmtMgmtShared.csproj", "RqmtMgmtShared/"]
+COPY ["local_nuget/", "local_nuget/"]
+COPY ["NuGet.Config", "./"]
+
+RUN dotnet restore "frontend/frontend.csproj"
+
+# Copy source code and build
+COPY . .
+WORKDIR "/src/frontend"
+RUN dotnet publish "frontend.csproj" -c Release -o /app/publish --no-restore
+
+# Runtime stage - use nginx to serve static files
+FROM nginx:alpine AS runtime
+WORKDIR /usr/share/nginx/html
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S -D -H -u 1001 -h /usr/share/nginx/html -s /sbin/nologin -G appgroup appuser
+
+# Copy published Blazor WebAssembly files
+COPY --from=build /app/publish/wwwroot .
+
+# Create custom nginx configuration for Blazor WebAssembly
+RUN echo 'server { \
+    listen 80; \
+    server_name localhost; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    \
+    # Handle client-side routing \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    \
+    # Security headers \
+    add_header X-Frame-Options "SAMEORIGIN" always; \
+    add_header X-Content-Type-Options "nosniff" always; \
+    add_header X-XSS-Protection "1; mode=block" always; \
+    \
+    # Cache static assets \
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
+        expires 1y; \
+        add_header Cache-Control "public, immutable"; \
+    } \
+    \
+    # Health check endpoint \
+    location /health { \
+        access_log off; \
+        return 200 "healthy\n"; \
+        add_header Content-Type text/plain; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
+# Set ownership to non-root user
+RUN chown -R appuser:appgroup /usr/share/nginx/html && \
+    chown -R appuser:appgroup /var/cache/nginx && \
+    chown -R appuser:appgroup /var/log/nginx && \
+    chown -R appuser:appgroup /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown -R appuser:appgroup /var/run/nginx.pid
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

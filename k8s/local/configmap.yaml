@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: rqmtmgmt
+data:
+  # ASP.NET Core Configuration
+  ASPNETCORE_ENVIRONMENT: "Development"
+  ASPNETCORE_URLS: "http://0.0.0.0:80"
+  
+  # Authentication Configuration (for local development)
+  Authentication__Authority: "http://identityserver-service:80"
+  Authentication__Audience: "rqmtmgmt-api"
+  Authentication__RequireHttpsMetadata: "false"
+  
+  # Frontend OIDC Configuration
+  OIDC__Authority: "https://rqmtmgmt.local"
+  OIDC__ClientId: "rqmtmgmt-frontend"
+  OIDC__ClientSecret: "frontend-secret"
+  
+  # Database Configuration (external SQL Server)
+  # Note: Using host.docker.internal to connect to external database
+  ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;"
+  ConnectionStrings__IdentityConnection: "Server=host.docker.internal,1433;Database=RqmtMgmtIdentity;User=sa;Password=Your_password123;TrustServerCertificate=True;"
+  
+  # Logging Configuration
+  Logging__LogLevel__Default: "Information"
+  Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+  
+  # Health Check Configuration
+  HealthChecks__UI__HealthChecksUri: "http://localhost/health"

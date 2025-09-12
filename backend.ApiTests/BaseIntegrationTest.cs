@@ -7,8 +7,8 @@ using Xunit;
 namespace backend.ApiTests
 {
     /// <summary>
-    /// Base class for integration tests that run against the actual docker-compose.identity.yml instance.
-    /// These tests authenticate with the real Identity Server and test against the real database.
+    /// Base class for integration tests that run against the Kubernetes deployment.
+    /// These tests authenticate with the Identity Server running in Kubernetes and test against the real database.
     /// </summary>
     public abstract class BaseIntegrationTest : IAsyncLifetime
     {
@@ -16,14 +16,20 @@ namespace backend.ApiTests
         protected readonly JsonSerializerOptions _jsonOptions;
         protected string? _accessToken;
 
-        private const string BaseUrl = "https://localhost";
+        private const string BaseUrl = "https://rqmtmgmt.local";
         private const string ClientId = "rqmtmgmt-backend";
         private const string ClientSecret = "backend-secret";
         private const string Scope = "rqmtmgmt.api";
 
         protected BaseIntegrationTest()
         {
-            _client = new HttpClient
+            // Create HttpClientHandler that bypasses SSL certificate validation for local development
+            var handler = new HttpClientHandler()
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            
+            _client = new HttpClient(handler)
             {
                 BaseAddress = new Uri(BaseUrl)
             };
@@ -80,12 +86,12 @@ namespace backend.ApiTests
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to authenticate with Identity Server. Ensure docker-compose.identity.yml is running on {BaseUrl}. Error: {ex.Message}", ex);
+                throw new InvalidOperationException($"Failed to authenticate with Identity Server. Ensure Kubernetes deployment is running and accessible at {BaseUrl}. Error: {ex.Message}", ex);
             }
         }
 
         /// <summary>
-        /// Verifies that the docker-compose.identity.yml instance is running and accessible.
+        /// Verifies that the Kubernetes deployment is running and accessible.
         /// </summary>
         protected async Task<bool> IsSystemAvailableAsync()
         {
@@ -101,13 +107,13 @@ namespace backend.ApiTests
         }
 
         /// <summary>
-        /// Skips the test if the docker-compose system is not available.
+        /// Skips the test if the Kubernetes system is not available.
         /// </summary>
         protected async Task SkipIfSystemNotAvailableAsync()
         {
             if (!await IsSystemAvailableAsync())
             {
-                Skip.If(true, "Integration test skipped: docker-compose.identity.yml instance is not running on localhost:443. Start it with: cd docker-compose && docker-compose -f docker-compose.identity.yml up -d");
+                Skip.If(true, "Integration test skipped: Kubernetes deployment is not running or not accessible at rqmtmgmt.local. Ensure the deployment is running with: ./scripts/deploy-local-k8s.sh");
             }
         }
     }

@@ -1,0 +1,27 @@
+# Rancher Desktop Registry Configuration
+# This file configures the local registry for Rancher Desktop
+
+# For containerd runtime
+containerd:
+  system:
+    registries:
+      "localhost:5000":
+        host:
+          "http://localhost:5000":
+            capabilities: ["pull", "resolve", "push"]
+            skip_verify: true
+      "127.0.0.1:5000":
+        host:
+          "http://127.0.0.1:5000":
+            capabilities: ["pull", "resolve", "push"]
+            skip_verify: true
+
+# Enable local registry service
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      # Start local registry if not running
+      if ! docker ps | grep -q "registry:2"; then
+        docker run -d --name registry --restart=always -p 5000:5000 registry:2
+      fi

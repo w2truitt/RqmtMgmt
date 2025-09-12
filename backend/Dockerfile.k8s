@@ -1,0 +1,41 @@
+# Multi-stage production Dockerfile for Backend API
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy project files and restore dependencies
+COPY ["backend/backend.csproj", "backend/"]
+COPY ["RqmtMgmtShared/RqmtMgmtShared.csproj", "RqmtMgmtShared/"]
+COPY ["local_nuget/", "local_nuget/"]
+COPY ["NuGet.Config", "./"]
+
+RUN dotnet restore "backend/backend.csproj"
+
+# Copy source code and build
+COPY . .
+WORKDIR "/src/backend"
+RUN dotnet build "backend.csproj" -c Release -o /app/build
+
+# Publish the application
+RUN dotnet publish "backend.csproj" -c Release -o /app/publish --no-restore
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Create non-root user for security
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --gid 1001 appuser
+
+# Copy published application
+COPY --from=build /app/publish .
+
+# Set ownership to non-root user
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:80/health || exit 1
+
+EXPOSE 80
+ENTRYPOINT ["dotnet", "backend.dll"]
