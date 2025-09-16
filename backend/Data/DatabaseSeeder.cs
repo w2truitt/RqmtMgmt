@@ -116,7 +116,7 @@ namespace backend.Data
             // Sample Requirements
             var customerReq = new Requirement
             {
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Title = "User Authentication System",
                 Description = "The system shall provide secure user authentication using OAuth 2.0",
                 Status = RequirementStatus.Approved,
@@ -129,7 +129,7 @@ namespace backend.Data
 
             var productReq = new Requirement
             {
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Title = "Login Page Design",
                 Description = "The login page shall have a modern, responsive design",
                 Status = RequirementStatus.Draft,

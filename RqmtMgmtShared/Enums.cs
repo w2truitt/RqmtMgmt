@@ -1,9 +1,24 @@
 namespace RqmtMgmtShared
 {
     /// <summary>
-    /// Specifies the type of requirement: CRS, PRS, SRS, UserStory, BusinessRule, or EntityName.
+    /// Specifies the type of requirement: CRD, PRD, SRS, UserStory, BusinessRule, or EntityName.
     /// </summary>
-    public enum RequirementType { CRS, PRS, SRS, UserStory, BusinessRule, EntityName }
+    public enum RequirementType { CRD, PRD, SRS, UserStory, BusinessRule, EntityName }
+
+    /// <summary>
+    /// Specifies the type of requirement document (CRD, PRD, SRS).
+    /// </summary>
+    public enum DocumentType { CRD, PRD, SRS }
+
+    /// <summary>
+    /// Specifies the status of a document (Draft, InReview, Approved, Published).
+    /// </summary>
+    public enum DocumentStatus { Draft, InReview, Approved, Published }
+
+    /// <summary>
+    /// Specifies the type of trace relationship between requirements.
+    /// </summary>
+    public enum TraceType { DerivedFrom, ImplementedBy, ValidatedBy, RelatedTo }
 
     /// <summary>
     /// Specifies the status of a requirement (Draft, Approved, Implemented, Verified).

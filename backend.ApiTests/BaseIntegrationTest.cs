@@ -7,8 +7,8 @@ using Xunit;
 namespace backend.ApiTests
 {
     /// <summary>
-    /// Base class for integration tests that run against the Kubernetes deployment.
-    /// These tests authenticate with the Identity Server running in Kubernetes and test against the real database.
+    /// Base class for integration tests that run against the deployed application.
+    /// These tests authenticate with the Identity Server and test against the real database.
     /// </summary>
     public abstract class BaseIntegrationTest : IAsyncLifetime
     {
@@ -86,18 +86,18 @@ namespace backend.ApiTests
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to authenticate with Identity Server. Ensure Kubernetes deployment is running and accessible at {BaseUrl}. Error: {ex.Message}", ex);
+                throw new InvalidOperationException($"Failed to authenticate with Identity Server. Ensure deployment is running and accessible at {BaseUrl}. For Docker Compose: 'cd docker-compose && docker-compose up -d'. For Kubernetes: './scripts/deploy-local-k8s.sh'. Error: {ex.Message}", ex);
             }
         }
 
         /// <summary>
-        /// Verifies that the Kubernetes deployment is running and accessible.
+        /// Verifies that the deployment is running and accessible.
         /// </summary>
         protected async Task<bool> IsSystemAvailableAsync()
         {
             try
             {
-                    var healthResponse = await _client.GetAsync("/health/");
+                var healthResponse = await _client.GetAsync("/health/");
                 return healthResponse.IsSuccessStatusCode;
             }
             catch
@@ -107,13 +107,13 @@ namespace backend.ApiTests
         }
 
         /// <summary>
-        /// Skips the test if the Kubernetes system is not available.
+        /// Skips the test if the system is not available.
         /// </summary>
         protected async Task SkipIfSystemNotAvailableAsync()
         {
             if (!await IsSystemAvailableAsync())
             {
-                Skip.If(true, "Integration test skipped: Kubernetes deployment is not running or not accessible at rqmtmgmt.local. Ensure the deployment is running with: ./scripts/deploy-local-k8s.sh");
+                Skip.If(true, $"Integration test skipped: Deployment is not running or not accessible at {BaseUrl}. For Docker Compose: 'cd docker-compose && docker-compose up -d'. For Kubernetes: './scripts/deploy-local-k8s.sh'");
             }
         }
     }

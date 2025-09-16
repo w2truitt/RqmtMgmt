@@ -88,7 +88,7 @@ namespace backend.ApiTests
             // Add test requirement
             var testRequirement = new Requirement
             {
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Title = "Test Requirement",
                 Description = "Test Description",
                 Status = RequirementStatus.Draft,

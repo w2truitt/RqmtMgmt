@@ -14,7 +14,7 @@ namespace RqmtMgmtShared
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of requirement (CRS, PRS, SRS, UserStory, BusinessRule, EntityName).
+        /// Gets or sets the type of requirement (CRD, PRD, SRS, UserStory, BusinessRule, EntityName).
         /// </summary>
         public RequirementType Type { get; set; }
 
@@ -83,5 +83,15 @@ namespace RqmtMgmtShared
         /// Gets or sets the full requirement identifier including project code (e.g., "MBA-REQ-001").
         /// </summary>
         public string FullRequirementId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the ID of the document this requirement belongs to.
+        /// </summary>
+        public int? DocumentId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the document section this requirement belongs to.
+        /// </summary>
+        public int? SectionId { get; set; }
     }
 }

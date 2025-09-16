@@ -603,7 +603,7 @@ namespace backend.ApiTests
             var requirementDto = new RequirementDto
             {
                 Title = "Test Requirement for Search",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Test requirement for search and sort testing",
                 ProjectId = project.Id,

@@ -4,7 +4,7 @@ using RqmtMgmtShared;
 namespace backend.Models
 {
     /// <summary>
-    /// Represents a requirement (CRS, PRS, or SRS) in the requirements management system.
+    /// Represents a requirement (CRD, PRD, or SRS) in the requirements management system.
     /// Supports hierarchical relationships and links to test cases.
     /// </summary>
     public class Requirement
@@ -15,7 +15,7 @@ namespace backend.Models
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of the requirement (CRS, PRS, SRS).
+        /// Gets or sets the type of the requirement (CRD, PRD, SRS).
         /// </summary>
         public RequirementType Type { get; set; }
 
@@ -70,6 +70,16 @@ namespace backend.Models
         public string? ProjectCode { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the document this requirement belongs to.
+        /// </summary>
+        public int? DocumentId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the document section this requirement belongs to.
+        /// </summary>
+        public int? SectionId { get; set; }
+
+        /// <summary>
         /// Gets or sets the parent requirement for hierarchy navigation.
         /// </summary>
         public Requirement? Parent { get; set; }
@@ -90,6 +100,16 @@ namespace backend.Models
         public Project? Project { get; set; }
 
         /// <summary>
+        /// Gets or sets the document this requirement belongs to.
+        /// </summary>
+        public Document? Document { get; set; }
+
+        /// <summary>
+        /// Gets or sets the document section this requirement belongs to.
+        /// </summary>
+        public DocumentSection? Section { get; set; }
+
+        /// <summary>
         /// Gets or sets outgoing links to other requirements.
         /// </summary>
         public ICollection<RequirementLink> OutgoingLinks { get; set; } = new List<RequirementLink>();
@@ -103,5 +123,15 @@ namespace backend.Models
         /// Gets or sets links from this requirement to test cases.
         /// </summary>
         public ICollection<RequirementTestCaseLink> TestCaseLinks { get; set; } = new List<RequirementTestCaseLink>();
+
+        /// <summary>
+        /// Gets or sets outgoing trace links from this requirement.
+        /// </summary>
+        public ICollection<RequirementTrace> OutgoingTraces { get; set; } = new List<RequirementTrace>();
+
+        /// <summary>
+        /// Gets or sets incoming trace links to this requirement.
+        /// </summary>
+        public ICollection<RequirementTrace> IncomingTraces { get; set; } = new List<RequirementTrace>();
     }
 }

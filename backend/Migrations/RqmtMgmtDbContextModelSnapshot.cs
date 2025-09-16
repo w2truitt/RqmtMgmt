@@ -62,6 +62,123 @@ namespace backend.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("backend.Models.Document", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Appendix")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AssumptionsConstraints")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Background")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Dependencies")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DocumentOwner")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InScope")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Objective")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OutOfScope")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SuccessCriteria")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Timeline")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserPersonas")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ProjectId", "Type")
+                        .HasDatabaseName("IX_Documents_ProjectId_Type");
+
+                    b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("backend.Models.DocumentSection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsNotApplicable")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SectionOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId", "SectionOrder")
+                        .HasDatabaseName("IX_DocumentSections_DocumentId_SectionOrder");
+
+                    b.ToTable("DocumentSections");
+                });
+
             modelBuilder.Entity("backend.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -141,6 +258,9 @@ namespace backend.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("DocumentId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ParentId")
                         .HasColumnType("int");
 
@@ -148,6 +268,9 @@ namespace backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SectionId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -175,7 +298,11 @@ namespace backend.Migrations
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("DocumentId");
+
                     b.HasIndex("ParentId");
+
+                    b.HasIndex("SectionId");
 
                     b.HasIndex("ProjectId", "Id")
                         .HasDatabaseName("IX_Requirements_ProjectId_Id");
@@ -226,6 +353,43 @@ namespace backend.Migrations
                     b.HasIndex("TestCaseId");
 
                     b.ToTable("RequirementTestCaseLinks");
+                });
+
+            modelBuilder.Entity("backend.Models.RequirementTrace", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SourceRequirementId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TargetRequirementId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TraceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("TargetRequirementId")
+                        .HasDatabaseName("IX_RequirementTraces_TargetRequirementId");
+
+                    b.HasIndex("SourceRequirementId", "TraceType")
+                        .HasDatabaseName("IX_RequirementTraces_SourceRequirementId_TraceType");
+
+                    b.ToTable("RequirementTraces");
                 });
 
             modelBuilder.Entity("backend.Models.RequirementVersion", b =>
@@ -728,6 +892,36 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("backend.Models.Document", b =>
+                {
+                    b.HasOne("backend.Models.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("backend.Models.DocumentSection", b =>
+                {
+                    b.HasOne("backend.Models.Document", "Document")
+                        .WithMany("Sections")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
             modelBuilder.Entity("backend.Models.Project", b =>
                 {
                     b.HasOne("backend.Models.User", "Owner")
@@ -766,6 +960,11 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.Document", "Document")
+                        .WithMany("Requirements")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("backend.Models.Requirement", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
@@ -777,11 +976,20 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("backend.Models.DocumentSection", "Section")
+                        .WithMany("Requirements")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Creator");
+
+                    b.Navigation("Document");
 
                     b.Navigation("Parent");
 
                     b.Navigation("Project");
+
+                    b.Navigation("Section");
                 });
 
             modelBuilder.Entity("backend.Models.RequirementLink", b =>
@@ -818,6 +1026,33 @@ namespace backend.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("backend.Models.RequirementTrace", b =>
+                {
+                    b.HasOne("backend.Models.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Requirement", "SourceRequirement")
+                        .WithMany("OutgoingTraces")
+                        .HasForeignKey("SourceRequirementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Requirement", "TargetRequirement")
+                        .WithMany("IncomingTraces")
+                        .HasForeignKey("TargetRequirementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("SourceRequirement");
+
+                    b.Navigation("TargetRequirement");
+                });
+
             modelBuilder.Entity("backend.Models.TestCase", b =>
                 {
                     b.HasOne("backend.Models.User", "Creator")
@@ -829,7 +1064,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.TestSuite", "Suite")
                         .WithMany("TestCases")
                         .HasForeignKey("SuiteId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("backend.Models.User", "UpdatedByUser")
                         .WithMany()
@@ -848,7 +1083,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.User", "Executor")
                         .WithMany()
                         .HasForeignKey("ExecutedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("backend.Models.TestCase", "TestCase")
                         .WithMany()
@@ -920,7 +1155,7 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.TestPlan", "TestPlan")
                         .WithMany()
                         .HasForeignKey("TestPlanId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Runner");
 
@@ -1016,6 +1251,18 @@ namespace backend.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("backend.Models.Document", b =>
+                {
+                    b.Navigation("Requirements");
+
+                    b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("backend.Models.DocumentSection", b =>
+                {
+                    b.Navigation("Requirements");
+                });
+
             modelBuilder.Entity("backend.Models.Project", b =>
                 {
                     b.Navigation("Requirements");
@@ -1033,7 +1280,11 @@ namespace backend.Migrations
 
                     b.Navigation("IncomingLinks");
 
+                    b.Navigation("IncomingTraces");
+
                     b.Navigation("OutgoingLinks");
+
+                    b.Navigation("OutgoingTraces");
 
                     b.Navigation("TestCaseLinks");
                 });

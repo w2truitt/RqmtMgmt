@@ -26,7 +26,7 @@ namespace backend.ApiTests
             var invalidRequirement = new RequirementDto
             {
                 Title = "", // Invalid - use empty string instead of null
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Valid description",
                 CreatedBy = 1,
@@ -100,7 +100,7 @@ namespace backend.ApiTests
             var requirement = new RequirementDto
             {
                 Title = "Large Data Test",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = largeDescription,
                 CreatedBy = 1,
@@ -123,7 +123,7 @@ namespace backend.ApiTests
             var parentReq = new RequirementDto
             {
                 Title = "Parent Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Parent for circular test",
                 CreatedBy = 1,
@@ -139,7 +139,7 @@ namespace backend.ApiTests
             var childReq = new RequirementDto
             {
                 Title = "Child Requirement",
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Draft,
                 Description = "Child for circular test",
                 ParentId = createdParent!.Id,
@@ -170,7 +170,7 @@ namespace backend.ApiTests
             var requirement = new RequirementDto
             {
                 Title = "Concurrent Test Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "For concurrent modification test",
                 CreatedBy = 1,

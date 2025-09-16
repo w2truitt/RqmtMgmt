@@ -25,7 +25,7 @@ namespace backend.ApiTests
             var requirementDto = new RequirementDto
             {
                 Title = "Integration Test Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "A requirement for integration testing",
                 CreatedBy = 1,
@@ -191,7 +191,7 @@ namespace backend.ApiTests
             var parentRequirement = new RequirementDto
             {
                 Title = "Parent Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Parent requirement for hierarchy test",
                 CreatedBy = 1,
@@ -208,7 +208,7 @@ namespace backend.ApiTests
             var childRequirement1 = new RequirementDto
             {
                 Title = "Child Requirement 1",
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Draft,
                 Description = "First child requirement",
                 ParentId = createdParent.Id,

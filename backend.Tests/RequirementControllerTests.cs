@@ -25,8 +25,8 @@ namespace backend.Tests
         {
             var requirements = new List<RequirementDto>
             {
-                new RequirementDto { Id = 1, Type = RequirementType.CRS, Title = "Req1", Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow },
-                new RequirementDto { Id = 2, Type = RequirementType.PRS, Title = "Req2", Status = RequirementStatus.Approved, Version = 1, CreatedBy = 2, CreatedAt = System.DateTime.UtcNow }
+                new RequirementDto { Id = 1, Type = RequirementType.CRD, Title = "Req1", Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow },
+                new RequirementDto { Id = 2, Type = RequirementType.PRD, Title = "Req2", Status = RequirementStatus.Approved, Version = 1, CreatedBy = 2, CreatedAt = System.DateTime.UtcNow }
             };
             _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(requirements);
             var result = await _controller.GetAll();
@@ -48,8 +48,8 @@ namespace backend.Tests
         [Fact]
         public async Task Create_ReturnsCreated_WithRequirement()
         {
-            var dto = new RequirementDto { Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
-            var entity = new RequirementDto { Id = 1, Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow };
+            var dto = new RequirementDto { Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
+            var entity = new RequirementDto { Id = 1, Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow };
             _mockService.Setup(s => s.CreateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(entity);
             var result = await _controller.Create(dto);
             var created = Assert.IsType<CreatedAtActionResult>(result.Result);
@@ -60,8 +60,8 @@ namespace backend.Tests
         [Fact]
         public async Task Update_ReturnsOk_WithRequirement()
         {
-            var dto = new RequirementDto { Id = 1, Title = "Updated", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
-            var entity = new RequirementDto { Id = 1, Title = "Updated", Type = RequirementType.CRS, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow };
+            var dto = new RequirementDto { Id = 1, Title = "Updated", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
+            var entity = new RequirementDto { Id = 1, Title = "Updated", Type = RequirementType.CRD, Status = RequirementStatus.Draft, Version = 1, CreatedBy = 1, CreatedAt = System.DateTime.UtcNow };
             _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(entity);
             _mockService.Setup(s => s.UpdateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(true);
             var result = await _controller.Update(1, dto);
@@ -71,7 +71,7 @@ namespace backend.Tests
         [Fact]
         public async Task Update_ReturnsNotFound_WhenNotExists()
         {
-            var dto = new RequirementDto { Id = 99, Title = "NotFound", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
+            var dto = new RequirementDto { Id = 99, Title = "NotFound", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
             _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((RequirementDto)null);
             _mockService.Setup(s => s.UpdateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(false);
             var result = await _controller.Update(99, dto);
@@ -103,7 +103,7 @@ namespace backend.Tests
             { 
                 Id = 1, 
                 Title = "Test Requirement", 
-                Type = RequirementType.CRS, 
+                Type = RequirementType.CRD, 
                 Status = RequirementStatus.Draft,
                 Version = 1,
                 CreatedBy = 1,
@@ -123,7 +123,7 @@ namespace backend.Tests
         [Fact]
         public async Task Create_ReturnsBadRequest_WhenServiceReturnsNull()
         {
-            var dto = new RequirementDto { Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
+            var dto = new RequirementDto { Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
             _mockService.Setup(s => s.CreateAsync(It.IsAny<RequirementDto>())).ReturnsAsync((RequirementDto)null);
             var result = await _controller.Create(dto);
             Assert.IsType<BadRequestResult>(result.Result);
@@ -136,7 +136,7 @@ namespace backend.Tests
         [Fact]
         public async Task Update_ReturnsBadRequest_WhenIdMismatch()
         {
-            var dto = new RequirementDto { Id = 2, Title = "Updated", Type = RequirementType.CRS, Status = RequirementStatus.Draft };
+            var dto = new RequirementDto { Id = 2, Title = "Updated", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
             var result = await _controller.Update(1, dto);
             Assert.IsType<BadRequestResult>(result);
         }
@@ -150,8 +150,8 @@ namespace backend.Tests
         {
             var requirements = new List<RequirementDto>
             {
-                new RequirementDto { Id = 1, Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft },
-                new RequirementDto { Id = 2, Title = "Req2", Type = RequirementType.PRS, Status = RequirementStatus.Approved }
+                new RequirementDto { Id = 1, Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Draft },
+                new RequirementDto { Id = 2, Title = "Req2", Type = RequirementType.PRD, Status = RequirementStatus.Approved }
             };
 
             var pagedResult = new PagedResult<RequirementDto>
@@ -224,7 +224,7 @@ namespace backend.Tests
 
             _mockService.Setup(s => s.GetPagedAsync(It.Is<PaginationParameters>(p => 
                 p.PageNumber == 1 && 
-                p.PageSize == 20 &&
+                p.PageSize == 10 &&
                 p.SearchTerm == null &&
                 p.SortBy == null &&
                 p.SortDescending == false
@@ -235,7 +235,7 @@ namespace backend.Tests
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             _mockService.Verify(s => s.GetPagedAsync(It.Is<PaginationParameters>(p => 
                 p.PageNumber == 1 && 
-                p.PageSize == 20 &&
+                p.PageSize == 10 &&
                 p.SearchTerm == null &&
                 p.SortBy == null &&
                 p.SortDescending == false

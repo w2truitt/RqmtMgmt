@@ -4,7 +4,7 @@ namespace backend.ApiTests
 {
     /// <summary>
     /// Collection definition for integration tests to ensure they run sequentially
-    /// and don't interfere with each other when using the shared Kubernetes instance.
+    /// and don't interfere with each other when using the shared deployment instance.
     /// </summary>
     [CollectionDefinition("Integration Tests")]
     public class IntegrationTestCollection : ICollectionFixture<IntegrationTestFixture>
@@ -15,13 +15,13 @@ namespace backend.ApiTests
     }
 
     /// <summary>
-    /// Fixture for integration tests that ensures the Kubernetes instance is available.
+    /// Fixture for integration tests that ensures the deployment instance is available.
     /// </summary>
     public class IntegrationTestFixture : IAsyncLifetime
     {
         public async Task InitializeAsync()
         {
-            // Verify the Kubernetes instance is running before any tests start
+            // Verify the deployment instance is running before any tests start
             // Create HttpClientHandler that bypasses SSL certificate validation for local development
             var handler = new HttpClientHandler()
             {
@@ -36,14 +36,15 @@ namespace backend.ApiTests
                 var healthResponse = await client.GetAsync("/health");
                 if (!healthResponse.IsSuccessStatusCode)
                 {
-                    throw new InvalidOperationException("Kubernetes instance health check failed");
+                    throw new InvalidOperationException("Deployment instance health check failed");
                 }
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    "Integration tests require Kubernetes deployment to be running. " +
-                    "Start it with: ./scripts/deploy-local-k8s.sh", ex);
+                    "Integration tests require deployment to be running and accessible at https://rqmtmgmt.local. " +
+                    "For Docker Compose: 'cd docker-compose && docker-compose up -d'. " +
+                    "For Kubernetes: './scripts/deploy-local-k8s.sh'", ex);
             }
         }
 

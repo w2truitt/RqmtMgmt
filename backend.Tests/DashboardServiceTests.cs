@@ -173,10 +173,10 @@ namespace backend.Tests
         {
             // Add test requirements with different statuses
             db.Requirements.AddRange(
-                new Requirement { Id = 1, Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
-                new Requirement { Id = 2, Title = "Req2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
+                new Requirement { Id = 1, Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
+                new Requirement { Id = 2, Title = "Req2", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
                 new Requirement { Id = 3, Title = "Req3", Type = RequirementType.SRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
-                new Requirement { Id = 4, Title = "Req4", Type = RequirementType.CRS, Status = RequirementStatus.Implemented, CreatedBy = 1, CreatedAt = DateTime.UtcNow }
+                new Requirement { Id = 4, Title = "Req4", Type = RequirementType.CRD, Status = RequirementStatus.Implemented, CreatedBy = 1, CreatedAt = DateTime.UtcNow }
             );
 
             // Add test suites
@@ -211,8 +211,8 @@ namespace backend.Tests
 
             // Add test requirements
             db.Requirements.AddRange(
-                new Requirement { Id = 1, Title = "Req1", Type = RequirementType.CRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
-                new Requirement { Id = 2, Title = "Req2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-10) }
+                new Requirement { Id = 1, Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = DateTime.UtcNow },
+                new Requirement { Id = 2, Title = "Req2", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 2, CreatedAt = DateTime.UtcNow.AddMinutes(-10) }
             );
 
             // Add test cases
@@ -246,8 +246,8 @@ namespace backend.Tests
 
             // Add test requirements with different creation times
             db.Requirements.AddRange(
-                new Requirement { Id = 1, Title = "Latest Req", Type = RequirementType.CRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now }, // Most recent
-                new Requirement { Id = 2, Title = "Middle Req", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 2, CreatedAt = now.AddMinutes(-30) }, // Middle
+                new Requirement { Id = 1, Title = "Latest Req", Type = RequirementType.CRD, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now }, // Most recent
+                new Requirement { Id = 2, Title = "Middle Req", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 2, CreatedAt = now.AddMinutes(-30) }, // Middle
                 new Requirement { Id = 3, Title = "Oldest Req", Type = RequirementType.SRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now.AddHours(-2) } // Oldest
             );
 
@@ -274,9 +274,9 @@ namespace backend.Tests
             
             db.Requirements.AddRange(
                 new Requirement { Id = 1, Title = "Draft Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now },
-                new Requirement { Id = 2, Title = "Draft Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 2, Title = "Draft Req 2", Type = RequirementType.PRD, Status = RequirementStatus.Draft, CreatedBy = 1, CreatedAt = now },
                 new Requirement { Id = 3, Title = "Approved Req", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
-                new Requirement { Id = 4, Title = "Implemented Req", Type = RequirementType.PRS, Status = RequirementStatus.Implemented, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 4, Title = "Implemented Req", Type = RequirementType.PRD, Status = RequirementStatus.Implemented, CreatedBy = 1, CreatedAt = now },
                 new Requirement { Id = 5, Title = "Verified Req", Type = RequirementType.SRS, Status = RequirementStatus.Verified, CreatedBy = 1, CreatedAt = now }
             );
             await db.SaveChangesAsync();
@@ -299,7 +299,7 @@ namespace backend.Tests
             Assert.Equal(1, result.ByStatus[RequirementStatus.Verified]);
             
             Assert.Equal(3, result.ByType[RequirementType.SRS]);
-            Assert.Equal(2, result.ByType[RequirementType.PRS]);
+            Assert.Equal(2, result.ByType[RequirementType.PRD]);
         }
 
         [Fact]
@@ -353,7 +353,7 @@ namespace backend.Tests
             // Add requirements for coverage calculation
             db.Requirements.AddRange(
                 new Requirement { Id = 1, Title = "Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
-                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
+                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
             );
             
             // Add requirement-test case links for coverage
@@ -385,9 +385,9 @@ namespace backend.Tests
             // Add requirements
             db.Requirements.AddRange(
                 new Requirement { Id = 1, Title = "Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
-                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
+                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
                 new Requirement { Id = 3, Title = "Req 3", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
-                new Requirement { Id = 4, Title = "Req 4", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
+                new Requirement { Id = 4, Title = "Req 4", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
             );
             
             // Add test cases
@@ -422,7 +422,7 @@ namespace backend.Tests
             // Add requirements but no test case links
             db.Requirements.AddRange(
                 new Requirement { Id = 1, Title = "Req 1", Type = RequirementType.SRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now },
-                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRS, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
+                new Requirement { Id = 2, Title = "Req 2", Type = RequirementType.PRD, Status = RequirementStatus.Approved, CreatedBy = 1, CreatedAt = now }
             );
             
             await db.SaveChangesAsync();

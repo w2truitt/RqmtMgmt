@@ -61,7 +61,7 @@ namespace backend.Tests
             return new Requirement
             {
                 Title = title,
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 ProjectId = projectId,
                 CreatedBy = createdBy,
@@ -77,7 +77,7 @@ namespace backend.Tests
             return new RequirementDto
             {
                 Title = title,
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 ProjectId = projectId,
                 CreatedBy = createdBy,

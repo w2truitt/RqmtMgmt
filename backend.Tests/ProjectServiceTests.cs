@@ -395,7 +395,7 @@ namespace backend.Tests
             db.Users.Add(user); await db.SaveChangesAsync();
             var project = new Project { Name = "GN", Code = "GN", Status = ProjectStatus.Active, OwnerId = user.Id, CreatedAt = DateTime.UtcNow };
             db.Projects.Add(project); await db.SaveChangesAsync();
-            db.Requirements.Add(new Requirement { ProjectId = project.Id, Title = "R1", Type = RequirementType.CRS, Status = RequirementStatus.Draft, CreatedBy = user.Id, CreatedAt = DateTime.UtcNow });
+            db.Requirements.Add(new Requirement { ProjectId = project.Id, Title = "R1", Type = RequirementType.CRD, Status = RequirementStatus.Draft, CreatedBy = user.Id, CreatedAt = DateTime.UtcNow });
             await db.SaveChangesAsync();
             var service = new ProjectService(db);
             var nextId = await service.GenerateNextRequirementIdAsync(project.Id);

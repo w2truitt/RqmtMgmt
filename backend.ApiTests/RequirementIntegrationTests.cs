@@ -40,7 +40,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = $"Integration Test Requirement {Guid.NewGuid():N}",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Created by integration test",
                 CreatedBy = 1, // Assuming admin user exists
@@ -70,7 +70,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = $"Get Test Requirement {Guid.NewGuid():N}",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "For get testing",
                 CreatedBy = 1,
@@ -103,7 +103,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = $"Update Test Requirement {Guid.NewGuid():N}",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "To be updated",
                 CreatedBy = 1,
@@ -145,7 +145,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = $"Delete Test Requirement {Guid.NewGuid():N}",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "To be deleted",
                 CreatedBy = 1,

@@ -428,6 +428,9 @@ namespace backend.Services
             Status = r.Status,
             Version = r.Version,
             CreatedBy = r.CreatedBy,
+            FullRequirementId = $"{r.ProjectCode}-REQ-{r.Id:D3}",
+            ProjectCode = r.ProjectCode ?? string.Empty,
+            ProjectName = r.Project?.Name ?? string.Empty,
             CreatedByUser = r.Creator != null ? new UserDto
             {
                 Id = r.Creator.Id,
@@ -437,7 +440,9 @@ namespace backend.Services
             } : null,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt,
-            ProjectId = r.ProjectId
+            ProjectId = r.ProjectId,
+            DocumentId = r.DocumentId,
+            SectionId = r.SectionId
         };
 
         /// <summary>
@@ -475,7 +480,91 @@ namespace backend.Services
             CreatedBy = d.CreatedBy,
             CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt,
-            ProjectId = d.ProjectId
+            ProjectId = d.ProjectId,
+            DocumentId = d.DocumentId,
+            SectionId = d.SectionId
         };
+
+        /// <summary>
+        /// Retrieves all requirements for a specific document.
+        /// </summary>
+        /// <param name="documentId">The ID of the document.</param>
+        /// <returns>A list of requirements for the specified document.</returns>
+        public async Task<List<RequirementDto>> GetByDocumentIdAsync(int documentId)
+        {
+            var entities = await _context.Requirements
+                .Where(r => r.DocumentId == documentId)
+                .AsNoTracking()
+                .ToListAsync();
+            return entities.Select(EntityToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves all requirements for a specific document section.
+        /// </summary>
+        /// <param name="sectionId">The ID of the document section.</param>
+        /// <returns>A list of requirements for the specified section.</returns>
+        public async Task<List<RequirementDto>> GetBySectionIdAsync(int sectionId)
+        {
+            var entities = await _context.Requirements
+                .Where(r => r.SectionId == sectionId)
+                .AsNoTracking()
+                .ToListAsync();
+            return entities.Select(EntityToDto).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves requirements for a specific document with pagination.
+        /// </summary>
+        /// <param name="documentId">The ID of the document.</param>
+        /// <param name="parameters">Pagination parameters.</param>
+        /// <returns>A paginated result of requirements for the specified document.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByDocumentIdAsync(int documentId, PaginationParameters parameters)
+        {
+            var query = _context.Requirements.Where(r => r.DocumentId == documentId).AsQueryable();
+            query = ApplyFilters(query, parameters);
+            query = ApplySorting(query, parameters);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<RequirementDto>
+            {
+                Items = items.Select(EntityToDto).ToList(),
+                TotalItems = totalCount,
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize
+            };
+        }
+
+        /// <summary>
+        /// Retrieves requirements for a specific document section with pagination.
+        /// </summary>
+        /// <param name="sectionId">The ID of the document section.</param>
+        /// <param name="parameters">Pagination parameters.</param>
+        /// <returns>A paginated result of requirements for the specified section.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedBySectionIdAsync(int sectionId, PaginationParameters parameters)
+        {
+            var query = _context.Requirements.Where(r => r.SectionId == sectionId).AsQueryable();
+            query = ApplyFilters(query, parameters);
+            query = ApplySorting(query, parameters);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<RequirementDto>
+            {
+                Items = items.Select(EntityToDto).ToList(),
+                TotalItems = totalCount,
+                PageNumber = parameters.PageNumber,
+                PageSize = parameters.PageSize
+            };
+        }
     }
 }

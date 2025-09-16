@@ -46,7 +46,7 @@ namespace backend.ApiTests
                 var requirementDto = new RequirementDto
                 {
                     Title = "Diagnostic Test Requirement",
-                    Type = RequirementType.CRS,
+                    Type = RequirementType.CRD,
                     Status = RequirementStatus.Draft,
                     Description = "Testing requirement creation",
                     CreatedBy = 1,

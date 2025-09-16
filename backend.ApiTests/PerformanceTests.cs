@@ -34,7 +34,7 @@ namespace backend.ApiTests
                 var requirement = new RequirementDto
                 {
                     Title = $"Performance Test Requirement {i}",
-                    Type = RequirementType.CRS,
+                    Type = RequirementType.CRD,
                     Status = RequirementStatus.Draft,
                     Description = $"Performance test requirement number {i}",
                     CreatedBy = 1,
@@ -89,7 +89,7 @@ namespace backend.ApiTests
             var requirement = new RequirementDto
             {
                 Title = "Versioning Performance Test",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "For versioning performance test",
                 CreatedBy = 1,

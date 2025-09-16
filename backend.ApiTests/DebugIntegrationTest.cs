@@ -22,7 +22,7 @@ namespace backend.ApiTests
             var requirementDto = new RequirementDto
             {
                 Title = "Debug Test Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "A requirement for debugging",
                 CreatedBy = 1,

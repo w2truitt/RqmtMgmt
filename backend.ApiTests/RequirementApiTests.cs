@@ -23,7 +23,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "API Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Created by API test",
                 CreatedBy = 1,
@@ -66,7 +66,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Update Requirement",
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Draft,
                 Description = "To be updated",
                 CreatedBy = 1,
@@ -144,7 +144,7 @@ namespace backend.ApiTests
             {
                 Id = 9999999,
                 Title = "Should Fail",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "No such requirement",
                 CreatedBy = 1,
@@ -174,7 +174,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Versioned Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Initial version test",
                 CreatedBy = 1,
@@ -203,7 +203,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Versioned Requirement Update",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Initial version",
                 CreatedBy = 1,
@@ -247,7 +247,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Initial Title",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Initial description",
                 CreatedBy = 1,

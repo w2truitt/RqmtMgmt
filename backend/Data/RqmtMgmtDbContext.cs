@@ -52,6 +52,13 @@ namespace backend.Data
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<TestStep> TestSteps { get; set; }
 
+        /// <summary>Gets or sets the documents table.</summary>
+        public DbSet<Document> Documents { get; set; }
+        /// <summary>Gets or sets the document sections table.</summary>
+        public DbSet<DocumentSection> DocumentSections { get; set; }
+        /// <summary>Gets or sets the requirement traces table.</summary>
+        public DbSet<RequirementTrace> RequirementTraces { get; set; }
+
         /// <summary>
         /// Configures the entity relationships and model conversions.
         /// </summary>
@@ -81,7 +88,7 @@ namespace backend.Data
                 .HasOne(tc => tc.Suite)
                 .WithMany(ts => ts.TestCases)
                 .HasForeignKey(tc => tc.SuiteId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // TestCase <-> User
             modelBuilder.Entity<TestCase>()
@@ -127,7 +134,7 @@ namespace backend.Data
                 .HasOne(tr => tr.TestPlan)
                 .WithMany()
                 .HasForeignKey(tr => tr.TestPlanId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // TestRun <-> User
             modelBuilder.Entity<TestRun>()
@@ -166,7 +173,7 @@ namespace backend.Data
                 .HasOne(tce => tce.Executor)
                 .WithMany()
                 .HasForeignKey(tce => tce.ExecutedBy)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // TestStepExecution relationships
             modelBuilder.Entity<TestStepExecution>()
@@ -334,6 +341,87 @@ namespace backend.Data
                 .HasIndex(u => u.Email)
                 .IsUnique()
                 .HasDatabaseName("IX_Users_Email");
+
+            // Document relationships
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.Creator)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.Project)
+                .WithMany()
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Document>()
+                .Property(d => d.Type)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<Document>()
+                .Property(d => d.Status)
+                .HasConversion<string>();
+
+            // DocumentSection relationships
+            modelBuilder.Entity<DocumentSection>()
+                .HasOne(ds => ds.Document)
+                .WithMany(d => d.Sections)
+                .HasForeignKey(ds => ds.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Requirement -> Document/Section relationships
+            modelBuilder.Entity<Requirement>()
+                .HasOne(r => r.Document)
+                .WithMany(d => d.Requirements)
+                .HasForeignKey(r => r.DocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Requirement>()
+                .HasOne(r => r.Section)
+                .WithMany(s => s.Requirements)
+                .HasForeignKey(r => r.SectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // RequirementTrace relationships
+            modelBuilder.Entity<RequirementTrace>()
+                .HasOne(rt => rt.SourceRequirement)
+                .WithMany(r => r.OutgoingTraces)
+                .HasForeignKey(rt => rt.SourceRequirementId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RequirementTrace>()
+                .HasOne(rt => rt.TargetRequirement)
+                .WithMany(r => r.IncomingTraces)
+                .HasForeignKey(rt => rt.TargetRequirementId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RequirementTrace>()
+                .HasOne(rt => rt.Creator)
+                .WithMany()
+                .HasForeignKey(rt => rt.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RequirementTrace>()
+                .Property(rt => rt.TraceType)
+                .HasConversion<string>();
+
+            // Indexes for new entities
+            modelBuilder.Entity<Document>()
+                .HasIndex(d => new { d.ProjectId, d.Type })
+                .HasDatabaseName("IX_Documents_ProjectId_Type");
+
+            modelBuilder.Entity<DocumentSection>()
+                .HasIndex(ds => new { ds.DocumentId, ds.SectionOrder })
+                .HasDatabaseName("IX_DocumentSections_DocumentId_SectionOrder");
+
+            modelBuilder.Entity<RequirementTrace>()
+                .HasIndex(rt => new { rt.SourceRequirementId, rt.TraceType })
+                .HasDatabaseName("IX_RequirementTraces_SourceRequirementId_TraceType");
+
+            modelBuilder.Entity<RequirementTrace>()
+                .HasIndex(rt => rt.TargetRequirementId)
+                .HasDatabaseName("IX_RequirementTraces_TargetRequirementId");
         }
     }
 }

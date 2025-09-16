@@ -51,7 +51,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Redline Test Requirement",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Test requirement for version history",
                 ProjectId = projectId,
@@ -108,7 +108,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Version Test Requirement",
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Draft,
                 Description = "Test for single version retrieval",
                 ProjectId = projectId,
@@ -163,7 +163,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Original Title",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Original description",
                 ProjectId = projectId,
@@ -238,7 +238,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Same Version Test",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 Description = "Test comparing same version to itself",
                 ProjectId = projectId,
@@ -281,7 +281,7 @@ namespace backend.ApiTests
             var createDto = new RequirementDto
             {
                 Title = "Mixed Valid Invalid Test",
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Draft,
                 Description = "Test mixed valid/invalid version IDs",
                 ProjectId = projectId,

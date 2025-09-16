@@ -215,6 +215,11 @@ namespace backend.Configuration
             services.AddScoped<RqmtMgmtShared.ITestExecutionService, TestExecutionService>();
             services.AddScoped<RqmtMgmtShared.IProjectService, ProjectService>();
 
+            // Register new document-centric services
+            services.AddScoped<RqmtMgmtShared.IDocumentService, DocumentService>();
+            services.AddScoped<RqmtMgmtShared.IDocumentSectionService, DocumentSectionService>();
+            services.AddScoped<RqmtMgmtShared.IRequirementTraceService, RequirementTraceService>();
+
             return services;
         }
 

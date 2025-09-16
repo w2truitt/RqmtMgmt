@@ -13,8 +13,8 @@ namespace backend.Tests
         [Fact]
         public void CompareRequirements_DetectsTitleChange()
         {
-            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS };
-            var newV = new RequirementVersion { Version = 2, Title = "B", Status = RequirementStatus.Draft, Type = RequirementType.CRS };
+            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD };
+            var newV = new RequirementVersion { Version = 2, Title = "B", Status = RequirementStatus.Draft, Type = RequirementType.CRD };
             var result = _service.CompareRequirements(oldV, newV);
             Assert.Contains(result.Changes, c => c.Field == "Title" && c.OldValue == "A" && c.NewValue == "B" && c.ChangeType == "Modified");
         }
@@ -22,8 +22,8 @@ namespace backend.Tests
         [Fact]
         public void CompareRequirements_DetectsNoChange()
         {
-            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS };
-            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS };
+            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD };
+            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD };
             var result = _service.CompareRequirements(oldV, newV);
             Assert.DoesNotContain(result.Changes, c => c.Field == "Title");
         }
@@ -31,8 +31,8 @@ namespace backend.Tests
         [Fact]
         public void CompareRequirements_DetectsStatusChange()
         {
-            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS };
-            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Approved, Type = RequirementType.CRS };
+            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD };
+            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Approved, Type = RequirementType.CRD };
             var result = _service.CompareRequirements(oldV, newV);
             Assert.Contains(result.Changes, c => c.Field == "Status" && c.OldValue == "Draft" && c.NewValue == "Approved" && c.ChangeType == "Modified");
         }
@@ -40,8 +40,8 @@ namespace backend.Tests
         [Fact]
         public void CompareRequirements_DetectsAddedField()
         {
-            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS, Description = null };
-            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS, Description = "desc" };
+            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD, Description = null };
+            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD, Description = "desc" };
             var result = _service.CompareRequirements(oldV, newV);
             Assert.Contains(result.Changes, c => c.Field == "Description" && c.OldValue == null && c.NewValue == "desc" && c.ChangeType == "Added");
         }
@@ -49,8 +49,8 @@ namespace backend.Tests
         [Fact]
         public void CompareRequirements_DetectsRemovedField()
         {
-            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS, Description = "desc" };
-            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRS, Description = null };
+            var oldV = new RequirementVersion { Version = 1, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD, Description = "desc" };
+            var newV = new RequirementVersion { Version = 2, Title = "A", Status = RequirementStatus.Draft, Type = RequirementType.CRD, Description = null };
             var result = _service.CompareRequirements(oldV, newV);
             Assert.Contains(result.Changes, c => c.Field == "Description" && c.OldValue == "desc" && c.NewValue == null && c.ChangeType == "Removed");
         }

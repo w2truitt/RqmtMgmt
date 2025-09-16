@@ -14,6 +14,10 @@ public interface IRequirementService
     Task<bool> UpdateAsync(RequirementDto requirement);
     Task<bool> DeleteAsync(int id);
     Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId);
+    Task<List<RequirementDto>> GetByDocumentIdAsync(int documentId);
+    Task<List<RequirementDto>> GetBySectionIdAsync(int sectionId);
+    Task<PagedResult<RequirementDto>> GetPagedByDocumentIdAsync(int documentId, PaginationParameters parameters);
+    Task<PagedResult<RequirementDto>> GetPagedBySectionIdAsync(int sectionId, PaginationParameters parameters);
 }
 
 /// <summary>
@@ -169,4 +173,46 @@ public interface IProjectService
     Task<bool> UserHasAccessToProjectAsync(int userId, int projectId);  
     Task<bool> UserHasRoleInProjectAsync(int userId, int projectId, ProjectRole role);  
     Task<string> GenerateNextRequirementIdAsync(int projectId);  
+}
+/// <summary>
+/// Service interface for document operations
+/// </summary>
+public interface IDocumentService
+{
+    Task<List<DocumentDto>> GetAllAsync();
+    Task<PagedResult<DocumentDto>> GetPagedAsync(PaginationParameters parameters);
+    Task<List<DocumentDto>> GetByProjectIdAsync(int projectId);
+    Task<PagedResult<DocumentDto>> GetPagedByProjectIdAsync(int projectId, PaginationParameters parameters);
+    Task<List<DocumentDto>> GetByTypeAsync(DocumentType type);
+    Task<DocumentDto?> GetByIdAsync(int id);
+    Task<DocumentDto?> CreateAsync(DocumentDto document);
+    Task<bool> UpdateAsync(DocumentDto document);
+    Task<bool> DeleteAsync(int id);
+}
+
+/// <summary>
+/// Service interface for document section operations
+/// </summary>
+public interface IDocumentSectionService
+{
+    Task<List<DocumentSectionDto>> GetByDocumentIdAsync(int documentId);
+    Task<DocumentSectionDto?> GetByIdAsync(int id);
+    Task<DocumentSectionDto?> CreateAsync(DocumentSectionDto section);
+    Task<bool> UpdateAsync(DocumentSectionDto section);
+    Task<bool> DeleteAsync(int id);
+    Task<bool> ReorderSectionsAsync(int documentId, List<int> sectionIds);
+}
+
+/// <summary>
+/// Service interface for requirement trace operations
+/// </summary>
+public interface IRequirementTraceService
+{
+    Task<List<RequirementTraceDto>> GetBySourceRequirementIdAsync(int sourceRequirementId);
+    Task<List<RequirementTraceDto>> GetByTargetRequirementIdAsync(int targetRequirementId);
+    Task<List<RequirementTraceDto>> GetTraceChainAsync(int requirementId);
+    Task<RequirementTraceDto?> GetByIdAsync(int id);
+    Task<RequirementTraceDto?> CreateAsync(RequirementTraceDto trace);
+    Task<bool> DeleteAsync(int id);
+    Task<bool> ValidateTraceAsync(int sourceRequirementId, int targetRequirementId, TraceType traceType);
 }

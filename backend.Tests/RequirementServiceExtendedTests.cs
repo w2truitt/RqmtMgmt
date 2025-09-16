@@ -212,10 +212,10 @@ namespace backend.Tests
             req1.Type = RequirementType.SRS;
             
             var req2 = TestDataHelper.CreateTestRequirement(project.Id, user.Id, "Req2");
-            req2.Type = RequirementType.CRS;
+            req2.Type = RequirementType.CRD;
             
             var req3 = TestDataHelper.CreateTestRequirement(project.Id, user.Id, "Req3");
-            req3.Type = RequirementType.PRS;
+            req3.Type = RequirementType.PRD;
 
             db.Requirements.AddRange(req1, req2, req3);
             await db.SaveChangesAsync();
@@ -225,8 +225,8 @@ namespace backend.Tests
 
             var result = await service.GetPagedAsync(parameters);
 
-            Assert.Equal(RequirementType.CRS, result.Items[0].Type);
-            Assert.Equal(RequirementType.PRS, result.Items[1].Type);
+            Assert.Equal(RequirementType.CRD, result.Items[0].Type);
+            Assert.Equal(RequirementType.PRD, result.Items[1].Type);
             Assert.Equal(RequirementType.SRS, result.Items[2].Type);
         }
 
@@ -483,7 +483,7 @@ namespace backend.Tests
             {
                 Id = 999,
                 Title = "Non-existent",
-                Type = RequirementType.CRS,
+                Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
                 ProjectId = project.Id,
                 CreatedBy = user.Id,
@@ -607,7 +607,7 @@ namespace backend.Tests
             {
                 Id = req.Id,
                 Title = "Updated Title",
-                Type = RequirementType.PRS,
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Approved,
                 ProjectId = project.Id,
                 CreatedBy = req.CreatedBy,
@@ -622,7 +622,7 @@ namespace backend.Tests
             var updatedReq = await db.Requirements.FindAsync(req.Id);
             Assert.NotNull(updatedReq);
             Assert.Equal("Updated Title", updatedReq!.Title);
-            Assert.Equal(RequirementType.PRS, updatedReq.Type);
+            Assert.Equal(RequirementType.PRD, updatedReq.Type);
             Assert.Equal(RequirementStatus.Approved, updatedReq.Status);
             Assert.Equal(2, updatedReq.Version);
             Assert.NotNull(updatedReq.UpdatedAt);
