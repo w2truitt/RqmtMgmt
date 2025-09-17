@@ -1,12 +1,15 @@
 @page "/projects/{ProjectId:int}/requirements/new"
 @inject IRequirementService RequirementService
 @inject IProjectService ProjectService
+@inject frontend.Services.DocumentsDataService DocumentsService
+@inject frontend.Services.DocumentSectionsDataService DocumentSectionsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using frontend.Components.Navigation
 @using RqmtMgmtShared
 @using Microsoft.AspNetCore.Components.Forms
 @inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
+@using System.Linq
 
 <PageTitle>New Requirement - @(project?.Name ?? "Loading...")</PageTitle>
 
@@ -125,6 +128,78 @@
                         </div>
                     </div>
 
+                    <!-- Document Context Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-file-earmark-ruled me-2"></i>
+                                Document Context <small class="text-muted">(Optional)</small>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="documentId" class="form-label">
+                                        <strong>Document</strong>
+                                    </label>
+                                    <select id="documentId" class="form-select" @bind="requirement.DocumentId" @bind:after="OnDocumentChanged">
+                                        <option value="">None (Standalone requirement)</option>
+                                        @if (availableDocuments != null)
+                                        {
+                                            @foreach (var doc in availableDocuments)
+                                            {
+                                                <option value="@doc.Id">@doc.Type - @doc.Title</option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        Select a document to organize this requirement within a CRD, PRD, or SRS structure.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="sectionId" class="form-label">
+                                        <strong>Document Section</strong>
+                                        @if (requirement.DocumentId != null)
+                                        {
+                                            <span class="text-danger">*</span>
+                                        }
+                                    </label>
+                                    <select id="sectionId" class="form-select" @bind="requirement.SectionId" disabled="@(requirement.DocumentId == null)">
+                                        <option value="">Select a section...</option>
+                                        @if (availableSections != null)
+                                        {
+                                            @foreach (var section in GetSectionsForDisplay())
+                                            {
+                                                <option value="@section.Id">@section.SectionOrder. @section.Title</option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        @if (requirement.DocumentId == null)
+                                        {
+                                            <span class="text-muted">Select a document first to see available sections.</span>
+                                        }
+                                        else if (availableSections?.Any() != true)
+                                        {
+                                            <span class="text-warning">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                No sections available. Create sections in the document first.
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                @availableSections.Count sections available.
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Description -->
                     <div class="mb-4">
                         <label for="description" class="form-label">
@@ -173,8 +248,26 @@
         // CreatedBy will be set in OnInitializedAsync after loading current user
     };
     private List<RequirementDto>? availableRequirements;
+    private List<DocumentDto>? availableDocuments;
+    private List<DocumentSectionDto>? availableSections;
     private string errorMessage = string.Empty;
     private bool isSubmitting = false;
+
+    private IEnumerable<DocumentSectionDto> GetSectionsForDisplay()
+    {
+        var result = new List<DocumentSectionDto>();
+        if (availableSections != null)
+        {
+            foreach (var section in availableSections)
+            {
+                if (!section.IsNotApplicable)
+                {
+                    result.Add(section);
+                }
+            }
+        }
+        return result;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -197,12 +290,47 @@
             requirement.ProjectCode = project.Code;
             requirement.CreatedBy = currentUser?.Id ?? 1; // Use current user ID, fallback to 1 if not available
 
-            // TODO: Load available requirements for parent selection
+            // Load available requirements for parent selection
             availableRequirements = new List<RequirementDto>();
+            
+            // Load available documents for this project
+            await LoadAvailableDocuments();
         }
         catch (Exception ex)
         {
             errorMessage = $"Error loading project: {ex.Message}";
+        }
+    }
+
+    private async Task LoadAvailableDocuments()
+    {
+        try
+        {
+            availableDocuments = await DocumentsService.GetDocumentsByProjectAsync(ProjectId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading documents: {ex.Message}");
+            availableDocuments = new List<DocumentDto>();
+        }
+    }
+
+    private async Task OnDocumentChanged()
+    {
+        availableSections = null;
+        requirement.SectionId = null;
+        
+        if (requirement.DocumentId.HasValue)
+        {
+            try
+            {
+                availableSections = await DocumentSectionsService.GetDocumentSectionsAsync(requirement.DocumentId.Value);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading sections: {ex.Message}");
+                availableSections = new List<DocumentSectionDto>();
+            }
         }
     }
 
@@ -215,6 +343,13 @@
 
         try
         {
+            // Validate document/section relationship
+            if (requirement.DocumentId.HasValue && !requirement.SectionId.HasValue)
+            {
+                errorMessage = "Please select a document section when a document is selected.";
+                return;
+            }
+
             // Create the requirement
             var created = await RequirementService.CreateAsync(requirement);
             if (created != null)

@@ -1,0 +1,242 @@
+@page "/documents/new"
+@page "/projects/{ProjectId:int}/documents/new"
+@page "/documents/{DocumentId:int}/edit"
+@page "/projects/{ProjectId:int}/documents/{DocumentId:int}/edit"
+@using RqmtMgmtShared
+@using frontend.Services
+@inject DocumentsDataService DocumentsService
+@inject IProjectContextService ProjectContextService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsEditMode ? "Edit Document" : "New Document")</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-0">
+                <i class="bi bi-file-earmark-ruled me-2"></i>
+                @(IsEditMode ? "Edit Document" : "Create New Document")
+            </h3>
+            <p class="text-muted mb-0">
+                @(IsEditMode ? "Update document information" : "Create a new requirement document (CRD, PRD, or SRS)")
+            </p>
+        </div>
+        <button class="btn btn-outline-secondary" @onclick="Cancel">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Documents
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading document...</p>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="document" OnValidSubmit="SaveDocument">
+            <DataAnnotationsValidator />
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Document Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <InputText id="title" class="form-control" @bind-Value="document.Title" placeholder="Enter document title" />
+                            <ValidationMessage For="@(() => document.Title)" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Document Type <span class="text-danger">*</span></label>
+                            <InputSelect id="type" class="form-select" @bind-Value="document.Type">
+                                <option value="">Select document type</option>
+                                <option value="@DocumentType.CRD">Customer Requirement Document (CRD)</option>
+                                <option value="@DocumentType.PRD">Product Requirement Document (PRD)</option>
+                                <option value="@DocumentType.SRS">Software Requirement Specification (SRS)</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => document.Type)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="version" class="form-label">Version</label>
+                            <InputText id="version" class="form-control" @bind-Value="document.Version" placeholder="1.0" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <InputSelect id="status" class="form-select" @bind-Value="document.Status">
+                                <option value="@DocumentStatus.Draft">Draft</option>
+                                <option value="@DocumentStatus.InReview">In Review</option>
+                                <option value="@DocumentStatus.Approved">Approved</option>
+                                <option value="@DocumentStatus.Published">Published</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="objective" class="form-label">Objective</label>
+                        <InputTextArea id="objective" class="form-control" rows="3" @bind-Value="document.Objective" 
+                                     placeholder="Clearly state the business goals and objectives..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="background" class="form-label">Background & Context</label>
+                        <InputTextArea id="background" class="form-control" rows="3" @bind-Value="document.Background" 
+                                     placeholder="Provide relevant background and context..." />
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-circle me-2"></i>
+                            }
+                            @(IsEditMode ? "Update Document" : "Create Document")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter] public int? ProjectId { get; set; }
+    [Parameter] public int? DocumentId { get; set; }
+
+    private DocumentDto document = new() { Title = "" };
+    private bool isLoading = false;
+    private bool isSaving = false;
+
+    private bool IsEditMode => DocumentId.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ProjectId.HasValue)
+        {
+            await ProjectContextService.SetCurrentProjectAsync(ProjectId.Value);
+            document.ProjectId = ProjectId.Value;
+        }
+
+        if (IsEditMode && DocumentId.HasValue)
+        {
+            await LoadDocument();
+        }
+        else
+        {
+            // Set defaults for new document
+            document.Status = DocumentStatus.Draft;
+            document.Version = "1.0";
+            document.CreatedAt = DateTime.Now;
+            if (ProjectContextService.CurrentProject != null)
+            {
+                document.ProjectId = ProjectContextService.CurrentProject.Id;
+            }
+        }
+    }
+
+    private async Task LoadDocument()
+    {
+        if (!DocumentId.HasValue) return;
+
+        isLoading = true;
+        try
+        {
+            var loadedDocument = await DocumentsService.GetDocumentByIdAsync(DocumentId.Value);
+            if (loadedDocument != null)
+            {
+                document = loadedDocument;
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Document not found.");
+                Cancel();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading document: {ex.Message}");
+            Cancel();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveDocument()
+    {
+        isSaving = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                document.UpdatedAt = DateTime.Now;
+                var success = await DocumentsService.UpdateDocumentAsync(document);
+                if (success)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Document updated successfully!");
+                    NavigateToDocuments();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to update document. Please try again.");
+                }
+            }
+            else
+            {
+                var createdDocument = await DocumentsService.CreateDocumentAsync(document);
+                if (createdDocument != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Document created successfully!");
+                    NavigateToDocuments();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to create document. Please try again.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error saving document: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigateToDocuments();
+    }
+
+    private void NavigateToDocuments()
+    {
+        if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectContextService.CurrentProject.Id}/documents");
+        }
+        else
+        {
+            Navigation.NavigateTo("/documents");
+        }
+    }
+}

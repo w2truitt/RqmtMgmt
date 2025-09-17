@@ -117,5 +117,65 @@ namespace frontend.Services
         /// <returns>A list of requirement versions, or an empty list if the request fails.</returns>
         public async Task<List<RequirementVersionDto>> GetVersionsAsync(int requirementId)
             => await GetListAsync<RequirementVersionDto>($"/api/Requirement/{requirementId}/versions");
+
+        /// <summary>
+        /// Retrieves all requirements for a specific document from the backend API.
+        /// </summary>
+        /// <param name="documentId">The unique identifier of the document.</param>
+        /// <returns>A list of requirements for the specified document, or an empty list if the request fails.</returns>
+        public async Task<List<RequirementDto>> GetByDocumentIdAsync(int documentId)
+            => await GetListAsync<RequirementDto>($"/api/Requirement/document/{documentId}");
+
+        /// <summary>
+        /// Retrieves requirements for a specific document with pagination from the backend API.
+        /// </summary>
+        /// <param name="documentId">The unique identifier of the document.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, and search criteria.</param>
+        /// <returns>A paginated result containing requirements for the document and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedByDocumentIdAsync(int documentId, PaginationParameters parameters)
+        {
+            var queryParams = new Dictionary<string, object?>
+            {
+                ["PageNumber"] = parameters.PageNumber,
+                ["PageSize"] = parameters.PageSize,
+                ["SearchTerm"] = parameters.SearchTerm,
+                ["SortBy"] = parameters.SortBy,
+                ["SortDescending"] = parameters.SortDescending ? "true" : null
+            };
+
+            var queryString = BuildQueryString(queryParams);
+            var result = await GetAsync<PagedResult<RequirementDto>>($"/api/Requirement/document/{documentId}/paged{queryString}");
+            return result ?? new PagedResult<RequirementDto>();
+        }
+
+        /// <summary>
+        /// Retrieves all requirements for a specific document section from the backend API.
+        /// </summary>
+        /// <param name="sectionId">The unique identifier of the document section.</param>
+        /// <returns>A list of requirements for the specified section, or an empty list if the request fails.</returns>
+        public async Task<List<RequirementDto>> GetBySectionIdAsync(int sectionId)
+            => await GetListAsync<RequirementDto>($"/api/Requirement/section/{sectionId}");
+
+        /// <summary>
+        /// Retrieves requirements for a specific document section with pagination from the backend API.
+        /// </summary>
+        /// <param name="sectionId">The unique identifier of the document section.</param>
+        /// <param name="parameters">Pagination parameters including page number, size, and search criteria.</param>
+        /// <returns>A paginated result containing requirements for the section and pagination metadata.</returns>
+        public async Task<PagedResult<RequirementDto>> GetPagedBySectionIdAsync(int sectionId, PaginationParameters parameters)
+        {
+            var queryParams = new Dictionary<string, object?>
+            {
+                ["PageNumber"] = parameters.PageNumber,
+                ["PageSize"] = parameters.PageSize,
+                ["SearchTerm"] = parameters.SearchTerm,
+                ["SortBy"] = parameters.SortBy,
+                ["SortDescending"] = parameters.SortDescending ? "true" : null
+            };
+
+            var queryString = BuildQueryString(queryParams);
+            var result = await GetAsync<PagedResult<RequirementDto>>($"/api/Requirement/section/{sectionId}/paged{queryString}");
+            return result ?? new PagedResult<RequirementDto>();
+        }
     }
 }

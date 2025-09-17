@@ -1,0 +1,94 @@
+@using RqmtMgmtShared
+@using System.Linq
+
+<div class="requirement-document-context">
+    @if (Requirement.DocumentId.HasValue)
+    {
+        <div class="small">
+            <div class="text-primary">
+                <i class="bi bi-file-earmark-ruled me-1"></i>
+                @(GetDocumentDisplay()) - @(GetDocumentTitle())
+            </div>
+            @if (GetSectionTitle() != null)
+            {
+                <div class="text-muted">
+                    <i class="bi bi-list-ol me-1"></i>
+                    @GetSectionOrder(). @GetSectionTitle()
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <span class="text-muted small">
+            <i class="bi bi-file-earmark me-1"></i>
+            Standalone
+        </span>
+    }
+</div>
+
+@code {
+    [Parameter] public RequirementDto Requirement { get; set; } = null!;
+    [Parameter] public List<DocumentDto>? Documents { get; set; }
+    [Parameter] public List<DocumentSectionDto>? Sections { get; set; }
+
+    private string GetDocumentDisplay()
+    {
+        if (Documents != null && Requirement.DocumentId.HasValue)
+        {
+            foreach (var doc in Documents)
+            {
+                if (doc.Id == Requirement.DocumentId.Value)
+                {
+                    return doc.Type.ToString();
+                }
+            }
+        }
+        return "Unknown";
+    }
+
+    private string GetDocumentTitle()
+    {
+        if (Documents != null && Requirement.DocumentId.HasValue)
+        {
+            foreach (var doc in Documents)
+            {
+                if (doc.Id == Requirement.DocumentId.Value)
+                {
+                    return doc.Title;
+                }
+            }
+        }
+        return "Unknown Document";
+    }
+
+    private string? GetSectionTitle()
+    {
+        if (Sections != null && Requirement.SectionId.HasValue)
+        {
+            foreach (var section in Sections)
+            {
+                if (section.Id == Requirement.SectionId.Value)
+                {
+                    return section.Title;
+                }
+            }
+        }
+        return null;
+    }
+
+    private int GetSectionOrder()
+    {
+        if (Sections != null && Requirement.SectionId.HasValue)
+        {
+            foreach (var section in Sections)
+            {
+                if (section.Id == Requirement.SectionId.Value)
+                {
+                    return section.SectionOrder;
+                }
+            }
+        }
+        return 0;
+    }
+}

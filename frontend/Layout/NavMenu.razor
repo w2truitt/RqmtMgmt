@@ -39,6 +39,20 @@
         <div class="nav-item px-3">
             @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
             {
+                <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/documents")">
+                    <span class="bi bi-file-earmark-ruled-nav-menu" aria-hidden="true"></span> Documents
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="documents">
+                    <span class="bi bi-file-earmark-ruled-nav-menu" aria-hidden="true"></span> Documents
+                </NavLink>
+            }
+        </div>
+        <div class="nav-item px-3">
+            @if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+            {
                 <NavLink class="nav-link" href="@($"projects/{ProjectContextService.CurrentProject.Id}/requirements")">
                     <span class="bi bi-file-earmark-text-nav-menu" aria-hidden="true"></span> Requirements
                 </NavLink>

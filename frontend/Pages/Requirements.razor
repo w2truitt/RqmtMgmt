@@ -4,7 +4,11 @@
 @inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
 @inject RqmtMgmtShared.ITestCaseService TestCaseService
 @inject frontend.Services.IProjectContextService ProjectContextService
+@inject frontend.Services.DocumentsDataService DocumentsService
+@inject frontend.Services.DocumentSectionsDataService DocumentSectionsService
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@using RqmtMgmtShared
+@using frontend.Components
 @inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>Requirements</PageTitle>
@@ -29,7 +33,7 @@
             }
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-1">
         <select class="form-select" @bind="sortBy" @bind:after="OnSortChanged">
             <option value="">Sort by...</option>
             <option value="title">Title</option>
@@ -40,6 +44,19 @@
         </select>
     </div>
     <div class="col-md-2">
+        <select class="form-select" @bind="selectedDocumentId" @bind:after="OnDocumentFilterChanged">
+            <option value="">All Documents</option>
+            <option value="0">Standalone Only</option>
+            @if (availableDocuments != null)
+            {
+                @foreach (var doc in availableDocuments)
+                {
+                    <option value="@doc.Id">@doc.Type - @doc.Title</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-1">
         <div class="form-check">
             <input class="form-check-input" type="checkbox" @bind="sortDescending" @bind:after="OnSortChanged" />
             <label class="form-check-label">Descending</label>
@@ -68,6 +85,7 @@ else
                 <tr>
                     <th>ID</th>
                     <th>Title</th>
+                    <th>Document Context</th>
                     <th>Status</th>
                     <th>Type</th>
                     <th>Actions</th>
@@ -79,6 +97,7 @@ else
                     <tr data-testid="requirement-row">
                         <td>@req.Id</td>
                         <td>@req.Title</td>
+                        <td><RequirementDocumentContext Requirement="@req" Documents="@availableDocuments" Sections="@availableSections" /></td>
                         <td>@req.Status</td>
                         <td>@req.Type</td>
                         <td>
@@ -198,8 +217,8 @@ else
                     <div class="form-group">
                         <label>Type</label>
                         <select class="form-control" @bind="formModel.Type" data-testid="type-select">
-                            <option value="@RequirementType.CRS">Customer Requirement</option>
-                            <option value="@RequirementType.PRS">Product Requirement</option>
+                            <option value="@RequirementType.CRD">Customer Requirement</option>
+                            <option value="@RequirementType.PRD">Product Requirement</option>
                             <option value="@RequirementType.SRS">Software Requirement</option>
                         </select>
                     </div>
@@ -221,7 +240,7 @@ else
 
     RequirementDto formModel = new() 
     { 
-        Type = RequirementType.CRS, 
+        Type = RequirementType.CRD, 
         Title = string.Empty, 
         Status = RequirementStatus.Draft,
         CreatedBy = 1, // Will be updated when current user is loaded
@@ -247,12 +266,49 @@ else
     string sortBy = string.Empty;
     bool sortDescending = false;
 
+    // Document filtering
+    string selectedDocumentId = string.Empty;
+    List<DocumentDto>? availableDocuments;
+    List<DocumentSectionDto>? availableSections;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadCurrentUserAsync();
+        await LoadAvailableDocuments();
         await LoadData();
     }
 
+
+    private async Task LoadAvailableDocuments()
+    {
+        try
+        {
+            var currentProject = ProjectContextService.CurrentProject;
+            if (currentProject != null)
+            {
+                availableDocuments = await DocumentsService.GetDocumentsByProjectAsync(currentProject.Id);
+                // Load all sections for context display
+                availableSections = new List<DocumentSectionDto>();
+                foreach (var doc in availableDocuments)
+                {
+                    var sections = await DocumentSectionsService.GetDocumentSectionsAsync(doc.Id);
+                    availableSections.AddRange(sections);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading documents: {ex.Message}");
+            availableDocuments = new List<DocumentDto>();
+            availableSections = new List<DocumentSectionDto>();
+        }
+    }
+
+    async Task OnDocumentFilterChanged()
+    {
+        paginationParams.PageNumber = 1; // Reset to first page when filtering
+        await LoadData();
+    }
     private async Task LoadData()
     {
         errorMessage = null; // Clear previous errors
@@ -328,7 +384,7 @@ else
         var currentProject = ProjectContextService.CurrentProject;
         formModel = new RequirementDto 
         { 
-            Type = RequirementType.CRS, 
+            Type = RequirementType.CRD, 
             Title = string.Empty, 
             Status = RequirementStatus.Draft,
             CreatedBy = currentUser?.Id ?? 1, // Use current user ID, fallback to 1 if not available

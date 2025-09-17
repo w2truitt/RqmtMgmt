@@ -1,0 +1,343 @@
+@using RqmtMgmtShared
+@using frontend.Services
+@inject DocumentSectionsDataService DocumentSectionsService
+@inject IJSRuntime JSRuntime
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-list-ol me-2"></i>
+            Document Sections
+        </h5>
+        <button class="btn btn-sm btn-primary" @onclick="ShowAddSectionModal">
+            <i class="bi bi-plus-circle me-1"></i>
+            Add Section
+        </button>
+    </div>
+    <div class="card-body">
+        @if (isLoading)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading sections...</span>
+                </div>
+            </div>
+        }
+        else if (!sections.Any())
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-list-ol display-4 text-muted"></i>
+                <h6 class="mt-2">No Sections Yet</h6>
+                <p class="text-muted small">Add sections to organize your document content.</p>
+                <button class="btn btn-outline-primary btn-sm" @onclick="ShowAddSectionModal">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Add First Section
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="section-list">
+                @foreach (var docSection in sections.OrderBy(s => s.SectionOrder))
+                {
+                    <div class="section-item border rounded p-3 mb-2 @(docSection.IsNotApplicable ? "bg-light" : "")" 
+                         data-section-id="@docSection.Id">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="badge bg-secondary me-2">@docSection.SectionOrder</span>
+                                    <h6 class="mb-0 @(docSection.IsNotApplicable ? "text-muted text-decoration-line-through" : "")">
+                                        @docSection.Title
+                                    </h6>
+                                    @if (docSection.IsNotApplicable)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-2">N/A</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(docSection.Description))
+                                {
+                                    <p class="text-muted small mb-0 @(docSection.IsNotApplicable ? "text-decoration-line-through" : "")">
+                                        @docSection.Description
+                                    </p>
+                                }
+                            </div>
+                            <div class="section-actions d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => MoveSection(docSection, -1)" 
+                                        disabled="@(docSection.SectionOrder <= 1)">
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => MoveSection(docSection, 1)"
+                                        disabled="@(docSection.SectionOrder >= sections.Max(s => s.SectionOrder))">
+                                    <i class="bi bi-arrow-down"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditSection(docSection)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSection(docSection)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (showSectionModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @((editingSection?.Id ?? 0) > 0 ? "Edit Section" : "Add Section")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HideSectionModal"></button>
+                </div>
+                <EditForm Model="editingSection" OnValidSubmit="SaveSection">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="sectionTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <InputText id="sectionTitle" class="form-control" @bind-Value="editingSection!.Title" 
+                                     placeholder="Enter section title" />
+                            <ValidationMessage For="@(() => editingSection!.Title)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionDescription" class="form-label">Description</label>
+                            <InputTextArea id="sectionDescription" class="form-control" rows="3" 
+                                         @bind-Value="editingSection!.Description" 
+                                         placeholder="Optional description of this section..." />
+                        </div>
+                        <div class="form-check">
+                            <InputCheckbox id="isNotApplicable" class="form-check-input" @bind-Value="editingSection!.IsNotApplicable" />
+                            <label class="form-check-label" for="isNotApplicable">
+                                Mark as Not Applicable (N/A)
+                            </label>
+                            <div class="form-text">
+                                Use this for template sections that don't apply to this document.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="HideSectionModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            }
+                            @((editingSection?.Id ?? 0) > 0 ? "Update Section" : "Add Section")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int DocumentId { get; set; }
+    [Parameter] public EventCallback OnSectionsChanged { get; set; }
+
+    private List<DocumentSectionDto> sections = new();
+    private bool isLoading = true;
+    private bool showSectionModal = false;
+    private bool isSaving = false;
+    private DocumentSectionDto? editingSection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSections();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DocumentId > 0)
+        {
+            await LoadSections();
+        }
+    }
+
+    private async Task LoadSections()
+    {
+        if (DocumentId <= 0) return;
+
+        isLoading = true;
+        try
+        {
+            sections = await DocumentSectionsService.GetDocumentSectionsAsync(DocumentId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sections: {ex.Message}");
+            sections = new List<DocumentSectionDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowAddSectionModal()
+    {
+        editingSection = new DocumentSectionDto 
+        { 
+            Title = "",
+            DocumentId = DocumentId,
+            SectionOrder = sections.Any() ? sections.Max(s => s.SectionOrder) + 1 : 1,
+            CreatedAt = DateTime.Now
+        };
+        showSectionModal = true;
+    }
+
+    private void EditSection(DocumentSectionDto docSection)
+    {
+        editingSection = new DocumentSectionDto
+        {
+            Id = docSection.Id,
+            DocumentId = docSection.DocumentId,
+            Title = docSection.Title,
+            Description = docSection.Description,
+            SectionOrder = docSection.SectionOrder,
+            IsNotApplicable = docSection.IsNotApplicable,
+            CreatedAt = docSection.CreatedAt,
+            UpdatedAt = docSection.UpdatedAt
+        };
+        showSectionModal = true;
+    }
+
+    private void HideSectionModal()
+    {
+        showSectionModal = false;
+        editingSection = null;
+    }
+
+    private async Task SaveSection()
+    {
+        if (editingSection == null) return;
+
+        isSaving = true;
+        try
+        {
+            if (editingSection.Id > 0)
+            {
+                editingSection.UpdatedAt = DateTime.Now;
+                var success = await DocumentSectionsService.UpdateDocumentSectionAsync(editingSection);
+                if (success)
+                {
+                    HideSectionModal();
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to update section. Please try again.");
+                }
+            }
+            else
+            {
+                var createdSection = await DocumentSectionsService.CreateDocumentSectionAsync(editingSection);
+                if (createdSection != null)
+                {
+                    HideSectionModal();
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to create section. Please try again.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error saving section: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteSection(DocumentSectionDto docSection)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the section '{docSection.Title}'?"))
+        {
+            try
+            {
+                var success = await DocumentSectionsService.DeleteDocumentSectionAsync(docSection.Id);
+                if (success)
+                {
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to delete section. Please try again.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting section: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task MoveSection(DocumentSectionDto docSection, int direction)
+    {
+        var targetOrder = docSection.SectionOrder + direction;
+        var targetSection = sections.FirstOrDefault(s => s.SectionOrder == targetOrder);
+        
+        if (targetSection != null)
+        {
+            try
+            {
+                var reorderRequests = new List<ReorderSectionRequest>
+                {
+                    new() { SectionId = docSection.Id, SectionOrder = targetOrder },
+                    new() { SectionId = targetSection.Id, SectionOrder = docSection.SectionOrder }
+                };
+
+                var success = await DocumentSectionsService.ReorderDocumentSectionsAsync(DocumentId, reorderRequests);
+                if (success)
+                {
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to reorder sections. Please try again.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error reordering sections: {ex.Message}");
+            }
+        }
+    }
+}
+
+<style>
+    .section-item {
+        transition: all 0.2s ease;
+    }
+
+    .section-item:hover {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section-actions {
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .section-item:hover .section-actions {
+        opacity: 1;
+    }
+
+    .modal {
+        z-index: 1055;
+    }
+</style>
