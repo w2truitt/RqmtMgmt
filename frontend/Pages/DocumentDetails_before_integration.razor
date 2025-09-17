@@ -146,51 +146,57 @@
                 }
             </div>
 
-                <!-- Phase 3A: Document Editor Preview -->
+                <!-- Document Editor Preview -->
                 <div class="card mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             <i class="bi bi-magic me-2"></i>
                             Document Editor Preview
+                            <span class="badge bg-info text-white ms-2">Phase 3A</span>
                         </h5>
-                        <span class="badge bg-info">Phase 3A Demo</span>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="ToggleDocumentEditor">
+                            <i class="bi bi-eye me-1"></i>
+                            @(showDocumentEditor ? "Hide" : "Show") Preview
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <h6><i class="bi bi-lightbulb me-2"></i>New Feature Preview</h6>
-                            <p class="mb-2">This demonstrates the document-centric editing experience where requirements can be edited inline within their document sections.</p>
-                            <a href="/test-inline-requirement" class="btn btn-primary btn-sm">
-                                <i class="bi bi-play me-1"></i>Try Interactive Demo
-                            </a>
-                        </div>
-                        
-                        @if (requirements.Any())
-                        {
-                            <h6 class="text-primary mb-3">Sample: Inline Requirement Editing</h6>
-                            <div class="border rounded p-3 bg-light">
-                                @{
-                                    var firstRequirement = requirements.First();
-                                }
-                                <InlineRequirement Requirement="@firstRequirement"
+                    @if (showDocumentEditor)
+                    {
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Preview:</strong> This demonstrates the new document-centric editing experience. 
+                                Requirements will be editable inline within document sections.
+                            </div>
+                            
+                            @if (requirements.Any())
+                            {
+                                <h6 class="text-primary mb-3">Sample: First Requirement with Inline Editing</h6>
+                                <InlineRequirement Requirement="@requirements.First()" 
                                                  OnUpdate="HandleRequirementUpdate"
                                                  OnDelete="HandleRequirementDelete" />
-                                <small class="text-muted mt-2 d-block">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Click the requirement above to edit it inline. This is a live preview of the Phase 3A functionality.
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="bi bi-journal-text display-4 text-muted"></i>
+                                    <p class="text-muted mt-2">No requirements available. Create requirements first to see the inline editing preview.</p>
+                                </div>
+                            }
+                            
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="text-success">✅ What This Preview Demonstrates:</h6>
+                                <ul class="mb-2">
+                                    <li>Click the requirement above to edit inline</li>
+                                    <li>Save/cancel operations work without navigation</li>
+                                    <li>Status and type can be changed with dropdowns</li>
+                                </ul>
+                                <small class="text-muted">
+                                    <strong>Next:</strong> This will be expanded to show all requirements organized by document sections.
                                 </small>
                             </div>
-                        }
-                        else
-                        {
-                            <div class="text-center py-3">
-                                <i class="bi bi-journal-text display-4 text-muted"></i>
-                                <p class="text-muted mt-2">Add requirements to this document to see the inline editing preview.</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-            <div class="col-lg-4">
+                        </div>
+                    }
+                </div>            <div class="col-lg-4">
                 <!-- Document Metadata -->
                 <div class="card">
                     <div class="card-header">
@@ -282,6 +288,7 @@
     private List<DocumentSectionDto> sections = new();
     private List<RequirementDto> requirements = new();
     private bool isLoading = true;
+    private bool showDocumentEditor = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -405,6 +412,12 @@
         DocumentStatus.Published => "bg-info",
         _ => "bg-light text-dark"
     };
+    private void ToggleDocumentEditor()
+    {
+        showDocumentEditor = !showDocumentEditor;
+        StateHasChanged();
+    }
+
     private async Task HandleRequirementUpdate(RequirementDto updatedRequirement)
     {
         // Update the requirement in our list
