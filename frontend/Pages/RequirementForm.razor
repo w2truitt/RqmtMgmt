@@ -171,7 +171,7 @@
                                         {
                                             @foreach (var section in GetSectionsForDisplay())
                                             {
-                                                <option value="@section.Id">@section.SectionOrder. @section.Title</option>
+                                                <option value="@(section.Id)">@(section.SectionOrder). @(section.Title)</option>
                                             }
                                         }
                                     </select>
@@ -255,18 +255,10 @@
 
     private IEnumerable<DocumentSectionDto> GetSectionsForDisplay()
     {
-        var result = new List<DocumentSectionDto>();
-        if (availableSections != null)
-        {
-            foreach (var section in availableSections)
-            {
-                if (!section.IsNotApplicable)
-                {
-                    result.Add(section);
-                }
-            }
-        }
-        return result;
+        if (availableSections == null)
+            return Enumerable.Empty<DocumentSectionDto>();
+        
+        return availableSections.Where(s => !s.IsNotApplicable);
     }
 
     protected override async Task OnInitializedAsync()

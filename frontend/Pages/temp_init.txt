@@ -1,0 +1,53 @@
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load current user
+            await LoadCurrentUserAsync();
+
+            // Load project and requirement information
+            var projectTask = ProjectService.GetProjectByIdAsync(ProjectId);
+            var requirementTask = RequirementService.GetByIdAsync(RequirementId);
+
+            await Task.WhenAll(projectTask, requirementTask);
+
+            project = await projectTask;
+            requirement = await requirementTask;
+
+            if (project == null)
+            {
+                errorMessage = "Project not found.";
+                return;
+            }
+
+            if (requirement == null)
+            {
+                errorMessage = "Requirement not found.";
+                return;
+            }
+
+            // Verify requirement belongs to the project
+            if (requirement.ProjectId != ProjectId)
+            {
+                errorMessage = "Requirement does not belong to the specified project.";
+                requirement = null;
+                return;
+            }
+
+            // Load available requirements for parent selection
+            availableRequirements = new List<RequirementDto>();
+            
+            // Load available documents for this project
+            await LoadAvailableDocuments();
+
+            // If requirement has a document, load its sections
+            if (requirement.DocumentId.HasValue)
+            {
+                await OnDocumentChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading requirement: {ex.Message}";
+        }
+    }
