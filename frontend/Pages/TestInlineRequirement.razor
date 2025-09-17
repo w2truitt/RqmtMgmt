@@ -1,0 +1,203 @@
+@page "/test-inline-requirement"
+@using RqmtMgmtShared
+@using frontend.Components
+@using frontend.Services
+@inject IRequirementService RequirementsService
+
+<PageTitle>Test Inline Requirement Component</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2>Phase 3A: Document-Centric Editing Test</h2>
+            <p class="text-muted">Testing the new InlineRequirement component for document-centric editing experience.</p>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-text me-2"></i>
+                        Sample Document Section: "User Authentication Requirements"
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">This demonstrates how requirements will appear within document sections with inline editing capabilities.</p>
+                    
+                    <!-- Sample Requirements -->
+                    <div class="section-requirements">
+                        @foreach (var requirement in sampleRequirements)
+                        {
+                            <InlineRequirement Requirement="@requirement"
+                                             OnUpdate="HandleRequirementUpdate"
+                                             OnDelete="HandleRequirementDelete" />
+                        }
+                        
+                        <!-- Add New Requirement -->
+                        @if (showAddNew)
+                        {
+                            <div class="new-requirement-form p-3 bg-light rounded">
+                                <InlineRequirement Requirement="@newRequirement"
+                                                 OnUpdate="HandleNewRequirementSaved"
+                                                 AllowDelete="false" />
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-secondary" @onclick="CancelAddNew">
+                                        <i class="bi bi-x me-1"></i>Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-primary btn-sm w-100 mt-2" @onclick="ShowAddNew">
+                                <i class="bi bi-plus me-1"></i>
+                                Add Requirement to User Authentication Section
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <h6><i class="bi bi-info-circle me-2"></i>Phase 3A Implementation Progress</h6>
+                <ul class="mb-0">
+                    <li>✅ <strong>InlineRequirement.razor Component</strong> - Created and working</li>
+                    <li>✅ <strong>Click-to-edit functionality</strong> - Click any requirement above to edit inline</li>
+                    <li>✅ <strong>Add requirements within sections</strong> - Use the "Add Requirement" button</li>
+                    <li>🔄 <strong>DocumentDetails.razor integration</strong> - Next step: integrate into document editor</li>
+                    <li>⏳ <strong>Section-based organization</strong> - Will be implemented in DocumentDetails</li>
+                </ul>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">User Experience Demonstration</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">✅ What Works Now:</h6>
+                            <ul>
+                                <li>Click any requirement to edit inline</li>
+                                <li>Save changes without navigation</li>
+                                <li>Add new requirements contextually</li>
+                                <li>Visual feedback and validation</li>
+                                <li>Proper requirement tagging (REQ-XXX format)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">🔄 Next Steps:</h6>
+                            <ul>
+                                <li>Integrate into DocumentDetails.razor</li>
+                                <li>Add section-based organization</li>
+                                <li>Implement requirement reordering</li>
+                                <li>Add collapsible sections</li>
+                                <li>Complete Phase 3A implementation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<RequirementDto> sampleRequirements = new();
+    private RequirementDto newRequirement = new() { Title = "" };
+    private bool showAddNew = false;
+
+    protected override void OnInitialized()
+    {
+        // Create sample requirements to demonstrate the functionality
+        sampleRequirements = new List<RequirementDto>
+        {
+            new RequirementDto
+            {
+                Id = 1,
+                Title = "User Login Authentication",
+                Description = "The system shall authenticate users using email and password credentials with secure hashing.",
+                Status = RequirementStatus.Draft,
+                Type = RequirementType.SRS,
+                FullRequirementId = "SRS-001",
+                ProjectId = 1,
+                ProjectName = "Sample Project",
+                CreatedAt = DateTime.Now.AddDays(-5)
+            },
+            new RequirementDto
+            {
+                Id = 2,
+                Title = "Password Complexity Requirements",
+                Description = "Passwords must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.",
+                Status = RequirementStatus.Approved,
+                Type = RequirementType.SRS,
+                FullRequirementId = "SRS-002",
+                ProjectId = 1,
+                ProjectName = "Sample Project",
+                CreatedAt = DateTime.Now.AddDays(-3)
+            },
+            new RequirementDto
+            {
+                Id = 3,
+                Title = "Session Management",
+                Description = "User sessions shall expire after 30 minutes of inactivity and require re-authentication.",
+                Status = RequirementStatus.Implemented,
+                Type = RequirementType.SRS,
+                FullRequirementId = "SRS-003",
+                ProjectId = 1,
+                ProjectName = "Sample Project",
+                CreatedAt = DateTime.Now.AddDays(-1)
+            }
+        };
+    }
+
+    private void ShowAddNew()
+    {
+        showAddNew = true;
+        newRequirement = new RequirementDto
+        {
+            Title = "",
+            Description = "",
+            Status = RequirementStatus.Draft,
+            Type = RequirementType.SRS,
+            ProjectId = 1,
+            ProjectName = "Sample Project",
+            CreatedAt = DateTime.Now
+        };
+        StateHasChanged();
+    }
+
+    private void CancelAddNew()
+    {
+        showAddNew = false;
+        newRequirement = new RequirementDto { Title = "" };
+        StateHasChanged();
+    }
+
+    private async Task HandleNewRequirementSaved(RequirementDto savedRequirement)
+    {
+        // Simulate saving and add to list
+        savedRequirement.Id = sampleRequirements.Count + 1;
+        savedRequirement.FullRequirementId = $"SRS-{savedRequirement.Id:D3}";
+        sampleRequirements.Add(savedRequirement);
+        
+        showAddNew = false;
+        newRequirement = new RequirementDto { Title = "" };
+        StateHasChanged();
+    }
+
+    private async Task HandleRequirementUpdate(RequirementDto updatedRequirement)
+    {
+        // Update the requirement in our list
+        var index = sampleRequirements.FindIndex(r => r.Id == updatedRequirement.Id);
+        if (index >= 0)
+        {
+            sampleRequirements[index] = updatedRequirement;
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleRequirementDelete(RequirementDto requirementToDelete)
+    {
+        sampleRequirements.RemoveAll(r => r.Id == requirementToDelete.Id);
+        StateHasChanged();
+    }
+}

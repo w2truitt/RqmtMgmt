@@ -1,0 +1,384 @@
+@using RqmtMgmtShared
+@using frontend.Services
+@inject IRequirementService RequirementsService
+@inject IJSRuntime JSRuntime
+
+<div class="inline-requirement @(IsEditing ? "editing" : "")">
+    @if (IsEditing)
+    {
+        <EditForm Model="editingRequirement" OnValidSubmit="SaveRequirement" OnInvalidSubmit="HandleInvalidSubmit">
+            <DataAnnotationsValidator />
+            <div class="inline-requirement-edit">
+                <div class="requirement-edit-header">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Title</label>
+                            <InputText @bind-Value="editingRequirement.Title" 
+                                     class="form-control form-control-sm" 
+                                     placeholder="Requirement title..." />
+                            <ValidationMessage For="@(() => editingRequirement.Title)" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <InputSelect @bind-Value="editingRequirement.Status" class="form-select form-select-sm">
+                                <option value="@RequirementStatus.Draft">Draft</option>
+                                <option value="@RequirementStatus.Approved">Approved</option>
+                                <option value="@RequirementStatus.Implemented">Implemented</option>
+                                <option value="@RequirementStatus.Verified">Verified</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Type</label>
+                            <InputSelect @bind-Value="editingRequirement.Type" class="form-select form-select-sm">
+                                <option value="@RequirementType.CRD">CRD</option>
+                                <option value="@RequirementType.PRD">PRD</option>
+                                <option value="@RequirementType.SRS">SRS</option>
+                                <option value="@RequirementType.UserStory">User Story</option>
+                                <option value="@RequirementType.BusinessRule">Business Rule</option>
+                                <option value="@RequirementType.EntityName">Entity Name</option>
+                            </InputSelect>
+                        </div>
+                    </div>
+                </div>
+                <div class="requirement-edit-body mt-2">
+                    <label class="form-label">Description</label>
+                    <InputTextArea @bind-Value="editingRequirement.Description" 
+                                 class="form-control requirement-text" 
+                                 rows="3"
+                                 placeholder="Enter detailed requirement description..." />
+                    <ValidationMessage For="@(() => editingRequirement.Description)" />
+                </div>
+                <div class="requirement-actions mt-2">
+                    <button type="submit" class="btn btn-sm btn-success me-2" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        <i class="bi bi-check me-1"></i>Save
+                    </button>
+                    <button type="button" @onclick="CancelEdit" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </button>
+                </div>
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger alert-sm mt-2 mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        @errorMessage
+                    </div>
+                }
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <div class="requirement-display" @onclick="StartEdit" role="button" tabindex="0" @onkeypress="HandleKeyPress">
+            <div class="requirement-content">
+                <div class="requirement-header">
+                    <strong class="requirement-tag">@GetRequirementTag():</strong>
+                    <div class="requirement-badges">
+                        <span class="badge @GetStatusBadgeClass()">@Requirement.Status</span>
+                        <span class="badge bg-light text-dark">@Requirement.Type</span>
+                    </div>
+                </div>
+                <div class="requirement-title">
+                    <strong>@Requirement.Title</strong>
+                </div>
+                @if (!string.IsNullOrEmpty(Requirement.Description))
+                {
+                    <div class="requirement-description">
+                        @Requirement.Description
+                    </div>
+                }
+            </div>
+            <div class="requirement-actions-overlay">
+                <button class="btn btn-sm btn-outline-primary" @onclick:stopPropagation="true" @onclick="StartEdit">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                @if (OnDelete.HasDelegate)
+                {
+                    <button class="btn btn-sm btn-outline-danger ms-1" @onclick:stopPropagation="true" @onclick="ConfirmDelete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .inline-requirement {
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .inline-requirement.editing {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+
+    .requirement-display {
+        padding: 12px;
+        cursor: pointer;
+        position: relative;
+        min-height: 60px;
+    }
+
+    .requirement-display:hover {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+    }
+
+    .requirement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .requirement-tag {
+        color: #0d6efd;
+        font-size: 0.95em;
+    }
+
+    .requirement-badges {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .requirement-title {
+        color: #333;
+        line-height: 1.4;
+        margin-bottom: 4px;
+        font-size: 1.05em;
+    }
+
+    .requirement-description {
+        color: #666;
+        line-height: 1.4;
+        font-size: 0.95em;
+    }
+
+    .requirement-actions-overlay {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .requirement-display:hover .requirement-actions-overlay {
+        opacity: 1;
+    }
+
+    .inline-requirement-edit {
+        padding: 16px;
+        background-color: #f8f9fa;
+    }
+
+    .requirement-edit-header {
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+
+    .requirement-text {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .alert-sm {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    @@media (max-width: 768px) {
+        .requirement-badges {
+            margin-top: 4px;
+        }
+        
+        .requirement-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public RequirementDto Requirement { get; set; } = new() { Title = "" };
+    [Parameter] public EventCallback<RequirementDto> OnUpdate { get; set; }
+    [Parameter] public EventCallback<RequirementDto> OnDelete { get; set; }
+    [Parameter] public bool AllowEdit { get; set; } = true;
+    [Parameter] public bool AllowDelete { get; set; } = true;
+
+    private RequirementDto editingRequirement = new() { Title = "" };
+    private bool IsEditing = false;
+    private bool isSaving = false;
+    private string errorMessage = "";
+
+    protected override void OnParametersSet()
+    {
+        // Create a copy for editing to avoid modifying the original
+        editingRequirement = new RequirementDto
+        {
+            Id = Requirement.Id,
+            Title = Requirement.Title,
+            Description = Requirement.Description,
+            Status = Requirement.Status,
+            Type = Requirement.Type,
+            ProjectId = Requirement.ProjectId,
+            DocumentId = Requirement.DocumentId,
+            SectionId = Requirement.SectionId,
+            CreatedAt = Requirement.CreatedAt,
+            UpdatedAt = Requirement.UpdatedAt,
+            Version = Requirement.Version,
+            CreatedBy = Requirement.CreatedBy,
+            ParentId = Requirement.ParentId,
+            ProjectName = Requirement.ProjectName,
+            ProjectCode = Requirement.ProjectCode,
+            FullRequirementId = Requirement.FullRequirementId
+        };
+    }
+
+    private void StartEdit()
+    {
+        if (!AllowEdit) return;
+        
+        IsEditing = true;
+        errorMessage = "";
+        StateHasChanged();
+    }
+
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        errorMessage = "";
+        // Reset editing requirement to original values
+        OnParametersSet();
+        StateHasChanged();
+    }
+
+    private async Task SaveRequirement()
+    {
+        if (isSaving) return;
+
+        isSaving = true;
+        errorMessage = "";
+
+        try
+        {
+            bool success;
+            if (editingRequirement.Id == 0)
+            {
+                // Create new requirement
+                var created = await RequirementsService.CreateAsync(editingRequirement);
+                success = created != null;
+                if (success && created != null)
+                {
+                    editingRequirement.Id = created.Id;
+                    editingRequirement.CreatedAt = created.CreatedAt;
+                    editingRequirement.UpdatedAt = created.UpdatedAt;
+                    editingRequirement.FullRequirementId = created.FullRequirementId;
+                    editingRequirement.Version = created.Version;
+                }
+            }
+            else
+            {
+                // Update existing requirement
+                success = await RequirementsService.UpdateAsync(editingRequirement);
+                if (success)
+                {
+                    editingRequirement.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            if (success)
+            {
+                // Update the original requirement with saved values
+                Requirement.Title = editingRequirement.Title;
+                Requirement.Description = editingRequirement.Description;
+                Requirement.Status = editingRequirement.Status;
+                Requirement.Type = editingRequirement.Type;
+                Requirement.UpdatedAt = editingRequirement.UpdatedAt;
+                if (Requirement.Id == 0)
+                {
+                    Requirement.Id = editingRequirement.Id;
+                    Requirement.CreatedAt = editingRequirement.CreatedAt;
+                    Requirement.FullRequirementId = editingRequirement.FullRequirementId;
+                    Requirement.Version = editingRequirement.Version;
+                }
+
+                IsEditing = false;
+                
+                // Notify parent component
+                if (OnUpdate.HasDelegate)
+                {
+                    await OnUpdate.InvokeAsync(Requirement);
+                }
+            }
+            else
+            {
+                errorMessage = "Failed to save requirement. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving requirement: {ex.Message}";
+            Console.WriteLine($"Error saving requirement: {ex}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleInvalidSubmit()
+    {
+        errorMessage = "Please correct the validation errors and try again.";
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !IsEditing)
+        {
+            StartEdit();
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (!AllowDelete || !OnDelete.HasDelegate) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete requirement '{GetRequirementTag()}'?");
+        
+        if (confirmed)
+        {
+            await OnDelete.InvokeAsync(Requirement);
+        }
+    }
+
+    private string GetRequirementTag()
+    {
+        if (!string.IsNullOrEmpty(Requirement.FullRequirementId))
+        {
+            return Requirement.FullRequirementId;
+        }
+        
+        // Fallback to a simple format
+        return $"REQ-{Requirement.Id:D3}";
+    }
+
+    private string GetStatusBadgeClass() => Requirement.Status switch
+    {
+        RequirementStatus.Draft => "bg-secondary",
+        RequirementStatus.Approved => "bg-success",
+        RequirementStatus.Implemented => "bg-primary",
+        RequirementStatus.Verified => "bg-info",
+        _ => "bg-light text-dark"
+    };
+}
