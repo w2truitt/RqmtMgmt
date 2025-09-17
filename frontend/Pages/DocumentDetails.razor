@@ -5,7 +5,6 @@
 @inject DocumentSectionsDataService DocumentSectionsService
 @inject IRequirementService RequirementsService
 @using frontend.Components.Documents
-@using frontend.Components
 @inject DocumentsDataService DocumentsService
 @inject IJSRuntime JSRuntime
 @inject IProjectContextService ProjectContextService
@@ -204,29 +203,6 @@
                     </div>
                 </div>
 
-                <!-- Phase 3A Preview -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-magic me-2"></i>
-                            Document Editor Preview
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3"><small>Phase 3A: Inline editing demonstration</small></p>
-                        @if (requirements.Any())
-                        {
-                            var firstReq = requirements.First();
-                            <InlineRequirement Requirement="@firstReq" 
-                                             OnUpdate="HandleRequirementUpdate" 
-                                             OnDelete="HandleRequirementDelete" />
-                        }
-                        else
-                        {
-                            <p class="text-muted">No requirements available for preview.</p>
-                        }
-                    </div>
-                </div>
                 <!-- Document Statistics -->
                 <div class="card mt-3">
                     <div class="card-header">
@@ -261,7 +237,6 @@
     private List<DocumentSectionDto> sections = new();
     private List<RequirementDto> requirements = new();
     private bool isLoading = true;
-    private RequirementDto newRequirement = new() { Title = "" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -385,30 +360,4 @@
         DocumentStatus.Published => "bg-info",
         _ => "bg-light text-dark"
     };
-    private async Task HandleRequirementUpdate(RequirementDto updatedRequirement)
-    {
-        // Update the requirement in our list
-        var index = requirements.FindIndex(r => r.Id == updatedRequirement.Id);
-        if (index >= 0)
-        {
-            requirements[index] = updatedRequirement;
-        }
-        StateHasChanged();
-    }
-
-    private async Task HandleRequirementDelete(RequirementDto requirementToDelete)
-    {
-        try
-        {
-            var success = await RequirementsService.DeleteAsync(requirementToDelete.Id);
-            if (success)
-            {
-                requirements.RemoveAll(r => r.Id == requirementToDelete.Id);
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting requirement: {ex.Message}");
-        }
-    }}
+}
