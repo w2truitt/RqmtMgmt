@@ -262,9 +262,8 @@ else
         try
         {
             // Load requirements count
-            var reqResult = await RequirementService.GetPagedAsync(new PaginationParameters
+            var reqResult = await RequirementService.GetPagedByProjectIdAsync(ProjectId, new PaginationParameters
             {
-                ProjectId = ProjectId,
                 PageSize = 1,
                 PageNumber = 1
             });

@@ -300,7 +300,7 @@ else
                 // For now, we'll filter client-side after getting results
             }
 
-            var result = await RequirementService.GetPagedAsync(request);
+            var result = await RequirementService.GetPagedByProjectIdAsync(ProjectId, request);
             if (result != null)
             {
                 pagedResult = result;

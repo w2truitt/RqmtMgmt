@@ -4,10 +4,12 @@
 @using frontend.Services
 @inject DocumentSectionsDataService DocumentSectionsService
 @inject IRequirementService RequirementsService
+@using frontend.Components
 @using frontend.Components.Documents
 @inject DocumentsDataService DocumentsService
 @inject IJSRuntime JSRuntime
 @inject IProjectContextService ProjectContextService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 
 <PageTitle>@(document?.Title ?? "Document Details")</PageTitle>
@@ -144,7 +146,64 @@
                     </div>
                 }
             </div>
-
+                <!-- Document Editor Preview -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-magic me-2"></i>
+                            Document Editor Preview
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            <strong>Phase 3A:</strong> Inline editing demonstration - click requirements to edit them directly.
+                        </p>
+                        
+                        @if (sections.Any())
+                        {
+                            var firstSection = sections.OrderBy(s => s.SectionOrder).First();
+                            var sectionRequirements = requirements.Where(r => r.SectionId == firstSection.Id).Take(2).ToList();
+                            
+                            <h6 class="text-primary mb-3">@firstSection.SectionOrder. @firstSection.Title</h6>
+                            
+                            @if (sectionRequirements.Any())
+                            {
+                                @foreach (var requirement in sectionRequirements)
+                                {
+                                    <InlineRequirement Requirement="@requirement"
+                                                     OnUpdate="HandleRequirementUpdate"
+                                                     OnDelete="HandleRequirementDelete" />
+                                }
+                            }
+                            
+                            @if (showAddRequirementForSection == firstSection.Id)
+                            {
+                                <div class="mt-3 p-3 bg-light rounded">
+                                    <InlineRequirement Requirement="@newRequirement"
+                                                     OnUpdate="HandleNewRequirementSaved"
+                                                     AllowDelete="false" />
+                                    <button class="btn btn-sm btn-secondary mt-2" @onclick="CancelAddRequirement">
+                                        Cancel
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-primary btn-sm w-100 mt-2" 
+                                        @onclick="() => ShowAddRequirement(firstSection.Id)">
+                                    <i class="bi bi-plus me-1"></i>Add Requirement
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Add sections to this document to see the inline editing preview.
+                            </div>
+                        }
+                    </div>
+                </div>
             <div class="col-lg-4">
                 <!-- Document Metadata -->
                 <div class="card">
@@ -237,6 +296,8 @@
     private List<DocumentSectionDto> sections = new();
     private List<RequirementDto> requirements = new();
     private bool isLoading = true;
+    private int? showAddRequirementForSection = null;
+    private RequirementDto newRequirement = new() { Title = "" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -360,4 +421,64 @@
         DocumentStatus.Published => "bg-info",
         _ => "bg-light text-dark"
     };
+    
+    private void ShowAddRequirement(int sectionId)
+    {
+        showAddRequirementForSection = sectionId;
+        newRequirement = new RequirementDto
+        {
+            Title = "",
+            DocumentId = DocumentId,
+            SectionId = sectionId,
+            ProjectId = document?.ProjectId ?? 0,
+            Status = RequirementStatus.Draft,
+            Type = RequirementType.SRS,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = 1, // TODO: Get actual user ID from authentication
+            ProjectName = document?.ProjectName ?? ""
+        };
+        StateHasChanged();
+    }
+
+    private void CancelAddRequirement()
+    {
+        showAddRequirementForSection = null;
+        newRequirement = new RequirementDto { Title = "" };
+        StateHasChanged();
+    }
+
+    private async Task HandleNewRequirementSaved(RequirementDto savedRequirement)
+    {
+        requirements.Add(savedRequirement);
+        showAddRequirementForSection = null;
+        newRequirement = new RequirementDto { Title = "" };
+        StateHasChanged();
+    }
+
+    private async Task HandleRequirementUpdate(RequirementDto updatedRequirement)
+    {
+        var index = requirements.FindIndex(r => r.Id == updatedRequirement.Id);
+        if (index >= 0)
+        {
+            requirements[index] = updatedRequirement;
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleRequirementDelete(RequirementDto requirementToDelete)
+    {
+        try
+        {
+            var success = await RequirementsService.DeleteAsync(requirementToDelete.Id);
+            if (success)
+            {
+                requirements.RemoveAll(r => r.Id == requirementToDelete.Id);
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting requirement: {ex.Message}");
+        }
+    }
 }
