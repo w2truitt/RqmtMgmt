@@ -98,7 +98,7 @@ namespace backend.Tests
         {
             var mockService = new Mock<ITestRunSessionService>();
             var controller = new TestRunSessionController(mockService.Object);
-            mockService.Setup(s => s.GetByIdAsync(999)).ReturnsAsync((TestRunSessionDto)null);
+            mockService.Setup(s => s.GetByIdAsync(999)).ReturnsAsync((TestRunSessionDto?)null);
             var result = await controller.GetById(999);
             Assert.IsType<NotFoundObjectResult>(result.Result);
         }
@@ -118,7 +118,7 @@ namespace backend.Tests
         public async Task Create_ServiceReturnsNull_ReturnsInternalServerError()
         {
             var mockService = new Mock<ITestRunSessionService>();
-            mockService.Setup(s => s.CreateAsync(It.IsAny<TestRunSessionDto>())).ReturnsAsync((TestRunSessionDto)null);
+            mockService.Setup(s => s.CreateAsync(It.IsAny<TestRunSessionDto>())).ReturnsAsync((TestRunSessionDto?)null);
             var controller = new TestRunSessionController(mockService.Object);
             var dto = new TestRunSessionDto { Id = 1 };
             var result = await controller.Create(dto);
@@ -232,7 +232,7 @@ namespace backend.Tests
         public async Task StartTestRunSession_ServiceReturnsNull_ReturnsInternalServerError()
         {
             var mockService = new Mock<ITestRunSessionService>();
-            mockService.Setup(s => s.StartTestRunSessionAsync(It.IsAny<TestRunSessionDto>())).ReturnsAsync((TestRunSessionDto)null);
+            mockService.Setup(s => s.StartTestRunSessionAsync(It.IsAny<TestRunSessionDto>())).ReturnsAsync((TestRunSessionDto?)null);
             var controller = new TestRunSessionController(mockService.Object);
             var dto = new TestRunSessionDto { Id = 1 };
             var result = await controller.StartTestRunSession(dto);

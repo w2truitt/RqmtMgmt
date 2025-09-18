@@ -1,6 +1,8 @@
 @page "/projects/{ProjectId:int}/requirements/{RequirementId:int}"
 @inject IRequirementService RequirementService
 @inject IProjectService ProjectService
+@inject frontend.Services.DocumentsDataService DocumentsService
+@inject frontend.Services.DocumentSectionsDataService DocumentSectionsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using frontend.Components.Navigation
@@ -44,123 +46,130 @@
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="mb-1">
-                    @GetTypeIcon(requirement.Type) @requirement.Title
-                </h2>
-                <p class="text-muted mb-0">
-                    <i class="bi bi-tag me-1"></i>
-                    <strong>@requirement.FullRequirementId</strong>
-                    <span class="ms-3">
-                        @GetStatusBadge(requirement.Status)
-                    </span>
-                    <span class="ms-3">
-                        <i class="bi bi-bookmark me-1"></i>@requirement.Type
-                    </span>
-                </p>
-                <p class="text-muted mb-0">
-                    <i class="bi bi-folder me-1"></i>
-                    Project: <strong>@project?.Name (@project?.Code)</strong>
-                </p>
+                <h1 class="h2 mb-0">
+                    <span class="text-muted">@requirement.FullRequirementId:</span> @requirement.Title
+                </h1>
             </div>
             <div>
-                <button class="btn btn-outline-secondary me-2" @onclick="BackToRequirements">
-                    <i class="bi bi-arrow-left me-1"></i>
-                    Back to Requirements
-                </button>
-                <button class="btn btn-warning" @onclick="EditRequirement">
-                    <i class="bi bi-pencil-square me-1"></i>
-                    Edit
+                <button class="btn btn-primary" @onclick="EditRequirement">
+                    <i class="bi bi-pencil-square me-1"></i> Edit
                 </button>
             </div>
         </div>
 
-        <!-- Requirement Details Card -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-file-earmark-text me-2"></i>
-                    Requirement Details
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <!-- Main Content -->
-                    <div class="col-md-8">
-                        @if (!string.IsNullOrWhiteSpace(requirement.Description))
+        <div class="row g-4">
+            <!-- Main Content Column -->
+            <div class="col-lg-8">
+                <!-- Context Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>Context
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (requirement.DocumentId.HasValue && associatedDocument != null)
                         {
-                            <div class="mb-4">
-                                <h6 class="text-muted mb-2">Description</h6>
-                                <div class="bg-light p-3 rounded" style="white-space: pre-wrap;">@requirement.Description</div>
+                            <div class="mb-3">
+                                <small class="text-muted d-block">Document</small>
+                                <a href="/projects/@ProjectId/documents/@requirement.DocumentId" class="text-decoration-none fs-5">
+                                    <span class="badge bg-info me-2">@associatedDocument.Type</span>
+                                    <span class="align-middle">@associatedDocument.Title</span>
+                                </a>
                             </div>
+
+                            @if (requirement.SectionId.HasValue && associatedSection != null)
+                            {
+                                <div>
+                                    <small class="text-muted d-block">Document Section</small>
+                                    <span class="badge bg-secondary">@associatedSection.SectionOrder. @associatedSection.Title</span>
+                                </div>
+                            }
                         }
                         else
                         {
-                            <div class="mb-4">
-                                <h6 class="text-muted mb-2">Description</h6>
-                                <p class="text-muted fst-italic">No description provided.</p>
-                            </div>
+                            <p class="text-muted fst-italic mb-0">This is a standalone requirement, not linked to a document.</p>
                         }
                     </div>
+                </div>
 
-                    <!-- Metadata -->
-                    <div class="col-md-4">
-                        <div class="bg-light p-3 rounded">
-                            <h6 class="text-primary mb-3">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Metadata
-                            </h6>
-                            
-                            <div class="mb-3">
-                                <small class="text-muted d-block">Status</small>
-                                @GetStatusBadge(requirement.Status)
-                            </div>
+                <!-- Description Card -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-card-text me-2"></i>Description
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(requirement.Description))
+                        {
+                            <div>@((MarkupString)requirement.Description)</div>
+                        }
+                        else
+                        {
+                            <p class="text-muted fst-italic mb-0">No description provided.</p>
+                        }
+                    </div>
+                </div>
+            </div>
 
-                            <div class="mb-3">
-                                <small class="text-muted d-block">Type</small>
-                                <span class="badge bg-secondary">@requirement.Type</span>
-                            </div>
+            <!-- Metadata Sidebar Column -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Metadata
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Status</dt>
+                            <dd class="col-sm-7">@GetStatusBadge(requirement.Status)</dd>
 
-                            <div class="mb-3">
-                                <small class="text-muted d-block">Version</small>
-                                <span class="badge bg-dark">v@requirement.Version</span>
-                            </div>
+                            <dt class="col-sm-5">Type</dt>
+                            <dd class="col-sm-7"><span class="badge bg-secondary">@requirement.Type</span></dd>
 
-                            @if (requirement.ParentId.HasValue && parentRequirement != null)
-                            {
-                                <div class="mb-3">
-                                    <small class="text-muted d-block">Parent Requirement</small>
+                            <dt class="col-sm-5">Version</dt>
+                            <dd class="col-sm-7"><span class="badge bg-dark">v@requirement.Version</span></dd>
+                        </dl>
+                        
+                        @if (requirement.ParentId.HasValue && parentRequirement != null)
+                        {
+                            <hr>
+                            <dl class="row mb-0">
+                                <dt class="col-12 mb-1">Parent Requirement</dt>
+                                <dd class="col-12">
                                     <a href="/projects/@ProjectId/requirements/@requirement.ParentId" class="text-decoration-none">
-                                        <small>@parentRequirement.FullRequirementId</small><br>
-                                        <span class="text-primary">@parentRequirement.Title</span>
+                                        <small class="d-block">@parentRequirement.FullRequirementId</small>
+                                        <span>@parentRequirement.Title</span>
                                     </a>
-                                </div>
-                            }
-
-                            <div class="mb-3">
-                                <small class="text-muted d-block">Created</small>
-                                <small>@requirement.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                                </dd>
+                            </dl>
+                        }
+                        
+                        <hr>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Created</dt>
+                            <dd class="col-sm-7">@requirement.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+                            
+                            <dt class="col-sm-5">Created By</dt>
+                            <dd class="col-sm-7">
                                 @if (requirement.CreatedByUser != null)
                                 {
-                                    <br>
-                                    <small class="text-muted d-block">Created By</small>
-                                    <small data-testid="created-by-user" title="@requirement.CreatedByUser.Email">@requirement.CreatedByUser.UserName</small>
+                                    <span data-testid="created-by-user" title="@requirement.CreatedByUser.Email">@requirement.CreatedByUser.UserName</span>
                                 }
                                 else
                                 {
-                                    <br>
-                                    <small class="text-muted d-block">Created By</small>
-                                    <small data-testid="created-by-user" class="text-muted">User ID: @requirement.CreatedBy</small>
+                                    <span data-testid="created-by-user" class="text-muted">User ID: @requirement.CreatedBy</span>
                                 }
-                            </div>
+                            </dd>
 
                             @if (requirement.UpdatedAt.HasValue)
                             {
-                                <div class="mb-3">
-                                    <small class="text-muted d-block">Last Updated</small>
-                                    <small>@requirement.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</small>
-                                </div>
+                                <dt class="col-sm-5">Updated</dt>
+                                <dd class="col-sm-7">@requirement.UpdatedAt.Value.ToString("yyyy-MM-dd HH:mm")</dd>
                             }
-                        </div>
+                        </dl>
                     </div>
                 </div>
             </div>
@@ -169,32 +178,26 @@
         <!-- Child Requirements -->
         @if (childRequirements?.Any() == true)
         {
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-secondary text-white">
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-diagram-3 me-2"></i>
                         Child Requirements (@childRequirements.Count)
                     </h5>
                 </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        @foreach (var child in childRequirements.OrderBy(r => r.FullRequirementId))
-                        {
-                            <div class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            <a href="/projects/@ProjectId/requirements/@child.Id" class="text-decoration-none">
-                                                @child.FullRequirementId - @child.Title
-                                            </a>
-                                        </h6>
-                                        <small class="text-muted">@child.Type</small>
-                                    </div>
-                                    @GetStatusBadge(child.Status)
+                <div class="list-group list-group-flush">
+                    @foreach (var child in childRequirements.OrderBy(r => r.FullRequirementId))
+                    {
+                        <a href="/projects/@ProjectId/requirements/@child.Id" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">@child.FullRequirementId - @child.Title</h6>
+                                    <small class="text-muted">@child.Type</small>
                                 </div>
+                                @GetStatusBadge(child.Status)
                             </div>
-                        }
-                    </div>
+                        </a>
+                    }
                 </div>
             </div>
         }
@@ -202,35 +205,32 @@
         <!-- Version History -->
         @if (versions?.Any() == true)
         {
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-clock-history me-2"></i>
                         Version History (@versions.Count)
                     </h5>
                 </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        @foreach (var version in versions.OrderByDescending(v => v.Version))
-                        {
-                            <div class="list-group-item @(version.Version == requirement.Version ? "list-group-item-primary" : "")">
-                                <div class="d-flex w-100 justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">
-                                            Version @version.Version
-                                            @if (version.Version == requirement.Version)
-                                            {
-                                                <span class="badge bg-primary ms-2">Current</span>
-                                            }
-                                        </h6>
-                                        <p class="mb-1">@version.Title</p>
-                                        <small class="text-muted">Version @version.Version</small>
-                                    </div>
-                                    <small class="text-muted">@version.ModifiedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                <div class="list-group list-group-flush">
+                    @foreach (var version in versions.OrderByDescending(v => v.Version))
+                    {
+                        <div class="list-group-item @(version.Version == requirement.Version ? "list-group-item-primary" : "")">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">
+                                        Version @version.Version
+                                        @if (version.Version == requirement.Version)
+                                        {
+                                            <span class="badge bg-primary ms-2">Current</span>
+                                        }
+                                    </h6>
+                                    <p class="mb-1 text-muted">@version.Title</p>
                                 </div>
+                                <small class="text-muted">@version.ModifiedAt.ToString("yyyy-MM-dd HH:mm")</small>
                             </div>
-                        }
-                    </div>
+                        </div>
+                    }
                 </div>
             </div>
         }
@@ -246,6 +246,8 @@
     private RequirementDto? parentRequirement;
     private List<RequirementDto>? childRequirements;
     private List<RequirementVersionDto>? versions;
+    private DocumentDto? associatedDocument;
+    private DocumentSectionDto? associatedSection;
     private string errorMessage = string.Empty;
     private bool isLoading = true;
 
@@ -305,6 +307,18 @@
             if (requirement.ParentId.HasValue)
             {
                 parentRequirement = await RequirementService.GetByIdAsync(requirement.ParentId.Value);
+            }
+
+            // Load associated document if exists
+            if (requirement.DocumentId.HasValue)
+            {
+                associatedDocument = await DocumentsService.GetDocumentByIdAsync(requirement.DocumentId.Value);
+            }
+            
+            // Load associated section if exists
+            if (requirement.SectionId.HasValue)
+            {
+                associatedSection = await DocumentSectionsService.GetDocumentSectionByIdAsync(requirement.SectionId.Value);
             }
 
             // TODO: Load child requirements

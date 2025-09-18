@@ -172,7 +172,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleNewRequirementSaved(RequirementDto savedRequirement)
+    private void HandleNewRequirementSaved(RequirementDto savedRequirement)
     {
         // Simulate saving and add to list
         savedRequirement.Id = sampleRequirements.Count + 1;
@@ -184,7 +184,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleRequirementUpdate(RequirementDto updatedRequirement)
+    private void HandleRequirementUpdate(RequirementDto updatedRequirement)
     {
         // Update the requirement in our list
         var index = sampleRequirements.FindIndex(r => r.Id == updatedRequirement.Id);
@@ -195,7 +195,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleRequirementDelete(RequirementDto requirementToDelete)
+    private void HandleRequirementDelete(RequirementDto requirementToDelete)
     {
         sampleRequirements.RemoveAll(r => r.Id == requirementToDelete.Id);
         StateHasChanged();

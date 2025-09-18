@@ -57,7 +57,7 @@ namespace backend.Tests
         [Fact]
         public async Task CreateRole_ReturnsBadRequest_WhenServiceReturnsNull()
         {
-            _mockService.Setup(s => s.CreateRoleAsync("InvalidRole")).ReturnsAsync((RoleDto)null);
+            _mockService.Setup(s => s.CreateRoleAsync("InvalidRole")).ReturnsAsync((RoleDto?)null);
             var result = await _controller.CreateRole("InvalidRole");
             Assert.IsType<BadRequestResult>(result.Result);
         }
@@ -96,7 +96,7 @@ namespace backend.Tests
         public async Task CreateRoleFromDto_ReturnsBadRequest_WhenServiceReturnsNull()
         {
             var inputDto = new RoleDto { Name = "InvalidDtoRole" };
-            _mockService.Setup(s => s.CreateRoleAsync("InvalidDtoRole")).ReturnsAsync((RoleDto)null);
+            _mockService.Setup(s => s.CreateRoleAsync("InvalidDtoRole")).ReturnsAsync((RoleDto?)null);
             
             var result = await _controller.CreateRoleFromDto(inputDto);
             

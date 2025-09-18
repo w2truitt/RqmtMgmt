@@ -173,7 +173,7 @@ namespace backend.Tests
             // Assert
             Assert.True(result);
             var updated = await context.DocumentSections.FindAsync(section.Id);
-            Assert.Equal("Updated Title", updated.Title);
+            Assert.Equal("Updated Title", updated!.Title);
             Assert.Equal("Updated Description", updated.Description);
             Assert.Equal(2, updated.SectionOrder);
             Assert.True(updated.IsNotApplicable);

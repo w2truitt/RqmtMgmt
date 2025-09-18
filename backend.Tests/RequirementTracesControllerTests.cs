@@ -145,7 +145,7 @@ namespace backend.Tests
             // Assert
             var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             Assert.Equal(nameof(_controller.GetById), createdResult.ActionName);
-            Assert.Equal(1, createdResult.RouteValues["id"]);
+            Assert.Equal(1, createdResult.RouteValues!["id"]);
             var returnedTrace = Assert.IsType<RequirementTraceDto>(createdResult.Value);
             Assert.Equal(TraceType.DerivedFrom, returnedTrace.TraceType);
         }

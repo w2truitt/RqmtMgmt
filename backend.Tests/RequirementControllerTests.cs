@@ -40,7 +40,7 @@ namespace backend.Tests
         [Fact]
         public async Task GetById_ReturnsNotFound_WhenNotExists()
         {
-            _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((RequirementDto)null);
+            _mockService.Setup(s => s.GetByIdAsync(42)).ReturnsAsync((RequirementDto?)null);
             var result = await _controller.GetById(42);
             Assert.IsType<NotFoundResult>(result.Result);
         }
@@ -72,7 +72,7 @@ namespace backend.Tests
         public async Task Update_ReturnsNotFound_WhenNotExists()
         {
             var dto = new RequirementDto { Id = 99, Title = "NotFound", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
-            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((RequirementDto)null);
+            _mockService.Setup(s => s.GetByIdAsync(99)).ReturnsAsync((RequirementDto?)null);
             _mockService.Setup(s => s.UpdateAsync(It.IsAny<RequirementDto>())).ReturnsAsync(false);
             var result = await _controller.Update(99, dto);
             Assert.IsType<NotFoundResult>(result);
@@ -124,7 +124,7 @@ namespace backend.Tests
         public async Task Create_ReturnsBadRequest_WhenServiceReturnsNull()
         {
             var dto = new RequirementDto { Title = "Req1", Type = RequirementType.CRD, Status = RequirementStatus.Draft };
-            _mockService.Setup(s => s.CreateAsync(It.IsAny<RequirementDto>())).ReturnsAsync((RequirementDto)null);
+            _mockService.Setup(s => s.CreateAsync(It.IsAny<RequirementDto>())).ReturnsAsync((RequirementDto?)null);
             var result = await _controller.Create(dto);
             Assert.IsType<BadRequestResult>(result.Result);
         }

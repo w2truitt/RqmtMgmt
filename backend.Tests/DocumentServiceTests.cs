@@ -168,7 +168,7 @@ namespace backend.Tests
             // Assert
             Assert.True(result);
             var updated = await context.Documents.FindAsync(document.Id);
-            Assert.Equal("Updated Title", updated.Title);
+            Assert.Equal("Updated Title", updated!.Title);
             Assert.Equal("1.1", updated.Version);
             Assert.Equal("New Owner", updated.DocumentOwner);
             Assert.Equal("Updated Objective", updated.Objective);

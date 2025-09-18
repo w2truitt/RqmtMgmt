@@ -66,7 +66,7 @@ namespace backend.Tests
             var mockService = new Mock<ITestExecutionService>();
             var controller = new TestExecutionController(mockService.Object);
             var executionDto = new TestCaseExecutionDto { TestRunSessionId = 1, TestCaseId = 1, OverallResult = TestResult.Passed };
-            mockService.Setup(s => s.ExecuteTestCaseAsync(It.IsAny<TestCaseExecutionDto>())).ReturnsAsync((TestCaseExecutionDto)null);
+            mockService.Setup(s => s.ExecuteTestCaseAsync(It.IsAny<TestCaseExecutionDto>())).ReturnsAsync((TestCaseExecutionDto?)null);
             var result = await controller.ExecuteTestCase(executionDto);
             var statusResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, statusResult.StatusCode);
@@ -153,7 +153,7 @@ namespace backend.Tests
         public async Task UpdateStepResult_ReturnsInternalServerError_WhenNull()
         {
             var mockService = new Mock<ITestExecutionService>();
-            mockService.Setup(s => s.UpdateStepResultAsync(It.IsAny<TestStepExecutionDto>())).ReturnsAsync((TestStepExecutionDto)null);
+            mockService.Setup(s => s.UpdateStepResultAsync(It.IsAny<TestStepExecutionDto>())).ReturnsAsync((TestStepExecutionDto?)null);
             var controller = new TestExecutionController(mockService.Object);
             var dto = new TestStepExecutionDto { Id = 1 };
             var result = await controller.UpdateStepResult(dto);

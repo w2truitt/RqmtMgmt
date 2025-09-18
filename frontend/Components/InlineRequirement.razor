@@ -341,7 +341,7 @@
         errorMessage = "Please correct the validation errors and try again.";
     }
 
-    private async Task HandleKeyPress(KeyboardEventArgs e)
+    private void HandleKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !IsEditing)
         {

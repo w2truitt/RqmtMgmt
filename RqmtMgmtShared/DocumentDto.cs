@@ -112,12 +112,15 @@ namespace RqmtMgmtShared
 
         /// <summary>
         /// Gets or sets the ID of the project this document belongs to.
+        /// This field is required to ensure all documents are properly organized under projects.
         /// </summary>
+        [Required(ErrorMessage = "Project is required for the document")]
         public int ProjectId { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the project this document belongs to.
         /// </summary>
+        [Required(ErrorMessage = "Project name is required")]
         public string ProjectName { get; set; } = string.Empty;
     }
 }

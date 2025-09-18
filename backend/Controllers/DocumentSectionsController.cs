@@ -124,7 +124,7 @@ namespace backend.Controllers
         /// <response code="204">If the reordering was successful.</response>
         /// <response code="400">If the section IDs are invalid or incomplete.</response>
         [HttpPost("document/{documentId}/reorder")]
-        public async Task<IActionResult> ReorderSections(int documentId, [FromBody] List<int> sectionIds)
+        public async Task<IActionResult> ReorderSections(int documentId, [FromBody] List<int>? sectionIds)
         {
             if (sectionIds == null || sectionIds.Count == 0)
                 return BadRequest("Section IDs are required");

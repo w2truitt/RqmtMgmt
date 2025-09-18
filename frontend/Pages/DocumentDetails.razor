@@ -447,7 +447,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleNewRequirementSaved(RequirementDto savedRequirement)
+    private void HandleNewRequirementSaved(RequirementDto savedRequirement)
     {
         requirements.Add(savedRequirement);
         showAddRequirementForSection = null;
@@ -455,7 +455,7 @@
         StateHasChanged();
     }
 
-    private async Task HandleRequirementUpdate(RequirementDto updatedRequirement)
+    private void HandleRequirementUpdate(RequirementDto updatedRequirement)
     {
         var index = requirements.FindIndex(r => r.Id == updatedRequirement.Id);
         if (index >= 0)

@@ -84,7 +84,7 @@ namespace backend.Tests
             // Assert
             var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             Assert.Equal(nameof(_controller.GetById), createdResult.ActionName);
-            Assert.Equal(1, createdResult.RouteValues["id"]);
+            Assert.Equal(1, createdResult.RouteValues!["id"]);
             var returnedDoc = Assert.IsType<DocumentDto>(createdResult.Value);
             Assert.Equal("New Doc", returnedDoc.Title);
         }
