@@ -174,6 +174,7 @@ public interface IProjectService
     Task<bool> UserHasRoleInProjectAsync(int userId, int projectId, ProjectRole role);  
     Task<string> GenerateNextRequirementIdAsync(int projectId);  
 }
+
 /// <summary>
 /// Service interface for document operations
 /// </summary>
@@ -188,6 +189,7 @@ public interface IDocumentService
     Task<DocumentDto?> CreateAsync(DocumentDto document);
     Task<bool> UpdateAsync(DocumentDto document);
     Task<bool> DeleteAsync(int id);
+    Task<TraceabilityMatrixDto?> GetTraceabilityMatrixAsync(int documentId, string direction, bool uncoveredOnly = false);
 }
 
 /// <summary>

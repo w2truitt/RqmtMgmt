@@ -79,5 +79,13 @@ namespace frontend.Services
                 return "Validation failed";
             }
         }
+
+        /// <summary>
+        /// Gets the traceability matrix for a document.
+        /// </summary>
+        public async Task<TraceabilityMatrixDto?> GetDocumentTraceabilityMatrixAsync(int documentId, string direction, bool uncoveredOnly = false)
+        {
+            return await GetAsync<TraceabilityMatrixDto>($"/api/documents/{documentId}/traceability?direction={direction}&uncoveredOnly={uncoveredOnly}");
+        }
     }
 }

@@ -203,5 +203,36 @@ namespace backend.Controllers
 
             return NoContent();
         }
+
+        /// <summary>
+        /// Retrieves traceability matrix data for a document showing requirement trace relationships.
+        /// </summary>
+        /// <param name="id">The ID of the document.</param>
+        /// <param name="direction">The trace direction: 'upstream' (requirements that trace TO this document) or 'downstream' (requirements that trace FROM this document).</param>
+        /// <param name="uncoveredOnly">If true, returns only requirements without trace links (for audit purposes).</param>
+        /// <returns>Traceability matrix data for the document.</returns>
+        /// <response code="200">Returns the traceability matrix data.</response>
+        /// <response code="404">If the document is not found.</response>
+        /// <response code="400">If the direction parameter is invalid.</response>
+        [HttpGet("{id}/traceability")]
+        public async Task<ActionResult<TraceabilityMatrixDto>> GetTraceability(
+            int id,
+            [FromQuery] string direction,
+            [FromQuery] bool uncoveredOnly = false)
+        {
+            // Validate direction parameter
+            if (string.IsNullOrEmpty(direction) || 
+                (!direction.Equals("upstream", StringComparison.OrdinalIgnoreCase) && 
+                 !direction.Equals("downstream", StringComparison.OrdinalIgnoreCase)))
+            {
+                return BadRequest("Direction parameter must be 'upstream' or 'downstream'.");
+            }
+
+            var traceabilityMatrix = await _documentService.GetTraceabilityMatrixAsync(id, direction.ToLower(), uncoveredOnly);
+            if (traceabilityMatrix == null)
+                return NotFound();
+
+            return Ok(traceabilityMatrix);
+        }
     }
 }

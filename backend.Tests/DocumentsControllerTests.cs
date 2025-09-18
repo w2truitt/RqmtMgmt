@@ -261,5 +261,85 @@ namespace backend.Tests
             Assert.Single(returnedResult.Items);
             Assert.Equal(1, returnedResult.Items.First().ProjectId);
         }
+
+	[Fact]
+	public async Task GetTraceability_ValidRequest_ReturnsOk()
+	{
+	    // Arrange
+	    var documentId = 1;
+	    var direction = "downstream";
+	    var traceabilityMatrix = new TraceabilityMatrixDto
+		{
+		    DocumentId = documentId,
+		    DocumentName = "Test Document",
+		    DocumentType = DocumentType.PRD,
+		    Direction = direction,
+		    Traceability = new List<RequirementTraceabilityDto>(),
+		    CoverageStats = new CoverageStatsDto()
+		};
+
+	    _mockService.Setup(s => s.GetTraceabilityMatrixAsync(documentId, direction, false))
+		.ReturnsAsync(traceabilityMatrix);
+
+	    // Act
+	    var result = await _controller.GetTraceability(documentId, direction);
+
+	    // Assert
+	    var okResult = Assert.IsType<OkObjectResult>(result.Result);
+	    var returnedMatrix = Assert.IsType<TraceabilityMatrixDto>(okResult.Value);
+	    Assert.Equal(documentId, returnedMatrix.DocumentId);
+	    Assert.Equal(direction, returnedMatrix.Direction);
+	}
+
+        [Fact]
+        public async Task GetTraceability_DocumentNotFound_ReturnsNotFound()
+	{
+	    // Arrange
+	    var documentId = 999;
+	    var direction = "downstream";
+
+	    _mockService.Setup(s => s.GetTraceabilityMatrixAsync(documentId, direction, false))
+		.ReturnsAsync((TraceabilityMatrixDto?)null);
+
+	    // Act
+	    var result = await _controller.GetTraceability(documentId, direction);
+
+	    // Assert
+	    Assert.IsType<NotFoundResult>(result.Result);
+	}
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("invalid")]
+        public async Task GetTraceability_InvalidDirection_ReturnsBadRequest(string direction)
+	{
+	    // Arrange
+	    var documentId = 1;
+
+	    // Act
+	    var result = await _controller.GetTraceability(documentId, direction);
+
+	    // Assert
+	    var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+	    Assert.Contains("Direction parameter must be", badRequestResult.Value?.ToString());
+	}
+
+        [Fact]
+        public async Task GetTraceability_UncoveredOnlyTrue_CallsServiceCorrectly()
+	{
+	    // Arrange
+	    var documentId = 1;
+	    var direction = "upstream";
+	    var uncoveredOnly = true;
+
+	    _mockService.Setup(s => s.GetTraceabilityMatrixAsync(documentId, direction, uncoveredOnly))
+		.ReturnsAsync(new TraceabilityMatrixDto());
+
+	    // Act
+	    await _controller.GetTraceability(documentId, direction, uncoveredOnly);
+
+	    // Assert
+	    _mockService.Verify(s => s.GetTraceabilityMatrixAsync(documentId, direction, uncoveredOnly), Times.Once);
+	}
     }
 }

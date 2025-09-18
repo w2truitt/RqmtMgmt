@@ -1,0 +1,301 @@
+@using RqmtMgmtShared
+@inject frontend.Services.RequirementTracesDataService TracesService
+@inject IJSRuntime JSRuntime
+
+<div class="traceability-matrix">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading traceability matrix...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading traceability relationships...</p>
+        </div>
+    }
+    else if (traceabilityMatrix != null)
+    {
+        <!-- Matrix Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1">
+                    <i class="bi bi-diagram-3 me-2"></i>
+                    Requirements Traceability Matrix
+                </h4>
+                <p class="text-muted mb-0">
+                    @GetDirectionDescription() for @traceabilityMatrix.DocumentName
+                </p>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleDirection">
+                    <i class="bi bi-arrow-repeat me-1"></i>
+                    Switch to @GetOppositeDirection()
+                </button>
+                
+                @if (traceabilityMatrix.CoverageStats.UncoveredRequirements.Any())
+                {
+                    <button class="btn btn-outline-warning btn-sm" @onclick="() => showUncoveredOnly = !showUncoveredOnly">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        @(showUncoveredOnly ? "Show All" : "Show Uncovered Only")
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Coverage Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">@traceabilityMatrix.CoverageStats.TotalRequirements</h5>
+                        <p class="card-text text-muted">Total Requirements</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">@traceabilityMatrix.CoverageStats.CoveredRequirements</h5>
+                        <p class="card-text text-muted">Covered Requirements</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title @GetCoverageClass()">@traceabilityMatrix.CoverageStats.CoveragePercentage%</h5>
+                        <p class="card-text text-muted">Coverage Percentage</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning">@traceabilityMatrix.CoverageStats.UncoveredRequirements.Count</h5>
+                        <p class="card-text text-muted">Uncovered Requirements</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Traceability Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-table me-2"></i>
+                    Traceability Relationships
+                    @if (showUncoveredOnly)
+                    {
+                        <span class="badge bg-warning ms-2">Showing Uncovered Only</span>
+                    }
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                @if (GetFilteredTraceability().Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%;">Source Requirement</th>
+                                    <th style="width: 45%;">@GetTargetColumnHeader()</th>
+                                    <th style="width: 15%;">Coverage Status</th>
+                                    <th style="width: 15%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in GetFilteredTraceability())
+                                {
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong class="text-primary">@item.SourceRequirement.FullRequirementId</strong>
+                                                <br />
+                                                <span class="text-muted small">@item.SourceRequirement.Title</span>
+                                                <br />
+                                                <span class="badge bg-secondary">@item.SourceRequirement.Type</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (item.Traces.Any())
+                                            {
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach (var trace in item.Traces)
+                                                    {
+                                                        <div class="border rounded p-2 mb-1 bg-light">
+                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                <div>
+                                                                    <strong class="text-success">@trace.TargetRequirement.FullRequirementId</strong>
+                                                                    <br />
+                                                                    <span class="small">@trace.TargetRequirement.Title</span>
+                                                                    <br />
+                                                                    <span class="badge bg-info">@trace.TraceType</span>
+                                                                    @if (!string.IsNullOrEmpty(trace.TargetRequirement.DocumentName))
+                                                                    {
+                                                                        <br />
+                                                                        <small class="text-muted">@trace.TargetRequirement.DocumentName</small>
+                                                                    }
+                                                                </div>
+                                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteTrace(trace.TraceId)" title="Remove trace link">
+                                                                    <i class="bi bi-x"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted fst-italic">No trace links</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.Traces.Any())
+                                            {
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Covered
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>Not Covered
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => AddTrace(item.SourceRequirement.Id)" title="Add trace link">
+                                                <i class="bi bi-plus me-1"></i>Add Link
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">
+                            @if (showUncoveredOnly)
+                            {
+                                <span>All requirements are covered!</span>
+                            }
+                            else
+                            {
+                                <span>No requirements found in this document</span>
+                            }
+                        </h5>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int DocumentId { get; set; }
+    [Parameter] public string Direction { get; set; } = "downstream";
+    [Parameter] public EventCallback<int> OnAddTrace { get; set; }
+    [Parameter] public EventCallback<int> OnDeleteTrace { get; set; }
+
+    private TraceabilityMatrixDto? traceabilityMatrix;
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+    private bool showUncoveredOnly = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DocumentId > 0)
+        {
+            await LoadTraceabilityMatrix();
+        }
+    }
+
+    private async Task LoadTraceabilityMatrix()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // Note: This will use the new API endpoint once implemented
+            // For now, we'll need to implement this in the TracesService
+            traceabilityMatrix = await TracesService.GetDocumentTraceabilityMatrixAsync(DocumentId, Direction, false);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading traceability matrix: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ToggleDirection()
+    {
+        Direction = Direction == "downstream" ? "upstream" : "downstream";
+        await LoadTraceabilityMatrix();
+    }
+
+    private string GetDirectionDescription()
+    {
+        return Direction == "downstream" 
+            ? "Requirements in this document and what they trace TO" 
+            : "Requirements that trace TO this document";
+    }
+
+    private string GetOppositeDirection()
+    {
+        return Direction == "downstream" ? "Upstream" : "Downstream";
+    }
+
+    private string GetTargetColumnHeader()
+    {
+        return Direction == "downstream" 
+            ? "Linked Target Requirements" 
+            : "Linked Source Requirements";
+    }
+
+    private string GetCoverageClass()
+    {
+        if (traceabilityMatrix?.CoverageStats == null) return "text-muted";
+        
+        var percentage = traceabilityMatrix.CoverageStats.CoveragePercentage;
+        return percentage >= 80 ? "text-success" : 
+               percentage >= 60 ? "text-warning" : 
+               "text-danger";
+    }
+
+    private IEnumerable<RequirementTraceabilityDto> GetFilteredTraceability()
+    {
+        if (traceabilityMatrix?.Traceability == null) return Enumerable.Empty<RequirementTraceabilityDto>();
+
+        return showUncoveredOnly 
+            ? traceabilityMatrix.Traceability.Where(t => !t.Traces.Any())
+            : traceabilityMatrix.Traceability;
+    }
+
+    private async Task AddTrace(int sourceRequirementId)
+    {
+        await OnAddTrace.InvokeAsync(sourceRequirementId);
+        await LoadTraceabilityMatrix(); // Refresh after adding
+    }
+
+    private async Task DeleteTrace(int traceId)
+    {
+        await OnDeleteTrace.InvokeAsync(traceId);
+        await LoadTraceabilityMatrix(); // Refresh after deleting
+    }
+}

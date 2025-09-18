@@ -47,7 +47,7 @@
                     <small class="text-muted ms-2">v@(document.Version)</small>
                 </div>
                 <h2 class="mb-0">@document.Title</h2>
-                <p class="text-muted mb-0">@document.ProjectName</p>
+                <p class="text-muted mb-0">@document.ProjectId</p>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-primary" @onclick="EditDocument">
@@ -435,7 +435,7 @@
             Type = RequirementType.SRS,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = 1, // TODO: Get actual user ID from authentication
-            ProjectName = document?.ProjectName ?? ""
+            ProjectName = "" // TODO: Get project name from project ID
         };
         StateHasChanged();
     }
