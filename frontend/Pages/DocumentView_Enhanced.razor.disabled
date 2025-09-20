@@ -1,0 +1,432 @@
+@* DocumentView_Enhanced.razor - Demonstration of enhanced document view with traceability *@
+@page "/documents/{DocumentId:int}/enhanced"
+@page "/projects/{ProjectId:int}/documents/{DocumentId:int}/enhanced"
+@using RqmtMgmtShared
+@using frontend.Services
+@using frontend.Components.Traceability
+@using frontend.Components.Documents
+@inject DocumentSectionsDataService DocumentSectionsService
+@inject IRequirementService RequirementsService
+@inject DocumentsDataService DocumentsService
+@inject RequirementTracesDataService TracesService
+@inject IJSRuntime JSRuntime
+@inject IProjectContextService ProjectContextService
+@inject NavigationManager Navigation
+
+<PageTitle>@(document?.Title ?? "Document View") - Enhanced</PageTitle>
+
+<div class="enhanced-document-view">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading document...</p>
+        </div>
+    }
+    else if (document == null)
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+            <h4 class="mt-3">Document Not Found</h4>
+            <p class="text-muted">The requested document could not be found.</p>
+            <button class="btn btn-primary" @onclick="NavigateBack">
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Document
+            </button>
+        </div>
+    }
+    else
+    {
+        <!-- DOCUMENT HEADER -->
+        <div class="document-header no-print-break">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge @GetDocumentTypeBadgeClass(document.Type) me-2">@document.Type</span>
+                        <span class="badge @GetStatusBadgeClass(document.Status)">@document.Status</span>
+                        <small class="text-muted ms-2">v@(document.Version)</small>
+                        <span class="badge bg-info ms-2">Enhanced View</span>
+                    </div>
+                    <h1 class="document-title">@document.Title</h1>
+                    <p class="text-muted">Project ID: @document.ProjectId</p>
+                </div>
+                
+                <!-- DOCUMENT ACTIONS -->
+                <div class="document-actions d-print-none">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary" @onclick="ToggleViewMode">
+                            <i class="bi @(isReadingMode ? "bi-pencil" : "bi-eye") me-1"></i>
+                            @(isReadingMode ? "Edit Mode" : "Reading Mode")
+                        </button>
+                        <button class="btn btn-outline-primary" @onclick="PrintDocument">
+                            <i class="bi bi-printer me-1"></i>
+                            Print
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="NavigateBack">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Back to Standard View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCUMENT METADATA SECTION -->
+        <div class="document-metadata no-print-break">
+            <h2 class="section-header">Document Information</h2>
+            
+            @if (!string.IsNullOrEmpty(document.Objective))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Objective</h3>
+                    <div class="field-content">@document.Objective</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.Background))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Background & Context</h3>
+                    <div class="field-content">@document.Background</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.SuccessCriteria))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Success Criteria</h3>
+                    <div class="field-content">@document.SuccessCriteria</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.Dependencies))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Dependencies</h3>
+                    <div class="field-content">@document.Dependencies</div>
+                </div>
+            }
+        </div>
+
+        <!-- DOCUMENT SECTIONS WITH REQUIREMENTS -->
+        @if (sections.Any())
+        {
+            @foreach (var section in sections.OrderBy(s => s.SectionOrder))
+            {
+                @{
+                    var sectionRequirements = requirements.Where(r => r.SectionId == section.Id).ToList();
+                }
+                
+                <DocumentSection Section="@section" 
+                               SectionRequirements="@sectionRequirements"
+                               IsReadingMode="@isReadingMode"
+                               OnEditSection="() => EditSection(section.Id)"
+                               OnEditRequirement="EditRequirement"
+                               OnAddRequirement="() => AddRequirementToSection(section.Id)" />
+            }
+        }
+        else
+        {
+            <div class="no-sections">
+                <h2 class="section-header">Document Sections</h2>
+                <p class="text-muted fst-italic">No sections defined for this document.</p>
+                @if (!isReadingMode)
+                {
+                    <button class="btn btn-outline-primary">
+                        <i class="bi bi-plus me-1"></i>Add Section
+                    </button>
+                }
+            </div>
+        }
+
+        <!-- INTEGRATED TRACEABILITY SECTION -->
+        <div class="traceability-section">
+            <h2 class="section-header">
+                <i class="bi bi-diagram-3 me-2"></i>
+                Requirements Traceability Analysis
+            </h2>
+            
+            <div class="traceability-content">
+                <p class="section-intro">
+                    This section provides traceability analysis for all requirements in this @document.Type document,
+                    showing relationships with other requirements and coverage statistics.
+                </p>
+
+                <!-- TRACEABILITY MATRIX COMPONENT -->
+                <TraceabilityMatrix DocumentId="@DocumentId" 
+                                   Direction="@traceDirection"
+                                   OnAddTrace="HandleAddTrace"
+                                   OnDeleteTrace="HandleDeleteTrace" />
+            </div>
+        </div>
+
+        <!-- DOCUMENT FOOTER -->
+        <div class="document-footer">
+            <hr />
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <strong>Document:</strong> @document.Title<br />
+                        <strong>Version:</strong> @document.Version<br />
+                        <strong>Generated:</strong> @DateTime.Now.ToString("MMMM dd, yyyy 'at' h:mm tt")
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <strong>Total Sections:</strong> @sections.Count<br />
+                        <strong>Total Requirements:</strong> @requirements.Count<br />
+                        <strong>Status:</strong> @document.Status
+                    </small>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .enhanced-document-view {
+        max-width: 8.5in;
+        margin: 0 auto;
+        padding: 1rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.6;
+    }
+
+    .document-title {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 3px solid #333;
+        padding-bottom: 0.5rem;
+        color: #333;
+    }
+
+    .section-header {
+        font-size: 1.75rem;
+        color: #333;
+        margin-top: 2.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 0.5rem;
+    }
+
+    .document-field {
+        margin-bottom: 1.5rem;
+    }
+
+    .field-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+
+    .field-content {
+        margin-left: 1rem;
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-left: 3px solid #6c757d;
+        border-radius: 0.375rem;
+    }
+
+    .traceability-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 3px solid #333;
+    }
+
+    .section-intro {
+        font-style: italic;
+        color: #666;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background-color: #e9ecef;
+        border-radius: 0.375rem;
+    }
+
+    .document-footer {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+    }
+
+    .no-sections {
+        margin: 2rem 0;
+        padding: 2rem;
+        text-align: center;
+        border: 1px dashed #ddd;
+        border-radius: 0.375rem;
+    }
+
+    /* Print Styles */
+    @media print {
+        .enhanced-document-view {
+            padding: 0.5in;
+            font-size: 12pt;
+            max-width: none;
+        }
+        
+        .d-print-none {
+            display: none !important;
+        }
+        
+        .no-print-break {
+            page-break-inside: avoid;
+        }
+        
+        .document-title {
+            font-size: 18pt;
+        }
+        
+        .section-header {
+            font-size: 14pt;
+        }
+        
+        .traceability-section {
+            page-break-before: always;
+        }
+    }
+
+    /* Screen-only styles */
+    @media screen {
+        .document-actions {
+            position: sticky;
+            top: 1rem;
+            z-index: 100;
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public int? ProjectId { get; set; }
+    [Parameter] public int DocumentId { get; set; }
+
+    private DocumentDto? document;
+    private List<DocumentSectionDto> sections = new();
+    private List<RequirementDto> requirements = new();
+    private bool isLoading = true;
+    private bool isReadingMode = true;
+    private string traceDirection = "downstream";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ProjectId.HasValue)
+        {
+            await ProjectContextService.SetCurrentProjectAsync(ProjectId.Value);
+        }
+
+        await LoadDocument();
+    }
+
+    private async Task LoadDocument()
+    {
+        isLoading = true;
+        try
+        {
+            document = await DocumentsService.GetDocumentByIdAsync(DocumentId);
+            
+            if (document != null)
+            {
+                // Load sections and requirements in parallel
+                var sectionsTask = DocumentSectionsService.GetDocumentSectionsAsync(DocumentId);
+                var requirementsTask = RequirementsService.GetByDocumentIdAsync(DocumentId);
+                
+                await Task.WhenAll(sectionsTask, requirementsTask);
+                
+                sections = await sectionsTask;
+                requirements = await requirementsTask;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading document: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ToggleViewMode()
+    {
+        isReadingMode = !isReadingMode;
+        StateHasChanged();
+    }
+
+    private async Task PrintDocument()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private void NavigateBack()
+    {
+        if (document == null) return;
+
+        if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectContextService.CurrentProject.Id}/documents/{document.Id}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/documents/{document.Id}");
+        }
+    }
+
+    private void EditSection(int sectionId)
+    {
+        Console.WriteLine($"Edit section {sectionId}");
+        // TODO: Implement section editing
+    }
+
+    private void EditRequirement(int requirementId)
+    {
+        Console.WriteLine($"Edit requirement {requirementId}");
+        // TODO: Navigate to requirement edit page
+    }
+
+    private void AddRequirementToSection(int sectionId)
+    {
+        Console.WriteLine($"Add requirement to section {sectionId}");
+        // TODO: Navigate to requirement creation with section pre-selected
+    }
+
+    private async Task HandleAddTrace(int sourceRequirementId)
+    {
+        Console.WriteLine($"Add trace for requirement {sourceRequirementId}");
+        // TODO: Implement add trace functionality
+    }
+
+    private async Task HandleDeleteTrace(int traceId)
+    {
+        try
+        {
+            var success = await TracesService.DeleteRequirementTraceAsync(traceId);
+            if (success)
+            {
+                Console.WriteLine($"Trace {traceId} deleted successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting trace: {ex.Message}");
+        }
+    }
+
+    private string GetDocumentTypeBadgeClass(DocumentType type) => type switch
+    {
+        DocumentType.CRD => "bg-success",
+        DocumentType.PRD => "bg-primary",
+        DocumentType.SRS => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetStatusBadgeClass(DocumentStatus status) => status switch
+    {
+        DocumentStatus.Draft => "bg-secondary",
+        DocumentStatus.InReview => "bg-warning text-dark",
+        DocumentStatus.Approved => "bg-success",
+        DocumentStatus.Published => "bg-info",
+        _ => "bg-light text-dark"
+    };
+}

@@ -93,11 +93,9 @@ internal static class HostingExtensions
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
 
-                // Configure issuer URI for HTTPS environment
-                if (builder.Environment.IsDevelopment())
-                {
-                    options.IssuerUri = "https://rqmtmgmt.local"; // Changed to HTTPS
-                }
+                // Let IdentityServer auto-detect the issuer URI from the request
+                // This allows it to work both with direct access and through nginx proxy
+                // The issuer will be determined from the Host header and X-Forwarded-* headers
                 
                 // Disable automatic key management for development
                 options.KeyManagement.Enabled = false;

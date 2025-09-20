@@ -1,0 +1,390 @@
+@* Enhanced DocumentDetails.razor - Complete Document View with Integrated Traceability *@
+@* This is a MOCKUP/CONCEPT showing the proposed structure for Phase 4C *@
+
+@page "/documents/{DocumentId:int}"
+@page "/projects/{ProjectId:int}/documents/{DocumentId:int}"
+@using RqmtMgmtShared
+@using frontend.Services
+@using frontend.Components.Traceability
+@using frontend.Components.Documents
+
+<PageTitle>@(document?.Title ?? "Document Details")</PageTitle>
+
+<div class="document-view">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading document...</p>
+        </div>
+    }
+    else if (document == null)
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+            <h4 class="mt-3">Document Not Found</h4>
+            <p class="text-muted">The requested document could not be found.</p>
+        </div>
+    }
+    else
+    {
+        <!-- DOCUMENT HEADER -->
+        <div class="document-header no-print-break">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge @GetDocumentTypeBadgeClass(document.Type) me-2">@document.Type</span>
+                        <span class="badge @GetStatusBadgeClass(document.Status)">@document.Status</span>
+                        <small class="text-muted ms-2">v@(document.Version)</small>
+                    </div>
+                    <h1 class="document-title">@document.Title</h1>
+                    <p class="text-muted">Project: @document.ProjectName</p>
+                </div>
+                
+                <!-- DOCUMENT ACTIONS (Hide in print) -->
+                <div class="document-actions d-print-none">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary" @onclick="ToggleViewMode">
+                            <i class="bi @(isReadingMode ? "bi-pencil" : "bi-eye") me-1"></i>
+                            @(isReadingMode ? "Edit Mode" : "Reading Mode")
+                        </button>
+                        <button class="btn btn-outline-primary" @onclick="PrintDocument">
+                            <i class="bi bi-printer me-1"></i>
+                            Print
+                        </button>
+                        <button class="btn btn-outline-info" @onclick="ExportToPdf">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                            Export PDF
+                        </button>
+                        @if (!isReadingMode)
+                        {
+                            <button class="btn btn-primary" @onclick="EditDocument">
+                                <i class="bi bi-pencil me-1"></i>
+                                Edit Document
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCUMENT METADATA SECTION -->
+        <div class="document-section no-print-break">
+            <h2 class="section-header">Document Information</h2>
+            
+            @if (!string.IsNullOrEmpty(document.Objective))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Objective</h3>
+                    <div class="field-content">@document.Objective</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.Background))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Background & Context</h3>
+                    <div class="field-content">@document.Background</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.SuccessCriteria))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Success Criteria</h3>
+                    <div class="field-content">@document.SuccessCriteria</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.Dependencies))
+            {
+                <div class="document-field">
+                    <h3 class="field-title">Dependencies</h3>
+                    <div class="field-content">@document.Dependencies</div>
+                </div>
+            }
+        </div>
+
+        <!-- DOCUMENT SECTIONS WITH REQUIREMENTS -->
+        @if (sections.Any())
+        {
+            @foreach (var section in sections.OrderBy(s => s.SectionOrder))
+            {
+                <div class="document-section">
+                    <h2 class="section-header">
+                        @section.SectionOrder. @section.Title
+                        @if (!isReadingMode)
+                        {
+                            <button class="btn btn-sm btn-outline-secondary ms-2 d-print-none" @onclick="() => EditSection(section.Id)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        }
+                    </h2>
+                    
+                    @if (!string.IsNullOrEmpty(section.Content))
+                    {
+                        <div class="section-content">
+                            @section.Content
+                        </div>
+                    }
+
+                    <!-- REQUIREMENTS IN THIS SECTION -->
+                    @{
+                        var sectionRequirements = requirements.Where(r => r.SectionId == section.Id).OrderBy(r => r.Title).ToList();
+                    }
+                    
+                    @if (sectionRequirements.Any())
+                    {
+                        <div class="section-requirements">
+                            @foreach (var requirement in sectionRequirements)
+                            {
+                                <div class="requirement-item">
+                                    <div class="requirement-header">
+                                        <h4 class="requirement-title">
+                                            <span class="requirement-id">@requirement.FullRequirementId</span>
+                                            @requirement.Title
+                                            <span class="badge bg-secondary ms-2">@requirement.Status</span>
+                                        </h4>
+                                        @if (!isReadingMode)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary d-print-none" @onclick="() => EditRequirement(requirement.Id)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                    
+                                    @if (!string.IsNullOrEmpty(requirement.Description))
+                                    {
+                                        <div class="requirement-description">
+                                            @requirement.Description
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(requirement.AcceptanceCriteria))
+                                    {
+                                        <div class="requirement-acceptance">
+                                            <strong>Acceptance Criteria:</strong>
+                                            <div>@requirement.AcceptanceCriteria</div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (!isReadingMode)
+                    {
+                        <div class="no-requirements d-print-none">
+                            <p class="text-muted">No requirements in this section.</p>
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => AddRequirementToSection(section.Id)">
+                                <i class="bi bi-plus me-1"></i>Add Requirement
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        <!-- INTEGRATED TRACEABILITY SECTION -->
+        <div class="document-section traceability-section">
+            <h2 class="section-header">
+                <i class="bi bi-diagram-3 me-2"></i>
+                Requirements Traceability Analysis
+            </h2>
+            
+            <div class="traceability-content">
+                <p class="section-intro">
+                    This section provides traceability analysis for all requirements in this @document.Type document,
+                    showing relationships with other requirements and coverage statistics.
+                </p>
+
+                <!-- INTEGRATED TRACEABILITY MATRIX COMPONENT -->
+                <TraceabilityMatrix DocumentId="@DocumentId" 
+                                   Direction="@traceDirection"
+                                   OnAddTrace="HandleAddTrace"
+                                   OnDeleteTrace="HandleDeleteTrace" />
+            </div>
+        </div>
+
+        <!-- DOCUMENT FOOTER -->
+        <div class="document-footer">
+            <hr />
+            <div class="row">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        <strong>Document:</strong> @document.Title<br />
+                        <strong>Version:</strong> @document.Version<br />
+                        <strong>Generated:</strong> @DateTime.Now.ToString("MMMM dd, yyyy 'at' h:mm tt")
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        <strong>Total Sections:</strong> @sections.Count<br />
+                        <strong>Total Requirements:</strong> @requirements.Count<br />
+                        <strong>Status:</strong> @document.Status
+                    </small>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@* PRINT-FRIENDLY STYLES *@
+<style>
+    .document-view {
+        max-width: 8.5in;
+        margin: 0 auto;
+        padding: 1in;
+        font-family: 'Times New Roman', serif;
+        line-height: 1.6;
+    }
+
+    .document-title {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 2px solid #333;
+        padding-bottom: 0.5rem;
+    }
+
+    .section-header {
+        font-size: 1.5rem;
+        color: #333;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.25rem;
+    }
+
+    .document-field {
+        margin-bottom: 1.5rem;
+    }
+
+    .field-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+
+    .field-content {
+        margin-left: 1rem;
+    }
+
+    .requirement-item {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border-left: 3px solid #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .requirement-title {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .requirement-id {
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .requirement-description {
+        margin-bottom: 0.75rem;
+    }
+
+    .requirement-acceptance {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .traceability-section {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid #333;
+    }
+
+    .section-intro {
+        font-style: italic;
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Print Styles */
+    @media print {
+        .d-print-none {
+            display: none !important;
+        }
+        
+        .document-view {
+            padding: 0.5in;
+            font-size: 12pt;
+        }
+        
+        .no-print-break {
+            page-break-inside: avoid;
+        }
+        
+        .document-section {
+            page-break-inside: avoid;
+            margin-bottom: 1rem;
+        }
+        
+        .requirement-item {
+            page-break-inside: avoid;
+        }
+    }
+
+    /* Screen-only styles */
+    @media screen {
+        .document-actions {
+            position: sticky;
+            top: 1rem;
+            z-index: 100;
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public int? ProjectId { get; set; }
+    [Parameter] public int DocumentId { get; set; }
+
+    private DocumentDto? document;
+    private List<DocumentSectionDto> sections = new();
+    private List<RequirementDto> requirements = new();
+    private bool isLoading = true;
+    private bool isReadingMode = true;
+    private string traceDirection = "downstream";
+
+    // ... (existing code methods would go here)
+    
+    private void ToggleViewMode()
+    {
+        isReadingMode = !isReadingMode;
+        StateHasChanged();
+    }
+
+    private async Task PrintDocument()
+    {
+        await JSRuntime.InvokeVoidAsync("window.print");
+    }
+
+    private async Task ExportToPdf()
+    {
+        // TODO: Implement PDF export functionality
+        Console.WriteLine("Export to PDF requested");
+    }
+
+    private async Task HandleAddTrace(int sourceRequirementId)
+    {
+        // TODO: Implement add trace functionality
+        Console.WriteLine($"Add trace for requirement {sourceRequirementId}");
+    }
+
+    private async Task HandleDeleteTrace(int traceId)
+    {
+        // TODO: Implement delete trace functionality  
+        Console.WriteLine($"Delete trace {traceId}");
+    }
+
+    // ... (other existing methods)
+}

@@ -63,6 +63,7 @@ namespace backend.Configuration
 
             // Add JWT Bearer authentication for API protection
             var identityServerUrl = configuration["Authentication:Authority"] ?? "https://rqmtmgmt.local";
+            var validIssuer = configuration["Authentication:ValidIssuer"] ?? identityServerUrl;
             
             services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>
@@ -79,7 +80,7 @@ namespace backend.Configuration
                         ClockSkew = TimeSpan.FromMinutes(5),
 
                         // Explicitly set the valid issuer to match IdentityServer
-                        ValidIssuer = identityServerUrl,
+                        ValidIssuer = validIssuer,
                         
                         // Configure multiple valid audiences to handle different token formats
                         ValidAudiences = new[] { 

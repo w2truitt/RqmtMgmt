@@ -60,6 +60,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;
       - Authentication__Authority=http://identityserver:5002
+      - Authentication__ValidIssuer=https://rqmtmgmt.local
       - Authentication__Audience=rqmtmgmt-api
       - Authentication__RequireHttpsMetadata=false
     command: ["dotnet", "run", "--urls", "http://0.0.0.0:5000", "--project", "/src/backend.csproj"]

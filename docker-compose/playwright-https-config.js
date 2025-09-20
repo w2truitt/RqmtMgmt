@@ -15,8 +15,9 @@ async function launchBrowserWithCerts() {
             '--ignore-certificate-errors-spki-list',
             '--disable-web-security',
             '--allow-running-insecure-content',
-            // Use system certificate store
-            '--use-system-default-printer',
+            // Add custom CA certificate
+            `--user-data-dir=/tmp/playwright-profile`,
+            `--ca-certificate=${CA_CERT_PATH}`,
             // Additional security bypass for development
             '--disable-features=VizDisplayCompositor'
         ]

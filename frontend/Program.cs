@@ -38,6 +38,9 @@ builder.Services.AddOidcAuthentication(options =>
     // Set redirect URIs for HTTPS
     options.ProviderOptions.PostLogoutRedirectUri = "https://rqmtmgmt.local/";
     options.ProviderOptions.RedirectUri = "https://rqmtmgmt.local/authentication/login-callback";
+    
+    // Configure authentication failure handling
+    options.AuthenticationPaths.LogInFailedPath = "/authentication/login";
 });
 
 // Configure HttpClient to point to backend API with authentication
