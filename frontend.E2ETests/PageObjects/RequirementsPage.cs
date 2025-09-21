@@ -118,7 +118,7 @@ public class RequirementsPage
     /// <param name="description">Requirement description</param>
     /// <param name="type">Requirement type</param>
     /// <param name="status">Requirement status</param>
-    public async Task FillRequirementFormAsync(string title, string description, string type = "CRS", string status = "Draft")
+    public async Task FillRequirementFormAsync(string title, string description, string type = "CRD", string status = "Draft")
     {
         // Clear and fill title with proper input events for Blazor binding
         await _page.ClickAsync("[data-testid='title-input']");

@@ -241,8 +241,8 @@ public class HomeTests : ComponentTestBase
                 },
                 ByType = new Dictionary<RequirementType, int>
                 {
-                    { RequirementType.CRS, 30 },
-                    { RequirementType.PRS, 12 },
+                    { RequirementType.CRD, 30 },
+                    { RequirementType.PRD, 12 },
                     { RequirementType.SRS, 5 }
                 }
             },

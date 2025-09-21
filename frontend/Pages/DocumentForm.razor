@@ -4,7 +4,7 @@
 @page "/projects/{ProjectId:int}/documents/{DocumentId:int}/edit"
 @using RqmtMgmtShared
 @using frontend.Services
-@inject DocumentsDataService DocumentsService
+@inject IDocumentService DocumentsService
 @inject IProjectContextService ProjectContextService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -158,7 +158,7 @@
         isLoading = true;
         try
         {
-            var loadedDocument = await DocumentsService.GetDocumentByIdAsync(DocumentId.Value);
+            var loadedDocument = await DocumentsService.GetByIdAsync(DocumentId.Value);
             if (loadedDocument != null)
             {
                 document = loadedDocument;
@@ -188,7 +188,7 @@
             if (IsEditMode)
             {
                 document.UpdatedAt = DateTime.Now;
-                var success = await DocumentsService.UpdateDocumentAsync(document);
+                var success = await DocumentsService.UpdateAsync(document);
                 if (success)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Document updated successfully!");
@@ -201,7 +201,7 @@
             }
             else
             {
-                var createdDocument = await DocumentsService.CreateDocumentAsync(document);
+                var createdDocument = await DocumentsService.CreateAsync(document);
                 if (createdDocument != null)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Document created successfully!");

@@ -1,6 +1,6 @@
 @using RqmtMgmtShared
 @using frontend.Services
-@inject DocumentSectionsDataService DocumentSectionsService
+@inject IDocumentSectionService DocumentSectionsService
 @inject IJSRuntime JSRuntime
 
 <div class="card">
@@ -167,7 +167,7 @@
         isLoading = true;
         try
         {
-            sections = await DocumentSectionsService.GetDocumentSectionsAsync(DocumentId);
+            sections = await DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
         }
         catch (Exception ex)
         {
@@ -224,7 +224,7 @@
             if (editingSection.Id > 0)
             {
                 editingSection.UpdatedAt = DateTime.Now;
-                var success = await DocumentSectionsService.UpdateDocumentSectionAsync(editingSection);
+                var success = await DocumentSectionsService.UpdateAsync(editingSection);
                 if (success)
                 {
                     HideSectionModal();
@@ -238,7 +238,7 @@
             }
             else
             {
-                var createdSection = await DocumentSectionsService.CreateDocumentSectionAsync(editingSection);
+                var createdSection = await DocumentSectionsService.CreateAsync(editingSection);
                 if (createdSection != null)
                 {
                     HideSectionModal();
@@ -267,7 +267,7 @@
         {
             try
             {
-                var success = await DocumentSectionsService.DeleteDocumentSectionAsync(docSection.Id);
+                var success = await DocumentSectionsService.DeleteAsync(docSection.Id);
                 if (success)
                 {
                     await LoadSections();
@@ -294,13 +294,14 @@
         {
             try
             {
-                var reorderRequests = new List<ReorderSectionRequest>
-                {
-                    new() { SectionId = docSection.Id, SectionOrder = targetOrder },
-                    new() { SectionId = targetSection.Id, SectionOrder = docSection.SectionOrder }
-                };
-
-                var success = await DocumentSectionsService.ReorderDocumentSectionsAsync(DocumentId, reorderRequests);
+                // Create a list of section IDs in the new order
+                var sectionIds = sections.OrderBy(s => s.SectionOrder).Select(s => s.Id).ToList();
+                
+                // Swap the positions of the two sections in the list
+                var sourceIndex = sectionIds.IndexOf(docSection.Id);
+                var targetIndex = sectionIds.IndexOf(targetSection.Id);
+                (sectionIds[sourceIndex], sectionIds[targetIndex]) = (sectionIds[targetIndex], sectionIds[sourceIndex]);
+                var success = await DocumentSectionsService.ReorderSectionsAsync(DocumentId, sectionIds);
                 if (success)
                 {
                     await LoadSections();

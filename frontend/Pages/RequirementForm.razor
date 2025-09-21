@@ -1,8 +1,8 @@
 @page "/projects/{ProjectId:int}/requirements/new"
 @inject IRequirementService RequirementService
 @inject IProjectService ProjectService
-@inject frontend.Services.DocumentsDataService DocumentsService
-@inject frontend.Services.DocumentSectionsDataService DocumentSectionsService
+@inject IDocumentService DocumentsService
+@inject IDocumentSectionService DocumentSectionsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using frontend.Components.Navigation
@@ -298,7 +298,7 @@
     {
         try
         {
-            availableDocuments = await DocumentsService.GetDocumentsByProjectAsync(ProjectId);
+            availableDocuments = await DocumentsService.GetByProjectIdAsync(ProjectId);
         }
         catch (Exception ex)
         {
@@ -316,7 +316,7 @@
         {
             try
             {
-                availableSections = await DocumentSectionsService.GetDocumentSectionsAsync(requirement.DocumentId.Value);
+                availableSections = await DocumentSectionsService.GetByDocumentIdAsync(requirement.DocumentId.Value);
             }
             catch (Exception ex)
             {

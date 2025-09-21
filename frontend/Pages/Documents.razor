@@ -2,7 +2,7 @@
 @page "/projects/{ProjectId:int}/documents"
 @using RqmtMgmtShared
 @using frontend.Services
-@inject DocumentsDataService DocumentsService
+@inject IDocumentService DocumentsService
 @inject IProjectContextService ProjectContextService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -167,11 +167,11 @@ else
         {
             if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
             {
-                documents = await DocumentsService.GetDocumentsByProjectAsync(ProjectContextService.CurrentProject.Id);
+                documents = await DocumentsService.GetByProjectIdAsync(ProjectContextService.CurrentProject.Id);
             }
             else
             {
-                documents = await DocumentsService.GetDocumentsAsync();
+                documents = await DocumentsService.GetAllAsync();
             }
 
             ApplyFilters();
@@ -262,7 +262,7 @@ else
         {
             try
             {
-                var success = await DocumentsService.DeleteDocumentAsync(document.Id);
+                var success = await DocumentsService.DeleteAsync(document.Id);
                 if (success)
                 {
                     await LoadDocuments();

@@ -16,12 +16,12 @@ public static class MockServiceHelpers
         mockService.Setup(s => s.GetAllAsync())
             .ReturnsAsync(new List<RequirementDto>
             {
-                new RequirementDto { Id = 1, Title = "Test Requirement 1", Type = RequirementType.CRS, Status = RequirementStatus.Approved },
-                new RequirementDto { Id = 2, Title = "Test Requirement 2", Type = RequirementType.PRS, Status = RequirementStatus.Draft }
+                new RequirementDto { Id = 1, Title = "Test Requirement 1", Type = RequirementType.CRD, Status = RequirementStatus.Approved },
+                new RequirementDto { Id = 2, Title = "Test Requirement 2", Type = RequirementType.PRD, Status = RequirementStatus.Draft }
             });
 
         mockService.Setup(s => s.GetByIdAsync(It.IsAny<int>()))
-            .ReturnsAsync((int id) => new RequirementDto { Id = id, Title = $"Requirement {id}", Type = RequirementType.CRS, Status = RequirementStatus.Approved });
+            .ReturnsAsync((int id) => new RequirementDto { Id = id, Title = $"Requirement {id}", Type = RequirementType.CRD, Status = RequirementStatus.Approved });
 
         mockService.Setup(s => s.CreateAsync(It.IsAny<RequirementDto>()))
             .ReturnsAsync((RequirementDto req) => 

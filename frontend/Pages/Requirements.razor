@@ -1,11 +1,11 @@
 @page "/requirements"
 @attribute [Authorize]
-@inject RqmtMgmtShared.IRequirementService ReqService
-@inject RqmtMgmtShared.IRequirementTestCaseLinkService LinkService
-@inject RqmtMgmtShared.ITestCaseService TestCaseService
+@inject IRequirementService ReqService
+@inject IRequirementTestCaseLinkService LinkService
+@inject ITestCaseService TestCaseService
 @inject frontend.Services.IProjectContextService ProjectContextService
-@inject frontend.Services.DocumentsDataService DocumentsService
-@inject frontend.Services.DocumentSectionsDataService DocumentSectionsService
+@inject IDocumentService DocumentsService
+@inject IDocumentSectionService DocumentSectionsService
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
 @using RqmtMgmtShared
 @using frontend.Components
@@ -286,12 +286,12 @@ else
             var currentProject = ProjectContextService.CurrentProject;
             if (currentProject != null)
             {
-                availableDocuments = await DocumentsService.GetDocumentsByProjectAsync(currentProject.Id);
+                availableDocuments = await DocumentsService.GetByProjectIdAsync(currentProject.Id);
                 // Load all sections for context display
                 availableSections = new List<DocumentSectionDto>();
                 foreach (var doc in availableDocuments)
                 {
-                    var sections = await DocumentSectionsService.GetDocumentSectionsAsync(doc.Id);
+                    var sections = await DocumentSectionsService.GetByDocumentIdAsync(doc.Id);
                     availableSections.AddRange(sections);
                 }
             }

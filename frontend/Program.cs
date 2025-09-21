@@ -72,8 +72,8 @@ builder.Services.AddScoped<IProjectContextService, ProjectContextService>();
 builder.Services.AddScoped<IRecentProjectsService, RecentProjectsService>();
 
 // Register document management services
-builder.Services.AddScoped<DocumentsDataService>();
-builder.Services.AddScoped<DocumentSectionsDataService>();
-builder.Services.AddScoped<RequirementTracesDataService>();
+builder.Services.AddScoped<IDocumentService, DocumentsDataService>();
+builder.Services.AddScoped<IDocumentSectionService, DocumentSectionsDataService>();
+builder.Services.AddScoped<IRequirementTraceService, RequirementTracesDataService>();
 
 await builder.Build().RunAsync();

@@ -3,8 +3,8 @@
 @using RqmtMgmtShared
 @using frontend.Services
 @using frontend.Components.Traceability
-@inject DocumentsDataService DocumentsService
-@inject RequirementTracesDataService TracesService
+@inject IDocumentService DocumentsService
+@inject IRequirementTraceService TracesService
 @inject NavigationManager Navigation
 @inject IProjectContextService ProjectContextService
 
@@ -85,7 +85,7 @@
         isLoading = true;
         try
         {
-            document = await DocumentsService.GetDocumentByIdAsync(DocumentId);
+            document = await DocumentsService.GetByIdAsync(DocumentId);
         }
         catch (Exception ex)
         {
@@ -111,11 +111,12 @@
         }
     }
 
-    private async Task HandleAddTrace(int sourceRequirementId)
+    private Task HandleAddTrace(int sourceRequirementId)
     {
         // TODO: Implement add trace dialog/modal
         // For now, just log the action
         Console.WriteLine($"Add trace requested for requirement {sourceRequirementId}");
+        return Task.CompletedTask;
         
         // In a full implementation, this would open a modal to select target requirement
         // and create the trace link via TracesService.CreateRequirementTraceAsync()
@@ -125,7 +126,7 @@
     {
         try
         {
-            var success = await TracesService.DeleteRequirementTraceAsync(traceId);
+            var success = await TracesService.DeleteAsync(traceId);
             if (success)
             {
                 Console.WriteLine($"Trace {traceId} deleted successfully");

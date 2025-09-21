@@ -44,7 +44,7 @@ public class RequirementsDataServiceTests
             { 
                 Id = 1, 
                 Title = "Test Requirement 1", 
-                Type = RequirementType.CRS, 
+                Type = RequirementType.CRD, 
                 Status = RequirementStatus.Approved,
                 ProjectId = 1
             },
@@ -52,7 +52,7 @@ public class RequirementsDataServiceTests
             { 
                 Id = 2, 
                 Title = "Test Requirement 2", 
-                Type = RequirementType.PRS, 
+                Type = RequirementType.PRD, 
                 Status = RequirementStatus.Draft,
                 ProjectId = 1
             }
@@ -81,7 +81,7 @@ public class RequirementsDataServiceTests
         Assert.NotNull(result);
         Assert.Equal(2, result.Count);
         Assert.Equal("Test Requirement 1", result[0].Title);
-        Assert.Equal(RequirementType.CRS, result[0].Type);
+        Assert.Equal(RequirementType.CRD, result[0].Type);
         Assert.Equal(RequirementStatus.Approved, result[0].Status);
     }
 
@@ -97,7 +97,7 @@ public class RequirementsDataServiceTests
                 Id = 1, 
                 Title = "Project Requirement 1", 
                 ProjectId = projectId,
-                Type = RequirementType.CRS, 
+                Type = RequirementType.CRD, 
                 Status = RequirementStatus.Approved
             }
         };
@@ -190,7 +190,7 @@ public class RequirementsDataServiceTests
         {
             Id = requirementId,
             Title = "Test Requirement",
-            Type = RequirementType.CRS,
+            Type = RequirementType.CRD,
             Status = RequirementStatus.Approved,
             ProjectId = 1
         };
@@ -218,7 +218,7 @@ public class RequirementsDataServiceTests
         Assert.NotNull(result);
         Assert.Equal(requirementId, result.Id);
         Assert.Equal("Test Requirement", result.Title);
-        Assert.Equal(RequirementType.CRS, result.Type);
+        Assert.Equal(RequirementType.CRD, result.Type);
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class RequirementsDataServiceTests
         {
             Title = "New Requirement",
             Description = "Test description",
-            Type = RequirementType.CRS,
+            Type = RequirementType.CRD,
             Status = RequirementStatus.Draft,
             ProjectId = 1
         };
@@ -267,7 +267,7 @@ public class RequirementsDataServiceTests
         Assert.NotNull(result);
         Assert.Equal(1, result.Id);
         Assert.Equal("New Requirement", result.Title);
-        Assert.Equal(RequirementType.CRS, result.Type);
+        Assert.Equal(RequirementType.CRD, result.Type);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class RequirementsDataServiceTests
         {
             Id = 1,
             Title = "Updated Requirement",
-            Type = RequirementType.CRS,
+            Type = RequirementType.CRD,
             Status = RequirementStatus.Approved,
             ProjectId = 1
         };

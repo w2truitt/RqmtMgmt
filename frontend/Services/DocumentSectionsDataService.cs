@@ -6,7 +6,7 @@ namespace frontend.Services
     /// <summary>
     /// Service for managing document sections through the API.
     /// </summary>
-    public class DocumentSectionsDataService : BaseDataService
+    public class DocumentSectionsDataService : BaseDataService, IDocumentSectionService
     {
         public DocumentSectionsDataService(HttpClient httpClient) : base(httpClient)
         {
@@ -15,7 +15,7 @@ namespace frontend.Services
         /// <summary>
         /// Gets all sections for a document.
         /// </summary>
-        public async Task<List<DocumentSectionDto>> GetDocumentSectionsAsync(int documentId)
+        public async Task<List<DocumentSectionDto>> GetByDocumentIdAsync(int documentId)
         {
             return await GetListAsync<DocumentSectionDto>($"/api/documentsections/document/{documentId}");
         }
@@ -23,7 +23,7 @@ namespace frontend.Services
         /// <summary>
         /// Gets a document section by ID.
         /// </summary>
-        public async Task<DocumentSectionDto?> GetDocumentSectionByIdAsync(int id)
+        public async Task<DocumentSectionDto?> GetByIdAsync(int id)
         {
             return await GetAsync<DocumentSectionDto>($"/api/documentsections/{id}");
         }
@@ -31,7 +31,7 @@ namespace frontend.Services
         /// <summary>
         /// Creates a new document section.
         /// </summary>
-        public async Task<DocumentSectionDto?> CreateDocumentSectionAsync(DocumentSectionDto section)
+        public async Task<DocumentSectionDto?> CreateAsync(DocumentSectionDto section)
         {
             return await PostAsync<DocumentSectionDto, DocumentSectionDto>("/api/documentsections", section);
         }
@@ -39,7 +39,7 @@ namespace frontend.Services
         /// <summary>
         /// Updates an existing document section.
         /// </summary>
-        public async Task<bool> UpdateDocumentSectionAsync(DocumentSectionDto section)
+        public async Task<bool> UpdateAsync(DocumentSectionDto section)
         {
             return await PutAsync($"/api/documentsections/{section.Id}", section);
         }
@@ -47,7 +47,7 @@ namespace frontend.Services
         /// <summary>
         /// Deletes a document section.
         /// </summary>
-        public async Task<bool> DeleteDocumentSectionAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
             return await DeleteAsync($"/api/documentsections/{id}");
         }
@@ -55,6 +55,23 @@ namespace frontend.Services
         /// <summary>
         /// Reorders document sections.
         /// </summary>
+        public async Task<bool> ReorderSectionsAsync(int documentId, List<int> sectionIds)
+        {
+            var reorderRequests = sectionIds.Select((sectionId, index) => new ReorderSectionRequest
+            {
+                SectionId = sectionId,
+                SectionOrder = index + 1
+            }).ToList();
+
+            return await PostAsync($"/api/documentsections/document/{documentId}/reorder", reorderRequests);
+        }
+
+        // Legacy methods for backward compatibility
+        public async Task<List<DocumentSectionDto>> GetDocumentSectionsAsync(int documentId) => await GetByDocumentIdAsync(documentId);
+        public async Task<DocumentSectionDto?> GetDocumentSectionByIdAsync(int id) => await GetByIdAsync(id);
+        public async Task<DocumentSectionDto?> CreateDocumentSectionAsync(DocumentSectionDto section) => await CreateAsync(section);
+        public async Task<bool> UpdateDocumentSectionAsync(DocumentSectionDto section) => await UpdateAsync(section);
+        public async Task<bool> DeleteDocumentSectionAsync(int id) => await DeleteAsync(id);
         public async Task<bool> ReorderDocumentSectionsAsync(int documentId, List<ReorderSectionRequest> reorderRequests)
         {
             return await PostAsync($"/api/documentsections/document/{documentId}/reorder", reorderRequests);

@@ -18,7 +18,7 @@ public static class TestDataFactory
         {
             Title = $"E2E Test Requirement {testId}",
             Description = $"This is a test requirement created for E2E testing with ID {testId}",
-            Type = RequirementType.CRS,
+            Type = RequirementType.CRD,
             Status = RequirementStatus.Draft,
             CreatedBy = 1,
             CreatedAt = DateTime.UtcNow,

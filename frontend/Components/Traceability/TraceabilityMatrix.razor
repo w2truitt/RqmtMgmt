@@ -1,5 +1,5 @@
 @using RqmtMgmtShared
-@inject frontend.Services.RequirementTracesDataService TracesService
+@inject IDocumentService DocumentService
 @inject IJSRuntime JSRuntime
 
 <div class="traceability-matrix">
@@ -231,7 +231,7 @@
         {
             // Note: This will use the new API endpoint once implemented
             // For now, we'll need to implement this in the TracesService
-            traceabilityMatrix = await TracesService.GetDocumentTraceabilityMatrixAsync(DocumentId, Direction, false);
+            traceabilityMatrix = await DocumentService.GetTraceabilityMatrixAsync(DocumentId, Direction, false);
         }
         catch (Exception ex)
         {

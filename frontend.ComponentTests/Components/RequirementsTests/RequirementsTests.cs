@@ -33,7 +33,7 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS }
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRD }
         };
         SetupMockServices(mockRequirements);
         
@@ -59,8 +59,8 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement 1", Status = RequirementStatus.Draft, Type = RequirementType.CRS },
-            new RequirementDto { Id = 2, Title = "Test Requirement 2", Status = RequirementStatus.Approved, Type = RequirementType.CRS }
+            new RequirementDto { Id = 1, Title = "Test Requirement 1", Status = RequirementStatus.Draft, Type = RequirementType.CRD },
+            new RequirementDto { Id = 2, Title = "Test Requirement 2", Status = RequirementStatus.Approved, Type = RequirementType.CRD }
         };
         
         SetupMockServices(mockRequirements);
@@ -91,7 +91,7 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS }
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRD }
         };
         
         SetupMockServices(mockRequirements);
@@ -153,7 +153,7 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS }
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRD }
         };
         
         SetupMockServices(mockRequirements);
@@ -180,7 +180,7 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS, Description = "Test Description" }
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRD, Description = "Test Description" }
         };
         
         var mockReqService = GetMockService<IRequirementService>();
@@ -218,7 +218,7 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS }
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRD }
         };
         
         var mockTestCases = new List<TestCaseDto>
@@ -286,7 +286,7 @@ public class RequirementsTests : ComponentTestBase
         // Arrange
         var mockRequirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRS }
+            new RequirementDto { Id = 1, Title = "Test Requirement", Status = RequirementStatus.Draft, Type = RequirementType.CRD }
         };
         
         var mockReqService = GetMockService<IRequirementService>();

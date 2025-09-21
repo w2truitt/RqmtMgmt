@@ -1,8 +1,8 @@
 @page "/projects/{ProjectId:int}/requirements/{RequirementId:int}"
 @inject IRequirementService RequirementService
 @inject IProjectService ProjectService
-@inject frontend.Services.DocumentsDataService DocumentsService
-@inject frontend.Services.DocumentSectionsDataService DocumentSectionsService
+@inject IDocumentService DocumentsService
+@inject IDocumentSectionService DocumentSectionsService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @using frontend.Components.Navigation
@@ -312,13 +312,13 @@
             // Load associated document if exists
             if (requirement.DocumentId.HasValue)
             {
-                associatedDocument = await DocumentsService.GetDocumentByIdAsync(requirement.DocumentId.Value);
+                associatedDocument = await DocumentsService.GetByIdAsync(requirement.DocumentId.Value);
             }
             
             // Load associated section if exists
             if (requirement.SectionId.HasValue)
             {
-                associatedSection = await DocumentSectionsService.GetDocumentSectionByIdAsync(requirement.SectionId.Value);
+                associatedSection = await DocumentSectionsService.GetByIdAsync(requirement.SectionId.Value);
             }
 
             // TODO: Load child requirements

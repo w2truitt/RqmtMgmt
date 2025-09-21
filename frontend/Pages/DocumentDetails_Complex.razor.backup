@@ -5,6 +5,7 @@
 @inject DocumentSectionsDataService DocumentSectionsService
 @inject IRequirementService RequirementsService
 @using frontend.Components
+@using frontend.Components.Traceability
 @using frontend.Components.Documents
 @inject DocumentsDataService DocumentsService
 @inject IJSRuntime JSRuntime
@@ -284,7 +285,30 @@
                     </div>
                 </div>
             </div>
-        </div>
+
+        <!-- Integrated Traceability Analysis Section -->
+        @if (requirements.Any())
+        {
+            <div class="mt-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0">
+                            <i class="bi bi-diagram-3 me-2"></i>
+                            Requirements Traceability Analysis
+                        </h4>
+                        <p class="text-muted mb-0 mt-1">
+                            Track requirement relationships and coverage for this @GetDocumentTypeDisplayName(document.Type)
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <TraceabilityMatrix DocumentId="@DocumentId" 
+                                         Direction="@traceabilityDirection"
+                                         OnAddTrace="HandleAddTrace"
+                                         OnDeleteTrace="HandleDeleteTrace" />
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -298,6 +322,7 @@
     private bool isLoading = true;
     private int? showAddRequirementForSection = null;
     private RequirementDto newRequirement = new() { Title = "" };
+    private string traceabilityDirection = "downstream"; // Default to downstream traceability
 
     protected override async Task OnInitializedAsync()
     {
@@ -326,6 +351,15 @@
                 
                 sections = await sectionsTask;
                 requirements = await requirementsTask;
+
+                // Set default traceability direction based on document type
+                traceabilityDirection = document.Type switch
+                {
+                    DocumentType.CRD => "downstream", // CRD traces to PRD
+                    DocumentType.PRD => "downstream", // PRD traces to SRS  
+                    DocumentType.SRS => "upstream",   // SRS traces back to PRD
+                    _ => "downstream"
+                };
             }
         }
         catch (Exception ex)
@@ -480,5 +514,21 @@
         {
             Console.WriteLine($"Error deleting requirement: {ex.Message}");
         }
+    }
+
+    // Traceability event handlers
+    private async Task HandleAddTrace(int sourceRequirementId)
+    {
+        // Navigate to trace creation page or show modal
+        // For now, we'll just log and refresh
+        Console.WriteLine($"Add trace for requirement {sourceRequirementId}");
+        StateHasChanged();
+    }
+
+    private async Task HandleDeleteTrace(int traceId)
+    {
+        // Handle trace deletion
+        Console.WriteLine($"Delete trace {traceId}");
+        StateHasChanged();
     }
 }
