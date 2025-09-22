@@ -140,9 +140,7 @@
         {
             @foreach (var docSection in sections.OrderBy(s => s.SectionOrder))
             {
-                @{
-                    var sectionRequirements = requirements.Where(r => r.DocumentSectionId == docSection.Id).ToList();
-                }
+                var sectionRequirements = requirements.Where(r => r.SectionId == docSection.Id).ToList();
                 <DocumentSection 
                     Section="docSection" 
                     SectionRequirements="sectionRequirements" 
@@ -154,11 +152,9 @@
         }
 
         <!-- Standalone Requirements (not assigned to sections) -->
-        @{
-            var standaloneRequirements = requirements.Where(r => r.DocumentSectionId == null).ToList();
-        }
-        @if (standaloneRequirements.Any())
+        @if (requirements.Where(r => r.SectionId == null).Any())
         {
+            var standaloneRequirements = requirements.Where(r => r.SectionId == null).ToList();
             <div class="document-section mb-5">
                 <h2 class="section-header">Additional Requirements</h2>
                 <p class="section-description">Requirements not assigned to specific sections</p>
@@ -372,11 +368,9 @@
     private string GetRequirementStatusBadgeClass(RequirementStatus status) => status switch
     {
         RequirementStatus.Draft => "bg-secondary",
-        RequirementStatus.InReview => "bg-warning text-dark",
         RequirementStatus.Approved => "bg-success",
         RequirementStatus.Implemented => "bg-primary",
-        RequirementStatus.Tested => "bg-info",
-        RequirementStatus.Rejected => "bg-danger",
+        RequirementStatus.Verified => "bg-info",
         _ => "bg-light text-dark"
     };
 }

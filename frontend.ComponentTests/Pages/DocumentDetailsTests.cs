@@ -46,7 +46,7 @@ public class DocumentDetailsTests : ComponentTestBase
         
         // Assert
         Assert.Contains("Test Document", component.Markup);
-        Assert.Contains("PRD", component.Markup);
+        Assert.Contains("Product Requirement Document", component.Markup);
         Assert.Contains("Draft", component.Markup);
     }
     
@@ -153,7 +153,7 @@ public class DocumentDetailsTests : ComponentTestBase
     }
     
     [Fact]
-    public void DocumentDetails_ShowsStatistics()
+    public void DocumentDetails_ShowsRequirementAndSectionCounts()
     {
         // Arrange
         var document = new DocumentDto { Id = 1, Title = "Test Document" };
@@ -173,7 +173,8 @@ public class DocumentDetailsTests : ComponentTestBase
             .Add(p => p.DocumentId, 1));
         
         // Assert
-        Assert.Contains("Statistics", component.Markup);
+        Assert.Contains("Requirements:", component.Markup);
+        Assert.Contains("Sections:", component.Markup);
         Assert.Contains("1", component.Markup); // Section count
         Assert.Contains("2", component.Markup); // Requirements count
     }
