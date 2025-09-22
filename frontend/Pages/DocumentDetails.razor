@@ -104,7 +104,7 @@
                     </div>
                 </div>
 
-                <!-- Document Sections Placeholder -->
+                <!-- Document Sections -->
                 <div class="card mt-4">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
@@ -113,8 +113,23 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">Document sections: @sections.Count</p>
-                        @* TODO: Add SectionManager component when compilation issues are resolved *@
+                        @if (sections.Any())
+                        {
+                            @foreach (var docSection in sections.OrderBy(s => s.SectionOrder))
+                            {
+                                <div class="section-item mb-2">
+                                    <h6>@docSection.SectionOrder. @docSection.Title</h6>
+                                    @if (!string.IsNullOrEmpty(docSection.Description))
+                                    {
+                                        <p class="text-muted small">@docSection.Description</p>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted">No sections available</p>
+                        }
                     </div>
                 </div>
 

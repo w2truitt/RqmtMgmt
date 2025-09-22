@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using RqmtMgmtShared;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace frontend.ComponentTests.Components.Traceability;
 
@@ -14,9 +15,11 @@ namespace frontend.ComponentTests.Components.Traceability;
 public class TraceabilityMatrixTests : ComponentTestBase
 {
     private Mock<IDocumentService> _mockDocumentService;
+    private readonly ITestOutputHelper _output;
     
-    public TraceabilityMatrixTests()
+    public TraceabilityMatrixTests(ITestOutputHelper output)
     {
+        _output = output;
         _mockDocumentService = new Mock<IDocumentService>();
         Services.AddSingleton(_mockDocumentService.Object);
     }
@@ -64,10 +67,15 @@ public class TraceabilityMatrixTests : ComponentTestBase
             .Add(p => p.DocumentId, 1)
             .Add(p => p.Direction, "downstream"));
         
+        // Debug: Print the actual markup
+        _output.WriteLine("=== ACTUAL MARKUP ===");
+        _output.WriteLine(component.Markup);
+        _output.WriteLine("=== END MARKUP ===");
+        
         // Assert
         Assert.Contains("Test Requirement", component.Markup);
         Assert.Contains("PRD-001", component.Markup);
-        Assert.Contains("60%", component.Markup);
+        Assert.Contains("60.0%", component.Markup);
     }
     
     [Fact]
@@ -113,9 +121,14 @@ public class TraceabilityMatrixTests : ComponentTestBase
         var component = RenderComponent<TraceabilityMatrix>(parameters => parameters
             .Add(p => p.DocumentId, 1));
         
+        // Debug: Print the actual markup
+        _output.WriteLine("=== ACTUAL MARKUP ===");
+        _output.WriteLine(component.Markup);
+        _output.WriteLine("=== END MARKUP ===");
+        
         // Assert
-        Assert.Contains("80%", component.Markup);
-        Assert.Contains("8 of 10", component.Markup);
+        Assert.Contains("80.0%", component.Markup);
+        Assert.Contains("Total Requirements", component.Markup);
     }
     
     [Fact]

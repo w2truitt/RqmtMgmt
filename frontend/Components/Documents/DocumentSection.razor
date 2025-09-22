@@ -6,6 +6,10 @@
     <div class="section-header-container">
         <h2 class="section-header">
             @Section.SectionOrder. @Section.Title
+            @if (Section.IsNotApplicable)
+            {
+                <span class="text-muted ms-2">(Not Applicable)</span>
+            }
             @if (!IsReadingMode)
             {
                 <button class="btn btn-sm btn-outline-secondary ms-2 d-print-none" @onclick="OnEditSection">
@@ -15,7 +19,13 @@
         </h2>
     </div>
     
-    @if (!string.IsNullOrEmpty(Section.Description))
+    @if (Section.IsNotApplicable)
+    {
+        <div class="section-content">
+            <em class="text-muted">This section is not applicable to this document.</em>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Section.Description))
     {
         <div class="section-content">
             @Section.Description
