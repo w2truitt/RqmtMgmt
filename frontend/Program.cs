@@ -76,4 +76,9 @@ builder.Services.AddScoped<IDocumentService, DocumentsDataService>();
 builder.Services.AddScoped<IDocumentSectionService, DocumentSectionsDataService>();
 builder.Services.AddScoped<IRequirementTraceService, RequirementTracesDataService>();
 
-await builder.Build().RunAsync();
+// Register frontend health service
+builder.Services.AddScoped<IFrontendHealthService, FrontendHealthService>();
+
+var app = builder.Build();
+
+await app.RunAsync();

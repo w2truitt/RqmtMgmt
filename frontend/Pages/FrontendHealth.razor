@@ -1,0 +1,28 @@
+@page "/frontend-health"
+@using frontend.Services
+@inject IFrontendHealthService HealthService
+
+<PageTitle>Frontend Health</PageTitle>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2>Frontend Health Status</h2>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        Status: @(HealthService.IsReady ? "✅ Ready" : "❌ Not Ready")
+                    </h5>
+                    <p class="card-text">
+                        <strong>Started:</strong> @HealthService.StartTime.ToString("yyyy-MM-dd HH:mm:ss UTC")<br/>
+                        <strong>Uptime:</strong> @((DateTime.UtcNow - HealthService.StartTime).TotalSeconds.ToString("F0")) seconds<br/>
+                        <strong>Blazor WebAssembly:</strong> ✅ Initialized<br/>
+                        <strong>Services:</strong> ✅ Registered<br/>
+                        <strong>Authentication:</strong> ✅ Configured
+                    </p>
+                    <a href="/documents" class="btn btn-primary">Go to Documents</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

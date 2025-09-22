@@ -41,6 +41,12 @@ services:
         condition: service_healthy
       identityserver:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5001/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -94,7 +100,7 @@ services:
       - ./certs/server-key.pem:/etc/ssl/private/server-key.pem:ro
     depends_on:
       frontend:
-        condition: service_started
+        condition: service_healthy
       backend:
         condition: service_healthy
       identityserver:
