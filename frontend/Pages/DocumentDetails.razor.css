@@ -1,0 +1,286 @@
+/* DocumentDetails.razor.css - Print-ready styles for professional document output */
+
+/* Print-specific styles */
+@media print {
+    /* Hide all management UI elements */
+    .no-print,
+    .d-print-none {
+        display: none !important;
+    }
+
+    /* Show reading mode elements in print */
+    .d-print-block {
+        display: block !important;
+    }
+
+    /* Page setup */
+    @page {
+        margin: 1in;
+        size: letter;
+    }
+
+    /* Document structure */
+    .container-fluid {
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Document header for print */
+    .document-header {
+        border-bottom: 2px solid #333;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+        page-break-inside: avoid;
+    }
+
+    .document-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Document metadata */
+    .document-section {
+        page-break-inside: avoid;
+        margin-bottom: 1.5rem;
+    }
+
+    .metadata-item {
+        margin-bottom: 0.25rem;
+        font-size: 12px;
+    }
+
+    /* Section headers */
+    .section-header {
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        page-break-after: avoid;
+        border-bottom: 1px solid #666;
+        padding-bottom: 0.25rem;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        page-break-after: avoid;
+    }
+
+    .section-description {
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+
+    /* Requirements */
+    .requirement-item {
+        border-left: 3px solid #007bff !important;
+        background-color: #f8f9fa !important;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        page-break-inside: avoid;
+    }
+
+    .requirement-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .requirement-description {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .requirement-meta .badge {
+        background-color: #6c757d !important;
+        color: white !important;
+        font-size: 10px;
+        padding: 0.25rem 0.5rem;
+        margin-right: 0.25rem;
+    }
+
+    /* Traceability matrix */
+    .traceability-matrix {
+        page-break-before: always;
+    }
+
+    .traceability-matrix table {
+        font-size: 10px;
+    }
+
+    .traceability-matrix th,
+    .traceability-matrix td {
+        padding: 0.25rem;
+        border: 1px solid #333;
+    }
+
+    /* Content sections */
+    .content-section {
+        margin-bottom: 1rem;
+        page-break-inside: avoid;
+    }
+
+    .content-text {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    /* Force page breaks for major sections */
+    .document-section:nth-of-type(n+3) {
+        page-break-before: auto;
+    }
+
+    /* Ensure badges are readable in print */
+    .badge {
+        border: 1px solid #333 !important;
+        color: #000 !important;
+        background-color: #fff !important;
+    }
+}
+
+/* Screen styles (enhance the existing design) */
+@media screen {
+    .document-header {
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .document-title {
+        color: #212529;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .document-section {
+        background-color: #ffffff;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid #dee2e6;
+    }
+
+    .section-header {
+        color: #495057;
+        font-weight: 600;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-title {
+        color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .content-text {
+        color: #495057;
+        line-height: 1.6;
+    }
+
+    .metadata-item {
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0;
+    }
+
+    .requirement-item {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .requirement-item:hover {
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .requirement-title {
+        color: #212529;
+        font-weight: 600;
+    }
+
+    .requirement-description {
+        color: #6c757d;
+        line-height: 1.5;
+    }
+
+    /* Reading mode specific styles */
+    .reading-mode .document-header {
+        background-color: transparent;
+        box-shadow: none;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .reading-mode .document-section {
+        box-shadow: none;
+        border: none;
+        background-color: transparent;
+        padding: 1rem 0;
+    }
+
+    .reading-mode .requirement-item {
+        border-left-width: 4px;
+        background-color: #f8f9fa;
+    }
+
+    /* View mode toggle button */
+    .btn-outline-primary:hover,
+    .btn-primary {
+        transition: all 0.2s ease-in-out;
+    }
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .document-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .document-header .d-flex.gap-2 {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .requirement-item .d-flex {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .metadata-item {
+        font-size: 0.875rem;
+    }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .requirement-item,
+    .btn-outline-primary,
+    .btn-primary {
+        transition: none;
+    }
+
+    .requirement-item:hover {
+        transform: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .document-section {
+        border: 2px solid #000;
+    }
+
+    .section-header {
+        border-bottom: 2px solid #000;
+    }
+
+    .requirement-item {
+        border-left: 4px solid #000 !important;
+    }
+}

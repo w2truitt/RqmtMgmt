@@ -55,3 +55,6 @@ frontend/NuGet.Config
 coverage.iml
 coverage.xml
 mcp.json
+
+# Backup files
+*.backup

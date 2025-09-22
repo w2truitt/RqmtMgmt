@@ -2,6 +2,8 @@
 @page "/projects/{ProjectId:int}/documents/{DocumentId:int}"
 @using RqmtMgmtShared
 @using frontend.Services
+@using frontend.Components.Traceability
+@using frontend.Components.Documents
 @inject IDocumentSectionService DocumentSectionsService
 @inject IRequirementService RequirementsService
 @inject IDocumentService DocumentsService
@@ -12,7 +14,7 @@
 
 <PageTitle>@(document?.Title ?? "Document Details")</PageTitle>
 
-<div class="container-fluid">
+<div class="container-fluid @(isReadingMode ? "reading-mode" : "")">
     @if (isLoading)
     {
         <div class="text-center py-5">
@@ -36,22 +38,33 @@
     }
     else
     {
-        <!-- Document Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
+        <!-- Document Header with Actions and View Mode Toggle -->
+        <div class="document-header d-flex justify-content-between align-items-start mb-4 @(isReadingMode ? "d-print-block" : "no-print")">
+            <div class="flex-grow-1">
                 <div class="d-flex align-items-center mb-2">
-                    <span class="badge @GetDocumentTypeBadgeClass(document.Type) me-2">@document.Type</span>
-                    <span class="badge @GetStatusBadgeClass(document.Status)">@document.Status</span>
-                    <small class="text-muted ms-2">v@(document.Version)</small>
+                    <span class="badge @GetDocumentTypeBadgeClass(document.Type) me-2">@GetDocumentTypeDisplayName(document.Type)</span>
+                    <span class="badge @GetStatusBadgeClass(document.Status) me-2">@document.Status</span>
+                    <small class="text-muted">Version @(document.Version)</small>
                 </div>
-                <h2 class="mb-0">@document.Title</h2>
+                <h1 class="document-title mb-1">@document.Title</h1>
                 <p class="text-muted mb-0">Project: @document.ProjectId</p>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary" @onclick="EditDocument">
-                    <i class="bi bi-pencil me-1"></i>
-                    Edit
+            <div class="d-flex gap-2 ms-3 @(isReadingMode ? "d-print-none" : "")">
+                <button class="btn @(isReadingMode ? "btn-primary" : "btn-outline-primary")" @onclick="ToggleViewMode">
+                    <i class="bi @(isReadingMode ? "bi-pencil" : "bi-book") me-1"></i>
+                    @(isReadingMode ? "Edit Mode" : "Reading Mode")
                 </button>
+                @if (!isReadingMode)
+                {
+                    <button class="btn btn-outline-primary" @onclick="EditDocument">
+                        <i class="bi bi-pencil me-1"></i>
+                        Edit Document
+                    </button>
+                    <button class="btn btn-outline-success" @onclick="AddRequirement">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Add Requirement
+                    </button>
+                }
                 <button class="btn btn-outline-secondary" @onclick="NavigateToDocuments">
                     <i class="bi bi-arrow-left me-1"></i>
                     Back to Documents
@@ -59,212 +72,139 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-lg-8">
-                <!-- Document Content -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-file-text me-2"></i>
-                            Document Information
-                        </h5>
+        <!-- Document Metadata Section -->
+        <div class="document-section mb-4">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="metadata-item">
+                        <strong>Document Type:</strong> @GetDocumentTypeDisplayName(document.Type)
                     </div>
-                    <div class="card-body">
-                        @if (!string.IsNullOrEmpty(document.Objective))
-                        {
-                            <div class="mb-4">
-                                <h6 class="text-primary">Objective</h6>
-                                <p class="mb-0">@document.Objective</p>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrEmpty(document.Background))
-                        {
-                            <div class="mb-4">
-                                <h6 class="text-primary">Background & Context</h6>
-                                <p class="mb-0">@document.Background</p>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrEmpty(document.SuccessCriteria))
-                        {
-                            <div class="mb-4">
-                                <h6 class="text-primary">Success Criteria</h6>
-                                <p class="mb-0">@document.SuccessCriteria</p>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrEmpty(document.Dependencies))
-                        {
-                            <div class="mb-4">
-                                <h6 class="text-primary">Dependencies</h6>
-                                <p class="mb-0">@document.Dependencies</p>
-                            </div>
-                        }
+                    <div class="metadata-item">
+                        <strong>Status:</strong> @document.Status
+                    </div>
+                    <div class="metadata-item">
+                        <strong>Version:</strong> @document.Version
                     </div>
                 </div>
-
-                <!-- Document Sections -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-list-ol me-2"></i>
-                            Document Sections
-                        </h5>
+                <div class="col-md-6">
+                    <div class="metadata-item">
+                        <strong>Created:</strong> @document.CreatedAt.ToString("MMM dd, yyyy")
                     </div>
-                    <div class="card-body">
-                        @if (sections.Any())
-                        {
-                            @foreach (var docSection in sections.OrderBy(s => s.SectionOrder))
-                            {
-                                <div class="section-item mb-2">
-                                    <h6>@docSection.SectionOrder. @docSection.Title</h6>
-                                    @if (!string.IsNullOrEmpty(docSection.Description))
-                                    {
-                                        <p class="text-muted small">@docSection.Description</p>
-                                    }
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <p class="text-muted">No sections available</p>
-                        }
-                    </div>
-                </div>
-
-                <!-- Related Requirements -->
-                @if (requirements.Any())
-                {
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-list-check me-2"></i>
-                                Related Requirements (@requirements.Count)
-                            </h5>
+                    @if (document.UpdatedAt.HasValue)
+                    {
+                        <div class="metadata-item">
+                            <strong>Updated:</strong> @document.UpdatedAt.Value.ToString("MMM dd, yyyy")
                         </div>
-                        <div class="card-body">
-                            @foreach (var requirement in requirements)
-                            {
-                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                                    <div>
-                                        <h6 class="mb-1">@requirement.Title</h6>
-                                        <small class="text-muted">@requirement.Type - @requirement.Status</small>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewRequirement(requirement.Id)">
-                                        View
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-
-            <div class="col-lg-4">
-                <!-- Document Metadata -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Document Details
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-2">
-                            <div class="col-5"><strong>Type:</strong></div>
-                            <div class="col-7">@GetDocumentTypeDisplayName(document.Type)</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-5"><strong>Status:</strong></div>
-                            <div class="col-7">@document.Status</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-5"><strong>Version:</strong></div>
-                            <div class="col-7">@document.Version</div>
-                        </div>
-                        <div class="row mb-2">
-                            <div class="col-5"><strong>Created:</strong></div>
-                            <div class="col-7">@document.CreatedAt.ToString("MMM dd, yyyy")</div>
-                        </div>
-                        @if (document.UpdatedAt.HasValue)
-                        {
-                            <div class="row mb-2">
-                                <div class="col-5"><strong>Updated:</strong></div>
-                                <div class="col-7">@document.UpdatedAt.Value.ToString("MMM dd, yyyy")</div>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-lightning me-2"></i>
-                            Quick Actions
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary" @onclick="EditDocument">
-                                <i class="bi bi-pencil me-2"></i>
-                                Edit Document
-                            </button>
-                            <button class="btn btn-outline-success" @onclick="AddRequirement">
-                                <i class="bi bi-plus-circle me-2"></i>
-                                Add Requirement
-                            </button>
-                        </div>
+                    }
+                    <div class="metadata-item">
+                        <strong>Requirements:</strong> @requirements.Count | <strong>Sections:</strong> @sections.Count
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-4">
-
-                <!-- Document Statistics -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-graph-up me-2"></i>
-                            Statistics
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <div class="h4 text-primary mb-0">@sections.Count</div>
-                                <small class="text-muted">Sections</small>
-                            </div>
-                            <div class="col-6">
-                                <div class="h4 text-success mb-0">@requirements.Count</div>
-                                <small class="text-muted">Requirements</small>
-                            </div>
-                        </div>
-                    </div>
+            @if (!string.IsNullOrEmpty(document.Objective))
+            {
+                <div class="content-section mb-4">
+                    <h3 class="section-title">Objective</h3>
+                    <p class="content-text">@document.Objective</p>
                 </div>
-            </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.Background))
+            {
+                <div class="content-section mb-4">
+                    <h3 class="section-title">Background & Context</h3>
+                    <p class="content-text">@document.Background</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.SuccessCriteria))
+            {
+                <div class="content-section mb-4">
+                    <h3 class="section-title">Success Criteria</h3>
+                    <p class="content-text">@document.SuccessCriteria</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(document.Dependencies))
+            {
+                <div class="content-section mb-4">
+                    <h3 class="section-title">Dependencies</h3>
+                    <p class="content-text">@document.Dependencies</p>
+                </div>
+            }
         </div>
 
-        <!-- Traceability Analysis Placeholder -->
+        <!-- Document Sections with Requirements using DocumentSection Component -->
+        @if (sections.Any())
+        {
+            @foreach (var docSection in sections.OrderBy(s => s.SectionOrder))
+            {
+                @{
+                    var sectionRequirements = requirements.Where(r => r.DocumentSectionId == docSection.Id).ToList();
+                }
+                <DocumentSection 
+                    Section="docSection" 
+                    SectionRequirements="sectionRequirements" 
+                    IsReadingMode="isReadingMode"
+                    OnEditSection="() => EditSection(docSection.Id)"
+                    OnEditRequirement="ViewRequirement"
+                    OnAddRequirement="() => AddRequirementToSection(docSection.Id)" />
+            }
+        }
+
+        <!-- Standalone Requirements (not assigned to sections) -->
+        @{
+            var standaloneRequirements = requirements.Where(r => r.DocumentSectionId == null).ToList();
+        }
+        @if (standaloneRequirements.Any())
+        {
+            <div class="document-section mb-5">
+                <h2 class="section-header">Additional Requirements</h2>
+                <p class="section-description">Requirements not assigned to specific sections</p>
+                
+                <div class="requirements-in-section mt-3">
+                    @foreach (var requirement in standaloneRequirements)
+                    {
+                        <div class="requirement-item mb-3 p-3 border-start border-3 border-secondary bg-light">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="requirement-title mb-1">@requirement.Title</h5>
+                                    <div class="requirement-meta mb-2">
+                                        <span class="badge bg-secondary me-2">@requirement.Type</span>
+                                        <span class="badge @GetRequirementStatusBadgeClass(requirement.Status)">@requirement.Status</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(requirement.Description))
+                                    {
+                                        <p class="requirement-description mb-0">@requirement.Description</p>
+                                    }
+                                </div>
+                                @if (!isReadingMode)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary no-print" @onclick="() => ViewRequirement(requirement.Id)">
+                                        View Details
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Traceability Analysis with TraceabilityMatrix Component -->
         @if (requirements.Any())
         {
-            <div class="mt-5">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title mb-0">
-                            <i class="bi bi-diagram-3 me-2"></i>
-                            Requirements Traceability Analysis
-                        </h4>
-                        <p class="text-muted mb-0 mt-1">
-                            Track requirement relationships and coverage for this @GetDocumentTypeDisplayName(document.Type)
-                        </p>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted">Traceability analysis will be displayed here.</p>
-                        @* TODO: Add TraceabilityMatrix component when compilation issues are resolved *@
-                    </div>
-                </div>
+            <div class="document-section mt-5 mb-5">
+                <h2 class="section-header">
+                    <i class="bi bi-diagram-3 me-2"></i>
+                    Requirements Traceability Analysis
+                </h2>
+                <p class="section-description">
+                    Track requirement relationships and coverage for this @GetDocumentTypeDisplayName(document.Type)
+                </p>
+                
+                <TraceabilityMatrix DocumentId="DocumentId" />
             </div>
         }
     }
@@ -278,6 +218,7 @@
     private List<DocumentSectionDto> sections = new();
     private List<RequirementDto> requirements = new();
     private bool isLoading = true;
+    private bool isReadingMode = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -318,6 +259,11 @@
         }
     }
 
+    private void ToggleViewMode()
+    {
+        isReadingMode = !isReadingMode;
+    }
+
     private void EditDocument()
     {
         if (document == null) return;
@@ -332,6 +278,20 @@
         }
     }
 
+    private void EditSection(int sectionId)
+    {
+        if (document == null) return;
+
+        if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectContextService.CurrentProject.Id}/documents/{document.Id}/sections/{sectionId}/edit");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/documents/{document.Id}/sections/{sectionId}/edit");
+        }
+    }
+
     private void AddRequirement()
     {
         if (document == null) return;
@@ -343,6 +303,20 @@
         else
         {
             Navigation.NavigateTo($"/requirements/new?documentId={document.Id}");
+        }
+    }
+
+    private void AddRequirementToSection(int sectionId)
+    {
+        if (document == null) return;
+
+        if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectContextService.CurrentProject.Id}/requirements/new?documentId={document.Id}&sectionId={sectionId}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/requirements/new?documentId={document.Id}&sectionId={sectionId}");
         }
     }
 
@@ -392,6 +366,17 @@
         DocumentStatus.InReview => "bg-warning text-dark",
         DocumentStatus.Approved => "bg-success",
         DocumentStatus.Published => "bg-info",
+        _ => "bg-light text-dark"
+    };
+
+    private string GetRequirementStatusBadgeClass(RequirementStatus status) => status switch
+    {
+        RequirementStatus.Draft => "bg-secondary",
+        RequirementStatus.InReview => "bg-warning text-dark",
+        RequirementStatus.Approved => "bg-success",
+        RequirementStatus.Implemented => "bg-primary",
+        RequirementStatus.Tested => "bg-info",
+        RequirementStatus.Rejected => "bg-danger",
         _ => "bg-light text-dark"
     };
 }
