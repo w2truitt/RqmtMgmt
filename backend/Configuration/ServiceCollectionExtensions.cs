@@ -63,7 +63,22 @@ namespace backend.Configuration
 
             // Add JWT Bearer authentication for API protection
             var identityServerUrl = configuration["Authentication:Authority"] ?? "https://rqmtmgmt.local";
-            var validIssuer = configuration["Authentication:ValidIssuer"] ?? identityServerUrl;
+            
+            // Configure multiple valid issuers to handle different environments
+            var validIssuers = new List<string>
+            {
+                "https://rqmtmgmt.local",              // External URL (Traefik proxy)
+                "http://identityserver-service:80",    // Internal Kubernetes service
+                "http://identityserver-service",       // Internal Kubernetes service (no port)
+                identityServerUrl                      // Configured authority URL
+            };
+            
+            // Add any additional valid issuer from configuration
+            var configuredValidIssuer = configuration["Authentication:ValidIssuer"];
+            if (!string.IsNullOrEmpty(configuredValidIssuer) && !validIssuers.Contains(configuredValidIssuer))
+            {
+                validIssuers.Add(configuredValidIssuer);
+            }
             
             services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>
@@ -79,8 +94,8 @@ namespace backend.Configuration
                         ValidateIssuerSigningKey = true,
                         ClockSkew = TimeSpan.FromMinutes(5),
 
-                        // Explicitly set the valid issuer to match IdentityServer
-                        ValidIssuer = validIssuer,
+                        // Configure multiple valid issuers to handle proxy and internal communication
+                        ValidIssuers = validIssuers,
                         
                         // Configure multiple valid audiences to handle different token formats
                         ValidAudiences = new[] { 

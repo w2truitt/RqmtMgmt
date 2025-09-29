@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -46,7 +47,7 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
                              await Page.IsVisibleAsync("h2:has-text('Project')");
         
         Assert.True(isOnProjectPage, "Should be able to navigate to project dashboard");
-        Output.WriteLine($"Successfully navigated to project page: {Page.Url}");
+        TestLogger.LogDebug($"Successfully navigated to project page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -64,7 +65,7 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
         
         // Debug: Check what's actually on the page
         var pageContent = await Page.ContentAsync();
-        Output.WriteLine($"Page URL: {Page.Url}");
+        TestLogger.LogDebug($"Page URL: {Page.Url}", Output);
         Output.WriteLine($"Page title: {await Page.TitleAsync()}");
         
         // Wait for any dynamic content to load
@@ -94,11 +95,11 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
         // Check if page is actually loaded (look for common elements)
         var bodyText = await Page.Locator("body").TextContentAsync();
         Output.WriteLine($"Body has content: {!string.IsNullOrWhiteSpace(bodyText)}");
-        Output.WriteLine($"Body text length: {bodyText?.Length ?? 0}");
+        TestLogger.LogTestStep($"Body text length: {bodyText?.Length ?? 0}", Output);
         
         // Check for error messages or redirects
         var hasError = await Page.IsVisibleAsync(".error, .alert-danger, [data-testid='error']");
-        Output.WriteLine($"Has error message: {hasError}");
+        TestLogger.LogError($"Has error message: {hasError}", Output);
         
         // Should see requirements header - check multiple possibilities
         var hasRequirementsHeader = await Page.IsVisibleAsync("h1:has-text('Requirements')") ||
@@ -115,7 +116,7 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
                                    requirementsText.Any();
         
         Assert.True(hasRequirementsHeader, "Should see requirements header on project requirements page");
-        Output.WriteLine($"Successfully accessed project requirements: {Page.Url}");
+        TestLogger.LogDebug($"Successfully accessed project requirements: {Page.Url}", Output);
     }
     
     [Fact]
@@ -133,12 +134,12 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
             visitedUrls.Add(Page.Url);
-            Output.WriteLine($"Visited project {projectId}: {Page.Url}");
+            TestLogger.LogDebug($"Visited project {projectId}: {Page.Url}", Output);
         }
         
         // Assert - Should have visited different project contexts
         Assert.True(visitedUrls.Count >= 1, "Should be able to navigate to project contexts");
-        Output.WriteLine("Successfully switched between project contexts");
+        TestLogger.LogTestStep("Successfully switched between project contexts", Output);
     }
     
     [Fact]
@@ -161,10 +162,10 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
             
             // Assert - Should maintain project context
             Assert.Contains($"/projects/{projectId}/", Page.Url);
-            Output.WriteLine($"Project context maintained on: {projectPage}");
+            TestLogger.LogDebug($"Project context maintained on: {projectPage}", Output);
         }
         
-        Output.WriteLine("Project context persists across navigation within project");
+        TestLogger.LogTestStep("Project context persists across navigation within project", Output);
     }
     
     [Fact]
@@ -195,7 +196,7 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
         Assert.Contains("/projects", Page.Url);
         Assert.DoesNotContain($"/projects/{projectId}/", Page.Url);
         
-        Output.WriteLine("Successfully returned to projects list from project context");
+        TestLogger.LogTestStep("Successfully returned to projects list from project context", Output);
     }
     
     [Fact]
@@ -226,7 +227,7 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
         
         // Assert - Should be on a valid page (breadcrumb navigation or at least accessible)
         Assert.DoesNotContain("/Account/Login", Page.Url);
-        Output.WriteLine("Breadcrumb navigation is functional or page remains accessible");
+        TestLogger.LogDebug("Breadcrumb navigation is functional or page remains accessible", Output);
     }
     
     [Fact]
@@ -256,6 +257,6 @@ public class ProjectNavigationE2ETests : AuthenticatedE2ETestBase
         
         // Assert - Should be on a valid page after project selection
         Assert.DoesNotContain("/Account/Login", Page.Url);
-        Output.WriteLine("Project selector functionality works or page remains accessible");
+        TestLogger.LogDebug("Project selector functionality works or page remains accessible", Output);
     }
 }

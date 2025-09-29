@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,26 +27,26 @@ public class DebugRequirementsCreationTests : AuthenticatedE2ETestBase
     {
         // Arrange - Project manager already authenticated via base class
         
-        Output.WriteLine("Starting requirements creation debug test");
+        TestLogger.LogDebug("Starting requirements creation debug test", Output);
         
         // Navigate to projects first
         await Page.GotoAsync($"{BaseUrl}/projects");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to projects page: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to projects page: {Page.Url}", Output);
         
         // Try to find a project to work with
         var projectLinks = await Page.QuerySelectorAllAsync("a[href*='/projects/']");
         
         if (projectLinks.Count > 0)
         {
-            Output.WriteLine($"Found {projectLinks.Count} project links");
+            TestLogger.LogDebug($"Found {projectLinks.Count} project links", Output);
             
             // Click on the first project
             await projectLinks[0].ClickAsync();
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
-            Output.WriteLine($"Navigated to project: {Page.Url}");
+            TestLogger.LogDebug($"Navigated to project: {Page.Url}", Output);
             
             // Try to navigate to requirements within this project
             var requirementsLink = await Page.QuerySelectorAsync("a[href*='requirements'], .nav-link:has-text('Requirements')");
@@ -54,13 +55,13 @@ public class DebugRequirementsCreationTests : AuthenticatedE2ETestBase
                 await requirementsLink.ClickAsync();
                 await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                 
-                Output.WriteLine($"Navigated to project requirements: {Page.Url}");
+                TestLogger.LogDebug($"Navigated to project requirements: {Page.Url}", Output);
                 
                 // Check if we can create a requirement in this context
                 var createButton = await Page.QuerySelectorAsync("button:has-text('Create'), button:has-text('New'), button:has-text('Add')");
                 if (createButton != null)
                 {
-                    Output.WriteLine("Create button found - requirements creation available in project context");
+                    TestLogger.LogDebug("Create button found - requirements creation available in project context", Output);
                     
                     await createButton.ClickAsync();
                     await Task.Delay(1000);
@@ -69,37 +70,37 @@ public class DebugRequirementsCreationTests : AuthenticatedE2ETestBase
                     var formVisible = await Page.IsVisibleAsync("form, .modal, [data-testid*='form']");
                     if (formVisible)
                     {
-                        Output.WriteLine("Requirements creation form opened successfully");
+                        TestLogger.LogDebug("Requirements creation form opened successfully", Output);
                         
                         // Cancel the form
                         var cancelButton = await Page.QuerySelectorAsync("button:has-text('Cancel'), .btn-secondary");
                         if (cancelButton != null)
                         {
                             await cancelButton.ClickAsync();
-                            Output.WriteLine("Form cancelled successfully");
+                            TestLogger.LogDebug("Form cancelled successfully", Output);
                         }
                     }
                     else
                     {
-                        Output.WriteLine("Requirements creation form did not open");
+                        TestLogger.LogDebug("Requirements creation form did not open", Output);
                     }
                 }
                 else
                 {
-                    Output.WriteLine("No create button found - requirements creation may not be available");
+                    TestLogger.LogDebug("No create button found - requirements creation may not be available", Output);
                 }
             }
             else
             {
-                Output.WriteLine("No requirements link found in project navigation");
+                TestLogger.LogDebug("No requirements link found in project navigation", Output);
             }
         }
         else
         {
-            Output.WriteLine("No projects found for requirements creation testing");
+            TestLogger.LogDebug("No projects found for requirements creation testing", Output);
         }
         
-        Output.WriteLine("Requirements creation debug test completed");
+        TestLogger.LogDebug("Requirements creation debug test completed", Output);
         
         // Assert - Test completed successfully
         Assert.True(true, "Debug test completed - check output for details");

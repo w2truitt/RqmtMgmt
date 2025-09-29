@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,13 +27,13 @@ public class DebugProjectPageElements : AuthenticatedE2ETestBase
     {
         // Arrange - Developer user already authenticated via base class
         
-        Output.WriteLine("Starting project page elements analysis");
+        TestLogger.LogDebug("Starting project page elements analysis", Output);
         
         // Navigate to projects page
         await Page.GotoAsync($"{BaseUrl}/projects");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to projects page: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to projects page: {Page.Url}", Output);
         
         // Analyze page elements
         var pageElements = await Page.EvaluateAsync<object>(@"
@@ -69,19 +70,19 @@ public class DebugProjectPageElements : AuthenticatedE2ETestBase
             }
         ");
         
-        Output.WriteLine($"Project page elements: {pageElements}");
+        TestLogger.LogDebug($"Project page elements: {pageElements}", Output);
         
         // Test navigation to a specific project if available
         var projectLinks = await Page.QuerySelectorAllAsync("a[href*='/projects/']");
         if (projectLinks.Count > 0)
         {
-            Output.WriteLine($"Found {projectLinks.Count} project links");
+            TestLogger.LogDebug($"Found {projectLinks.Count} project links", Output);
             
             // Navigate to first project
             await projectLinks[0].ClickAsync();
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
-            Output.WriteLine($"Navigated to specific project: {Page.Url}");
+            TestLogger.LogDebug($"Navigated to specific project: {Page.Url}", Output);
             
             // Analyze project detail page
             var projectDetailElements = await Page.EvaluateAsync<string[]>(@"
@@ -98,10 +99,10 @@ public class DebugProjectPageElements : AuthenticatedE2ETestBase
         }
         else
         {
-            Output.WriteLine("No project links found for detailed analysis");
+            TestLogger.LogDebug("No project links found for detailed analysis", Output);
         }
         
-        Output.WriteLine("Project page elements analysis completed");
+        TestLogger.LogDebug("Project page elements analysis completed", Output);
         
         // Assert test completed
         Assert.True(Page.Url.Contains("/projects"), "Should be on a projects-related page");

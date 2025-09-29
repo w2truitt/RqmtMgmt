@@ -112,7 +112,7 @@ services:
       SA_PASSWORD: "Your_password123"
       ACCEPT_EULA: "Y"
       # Configure SQL Server memory settings for Docker
-      MSSQL_MEMORY_LIMIT_MB: "2048"
+      MSSQL_MEMORY_LIMIT_MB: "4096"
     ports:
       - "1433:1433"
     volumes:
@@ -127,7 +127,7 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 3G
+          memory: 8G
         reservations:
           memory: 2G
 

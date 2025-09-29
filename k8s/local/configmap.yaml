@@ -12,16 +12,19 @@ data:
   Authentication__Authority: "http://identityserver-service:80"
   Authentication__Audience: "rqmtmgmt-api"
   Authentication__RequireHttpsMetadata: "false"
+  # Note: ValidIssuers are now configured in code to include multiple issuers:
+  # - https://rqmtmgmt.local (external Traefik proxy)
+  # - http://identityserver-service:80 (internal K8s service)
+  # - http://identityserver-service (internal K8s service without port)
   
   # Frontend OIDC Configuration
   OIDC__Authority: "https://rqmtmgmt.local"
   OIDC__ClientId: "rqmtmgmt-frontend"
   OIDC__ClientSecret: "frontend-secret"
   
-  # Database Configuration (external SQL Server)
-  # Note: Using host.docker.internal to connect to external database
-  ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;"
-  ConnectionStrings__IdentityConnection: "Server=host.docker.internal,1433;Database=RqmtMgmtIdentity;User=sa;Password=Your_password123;TrustServerCertificate=True;"
+  # Database Configuration (using StatefulSet service)
+  ConnectionStrings__DefaultConnection: "Server=mssql-0.mssql-service,1433;Database=RqmtMgmt;User=sa;Password=Your_password123;TrustServerCertificate=True;"
+  ConnectionStrings__IdentityConnection: "Server=mssql-0.mssql-service,1433;Database=RqmtMgmtIdentity;User=sa;Password=Your_password123;TrustServerCertificate=True;"
   
   # Logging Configuration
   Logging__LogLevel__Default: "Information"

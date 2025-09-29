@@ -3,12 +3,12 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project files and restore dependencies
-COPY ["identityserver/identityserver.csproj", "identityserver/"]
-RUN dotnet restore "identityserver/identityserver.csproj"
+COPY ["identityserver.csproj", "./"]
+RUN dotnet restore "identityserver.csproj"
 
 # Copy source code and build
 COPY . .
-WORKDIR "/src/identityserver"
+WORKDIR "/src"
 RUN dotnet build "identityserver.csproj" -c Release -o /app/build
 
 # Publish the application

@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -37,7 +38,7 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
         Assert.True(Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl));
         await Expect(Page.Locator("h1:has-text('Dashboard')")).ToBeVisibleAsync();
         
-        Output.WriteLine($"Successfully navigated to dashboard: {Page.Url}");
+        TestLogger.LogDebug($"Successfully navigated to dashboard: {Page.Url}", Output);
     }
     
     [Fact]
@@ -54,7 +55,7 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.True(Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl));
-        Output.WriteLine("Dashboard page loaded without errors");
+        TestLogger.LogDebug("Dashboard page loaded without errors", Output);
     }
     
     [Fact]
@@ -82,7 +83,7 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
             Assert.True(Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl));
         }
         
-        Output.WriteLine("Dashboard page elements are present");
+        TestLogger.LogDebug("Dashboard page elements are present", Output);
     }
     
     [Fact]
@@ -103,7 +104,7 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
         Assert.True(hasProjectMetrics || Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl), 
             "Dashboard should show project metrics or at least be accessible");
         
-        Output.WriteLine("Dashboard shows project-related information");
+        TestLogger.LogDebug("Dashboard shows project-related information", Output);
     }
     
     [Fact]
@@ -124,6 +125,6 @@ public class DashboardPageTests : AuthenticatedE2ETestBase
         Assert.True(hasRequirementMetrics || Page.Url.EndsWith("/") || Page.Url.Contains(BaseUrl), 
             "Dashboard should show requirement metrics or at least be accessible");
         
-        Output.WriteLine("Dashboard shows requirement-related information");
+        TestLogger.LogDebug("Dashboard shows requirement-related information", Output);
     }
 }

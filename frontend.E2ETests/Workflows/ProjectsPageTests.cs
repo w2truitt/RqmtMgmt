@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -37,7 +38,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         Assert.Contains("/projects", Page.Url);
         await Expect(Page.Locator("h3:has-text('Projects')")).ToBeVisibleAsync();
         
-        Output.WriteLine($"Successfully navigated to projects page: {Page.Url}");
+        TestLogger.LogDebug($"Successfully navigated to projects page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -55,7 +56,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.Contains("/projects", Page.Url);
-        Output.WriteLine("Projects page loaded without errors");
+        TestLogger.LogDebug("Projects page loaded without errors", Output);
     }
     
     [Fact]
@@ -73,7 +74,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         await Expect(Page.Locator("table")).ToBeVisibleAsync();
         await Expect(Page.Locator("button:has-text('Add Project')")).ToBeVisibleAsync();
         
-        Output.WriteLine("All expected page elements are present");
+        TestLogger.LogDebug("All expected page elements are present", Output);
     }
     
     [Fact]
@@ -92,7 +93,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         
         // Assert - Search functionality works (count may change)
         Assert.Contains("/projects", Page.Url);
-        Output.WriteLine("Search functionality works correctly");
+        TestLogger.LogTestStep("Search functionality works correctly", Output);
     }
     
     [Fact]
@@ -109,7 +110,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         
         // Assert
         Assert.True(projectCount >= 0, "Should have valid project count");
-        Output.WriteLine("Project counts are displayed correctly");
+        TestLogger.LogTestStep("Project counts are displayed correctly", Output);
     }
     
     [Fact]
@@ -131,7 +132,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         
         // Assert
         Assert.Contains("/projects", Page.Url);
-        Output.WriteLine("Form modal can be opened and cancelled successfully");
+        TestLogger.LogDebug("Form modal can be opened and cancelled successfully", Output);
     }
     
     [Fact]
@@ -157,7 +158,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         
         // Cleanup
         await projectsPage.CancelFormAsync();
-        Output.WriteLine("Form validation works correctly for required fields");
+        TestLogger.LogDebug("Form validation works correctly for required fields", Output);
     }
     
     [Fact]
@@ -188,7 +189,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         var isVisible = await projectsPage.IsProjectVisibleAsync(projectName);
         Assert.True(isVisible, $"Should be able to see created project: {projectName}");
         
-        Output.WriteLine($"Successfully created project: {projectName}");
+        TestLogger.LogTestStep($"Successfully created project: {projectName}", Output);
     }
     
     [Fact]
@@ -229,7 +230,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         var isVisible = await projectsPage.IsProjectVisibleAsync(updatedName);
         Assert.True(isVisible, $"Should see updated project name: {updatedName}");
         
-        Output.WriteLine($"Successfully edited project from {originalName} to {updatedName}");
+        TestLogger.LogTestStep($"Successfully edited project from {originalName} to {updatedName}", Output);
     }
     
     [Fact]
@@ -265,7 +266,7 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         var isVisible = await projectsPage.IsProjectVisibleAsync(projectName);
         Assert.False(isVisible, $"Project should be deleted: {projectName}");
         
-        Output.WriteLine($"Successfully deleted project: {projectName}");
+        TestLogger.LogTestStep($"Successfully deleted project: {projectName}", Output);
     }
     
     [Fact]
@@ -315,6 +316,6 @@ public class ProjectsPageTests : AuthenticatedE2ETestBase
         var isDeleted = !await projectsPage.IsProjectVisibleAsync(updatedName);
         Assert.True(isDeleted, "Project should be deleted");
         
-        Output.WriteLine($"Successfully completed full CRUD workflow for project: {projectName}");
+        TestLogger.LogTestStep($"Successfully completed full CRUD workflow for project: {projectName}", Output);
     }
 }

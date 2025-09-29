@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -38,7 +39,7 @@ public class TestPlansPageTests : AuthenticatedE2ETestBase
         // FIXED: Page uses <h1 class="h3">Test Plans</h1>, not <h3>
         await Expect(Page.Locator("h1:has-text('Test Plans')")).ToBeVisibleAsync();
         
-        Output.WriteLine($"Successfully navigated to test plans page: {Page.Url}");
+        TestLogger.LogDebug($"Successfully navigated to test plans page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -55,7 +56,7 @@ public class TestPlansPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.Contains("/testplans", Page.Url);
-        Output.WriteLine("Test plans page loaded without errors");
+        TestLogger.LogDebug("Test plans page loaded without errors", Output);
     }
     
     [Fact]
@@ -77,6 +78,6 @@ public class TestPlansPageTests : AuthenticatedE2ETestBase
                                  await Page.IsVisibleAsync("[data-testid='testplan-row']");
         
         // Test plans display is optional - page might be empty
-        Output.WriteLine("Test plans page elements are present");
+        TestLogger.LogDebug("Test plans page elements are present", Output);
     }
 }

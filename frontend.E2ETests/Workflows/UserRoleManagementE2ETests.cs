@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -36,7 +37,7 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
         Assert.Contains("/users", Page.Url);
         
         // Debug: Check what's actually on the users page
-        Output.WriteLine($"Users page URL: {Page.Url}");
+        TestLogger.LogAuthentication($"Users page URL: {Page.Url}", Output);
         Output.WriteLine($"Page title: {await Page.TitleAsync()}");
         
         // Wait for content to load
@@ -72,7 +73,7 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
                                await Page.IsVisibleAsync("table");
         
         Assert.True(hasUserManagement, "Admin should see user management functions");
-        Output.WriteLine("Admin can access user management functionality");
+        TestLogger.LogAuthentication("Admin can access user management functionality", Output);
     }
     
     [Fact]
@@ -98,7 +99,7 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
         
         // Assert - Should be able to see role information
         Assert.True(hasRoleInfo, "Should be able to view user roles in the users table");
-        Output.WriteLine("User roles are visible in user management");
+        TestLogger.LogAuthentication("User roles are visible in user management", Output);
     }
     
     [Fact]
@@ -123,10 +124,10 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
             Assert.DoesNotContain("/Account/Login", Page.Url);
             Assert.Contains(page, Page.Url);
             
-            Output.WriteLine($"Admin successfully accessed: {page}");
+            TestLogger.LogDebug($"Admin successfully accessed: {page}", Output);
         }
         
-        Output.WriteLine("Role-based access control is working for admin user");
+        TestLogger.LogAuthentication("Role-based access control is working for admin user", Output);
     }
     
     [Fact]
@@ -156,7 +157,7 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
             Output.WriteLine($"{roleName} ({email}) successfully accessed {testPage}");
         }
         
-        Output.WriteLine("User role switching works correctly");
+        TestLogger.LogAuthentication("User role switching works correctly", Output);
     }
     
     [Fact]
@@ -179,9 +180,9 @@ public class UserRoleManagementE2ETests : AuthenticatedE2ETestBase
             
             // Assert - Viewer should access these pages
             Assert.DoesNotContain("/Account/Login", Page.Url);
-            Output.WriteLine($"Viewer successfully accessed: {page}");
+            TestLogger.LogDebug($"Viewer successfully accessed: {page}", Output);
         }
         
-        Output.WriteLine("Viewer role has appropriate access restrictions");
+        TestLogger.LogTestStep("Viewer role has appropriate access restrictions", Output);
     }
 }

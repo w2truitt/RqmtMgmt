@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -34,7 +35,7 @@ public class ProjectSelectionWorkflowTests : AuthenticatedE2ETestBase
         await Page.GotoAsync($"{BaseUrl}");
         
         // Use existing static project
-        await SelectExistingProject(2); // Use project index 2 (E2E Test Project 69633ddf)
+        await SelectExistingProject(2); // Use project index 2 (Performance Test Project 638944753472742469)
         
         // Act - Navigate to project requirements
         await ClickProjectAwareRequirementsLink();
@@ -76,12 +77,12 @@ public class ProjectSelectionWorkflowTests : AuthenticatedE2ETestBase
             {
                 await SelectExistingProject(i);
                 projectUrls.Add(Page.Url);
-                Output.WriteLine($"Successfully selected project {i}: {Page.Url}");
+                TestLogger.LogDebug($"Successfully selected project {i}: {Page.Url}", Output);
                 break;
             }
             catch (Exception ex)
             {
-                Output.WriteLine($"Could not select project {i}: {ex.Message}");
+                TestLogger.LogTestStep($"Could not select project {i}: {ex.Message}", Output);
                 continue;
             }
         }
@@ -99,14 +100,14 @@ public class ProjectSelectionWorkflowTests : AuthenticatedE2ETestBase
                     if (newUrl != projectUrls[0])
                     {
                         projectUrls.Add(newUrl);
-                        Output.WriteLine($"Successfully selected different project {i}: {newUrl}");
+                        TestLogger.LogDebug($"Successfully selected different project {i}: {newUrl}", Output);
                         break;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Output.WriteLine($"Could not select different project {i}: {ex.Message}");
+                TestLogger.LogTestStep($"Could not select different project {i}: {ex.Message}", Output);
                 continue;
             }
         }
@@ -118,11 +119,11 @@ public class ProjectSelectionWorkflowTests : AuthenticatedE2ETestBase
         if (projectUrls.Count >= 2)
         {
             Assert.NotEqual(projectUrls[0], projectUrls[1]);
-            Output.WriteLine("Successfully demonstrated project switching capability");
+            TestLogger.LogTestStep("Successfully demonstrated project switching capability", Output);
         }
         else
         {
-            Output.WriteLine("Only one project available, but project selection is working");
+            TestLogger.LogTestStep("Only one project available, but project selection is working", Output);
         }
     }
 

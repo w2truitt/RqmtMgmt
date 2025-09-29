@@ -3,16 +3,15 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy project files and restore dependencies
-COPY ["backend/backend.csproj", "backend/"]
-COPY ["RqmtMgmtShared/RqmtMgmtShared.csproj", "RqmtMgmtShared/"]
+COPY ["backend.csproj", "./"]
 COPY ["local_nuget/", "local_nuget/"]
 COPY ["NuGet.Config", "./"]
 
-RUN dotnet restore "backend/backend.csproj"
+RUN dotnet restore "backend.csproj"
 
 # Copy source code and build
 COPY . .
-WORKDIR "/src/backend"
+WORKDIR "/src"
 RUN dotnet build "backend.csproj" -c Release -o /app/build
 
 # Publish the application

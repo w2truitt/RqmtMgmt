@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using static Microsoft.Playwright.Assertions;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 

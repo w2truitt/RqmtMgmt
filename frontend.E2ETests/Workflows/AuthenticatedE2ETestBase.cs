@@ -2,6 +2,7 @@ using frontend.E2ETests.Fixtures;
 using frontend.E2ETests.Services;
 using Microsoft.Playwright;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,6 +27,8 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
         : base(fixture)
     {
         Output = output;
+        // Initialize logging system
+        TestLogger.Initialize();
     }
 
     /// <summary>
@@ -53,16 +56,23 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
                 "Example: SetAdminUser() or SetUser(\"admin@rqmtmgmt.local\", \"Admin123!\")");
         }
 
-        Output.WriteLine($"Creating authenticated context for: {_userEmail}");
+        TestLogger.LogTestStep($"Creating authenticated context for: {_userEmail}", Output);
 
-        // Get cached session (login only happens once per user role across entire test suite)
-        var storageState = await AuthenticationService.GetStorageStateAsync(
+        // Get cached session file path (login only happens once per user role across entire test suite)
+        var storageStateFilePath = await AuthenticationService.GetStorageStateAsync(
             Fixture, _userEmail, _userPassword);
 
-        // Create context with pre-authenticated session
+        // Verify the file exists and is readable
+        if (!File.Exists(storageStateFilePath))
+        {
+            throw new FileNotFoundException($"Storage state file not found: {storageStateFilePath}");
+        }
+
+        // Create context with pre-authenticated session using the cached file
+        // Use the BrowserNewContextOptions constructor that accepts StorageStatePath
         Context = await Fixture.Browser.NewContextAsync(new BrowserNewContextOptions
         {
-            StorageState = storageState,
+            StorageStatePath = storageStateFilePath, // Use StorageStatePath property instead of StorageState
             IgnoreHTTPSErrors = true,
             ViewportSize = new ViewportSize { Width = 1280, Height = 720 }
         });
@@ -71,7 +81,7 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
-        Output.WriteLine($"Authenticated context ready for: {_userEmail}");
+        TestLogger.LogTestStep($"Authenticated context ready for: {_userEmail}", Output);
     }
 
     // ========================================
@@ -89,13 +99,13 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
             throw new InvalidOperationException("No user set for session clearing");
         }
 
-        Output.WriteLine($"Clearing session and re-authenticating: {_userEmail}");
+        TestLogger.LogTestStep($"Clearing session and re-authenticating: {_userEmail}", Output);
         
         AuthenticationService.ClearUserSession(_userEmail);
         await DisposeAsync();
         await InitializeAsync();
         
-        Output.WriteLine($"Re-authentication complete for: {_userEmail}");
+        TestLogger.LogTestStep($"Re-authentication complete for: {_userEmail}", Output);
     }
 
     /// <summary>
@@ -106,13 +116,13 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
     /// <param name="password">New user password</param>
     protected async Task SwitchToUser(string email, string password)
     {
-        Output.WriteLine($"Switching from {_userEmail} to {email}");
+        TestLogger.LogTestStep($"Switching from {_userEmail} to {email}", Output);
         
         await DisposeAsync();
         SetUser(email, password);
         await InitializeAsync();
         
-        Output.WriteLine($"User switch complete, now authenticated as: {email}");
+        TestLogger.LogTestStep($"User switch complete, now authenticated as: {email}", Output);
     }
 
     // ========================================

@@ -113,6 +113,41 @@ namespace backend.Data
             await context.Projects.AddAsync(defaultProject);
             await context.SaveChangesAsync();
 
+            // Create static E2E test projects that tests expect to exist
+            var staticE2EProjects = new[]
+            {
+                new Project 
+                { 
+                    Name = "E2E Test Project 3625e50c", 
+                    Code = "E2E3625E50C", 
+                    Description = "Static E2E test project for automated testing", 
+                    Status = ProjectStatus.Active, 
+                    OwnerId = adminUser.Id, 
+                    CreatedAt = DateTime.UtcNow 
+                },
+                new Project 
+                { 
+                    Name = "E2E Test Project 69633ddf", 
+                    Code = "E2E69633DDF", 
+                    Description = "Static E2E test project for automated testing", 
+                    Status = ProjectStatus.Active, 
+                    OwnerId = adminUser.Id, 
+                    CreatedAt = DateTime.UtcNow 
+                },
+                new Project 
+                { 
+                    Name = "E2E Test Project 0b85cc00", 
+                    Code = "E2E0B85CC00", 
+                    Description = "Static E2E test project for automated testing", 
+                    Status = ProjectStatus.Active, 
+                    OwnerId = adminUser.Id, 
+                    CreatedAt = DateTime.UtcNow 
+                }
+            };
+
+            await context.Projects.AddRangeAsync(staticE2EProjects);
+            await context.SaveChangesAsync();
+
             // Sample Requirements
             var customerReq = new Requirement
             {

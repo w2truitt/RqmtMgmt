@@ -3,16 +3,16 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project files and restore dependencies
-COPY ["frontend/frontend.csproj", "frontend/"]
-COPY ["RqmtMgmtShared/RqmtMgmtShared.csproj", "RqmtMgmtShared/"]
+COPY ["frontend.csproj", "./"]
 COPY ["local_nuget/", "local_nuget/"]
 COPY ["NuGet.Config", "./"]
 
-RUN dotnet restore "frontend/frontend.csproj"
+RUN dotnet restore "frontend.csproj"
 
 # Copy source code and build
 COPY . .
-WORKDIR "/src/frontend"
+WORKDIR "/src"
+RUN dotnet build "frontend.csproj" -c Release
 RUN dotnet publish "frontend.csproj" -c Release -o /app/publish --no-restore
 
 # Runtime stage - use nginx to serve static files

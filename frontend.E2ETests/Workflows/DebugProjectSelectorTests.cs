@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,13 +27,13 @@ public class DebugProjectSelectorTests : AuthenticatedE2ETestBase
     {
         // Arrange - Developer user already authenticated via base class
         
-        Output.WriteLine("Starting project selector debug test");
+        TestLogger.LogDebug("Starting project selector debug test", Output);
         
         // Navigate to home page where project selector might be
         await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to home page: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to home page: {Page.Url}", Output);
         
         // Look for project selector elements
         var selectorElements = await Page.EvaluateAsync<object>(@"
@@ -65,26 +66,26 @@ public class DebugProjectSelectorTests : AuthenticatedE2ETestBase
             }
         ");
         
-        Output.WriteLine($"Project selector elements found: {selectorElements}");
+        TestLogger.LogDebug($"Project selector elements found: {selectorElements}", Output);
         
         // Try to interact with project selector if found
         var projectSelectorButton = await Page.QuerySelectorAsync("button:has-text('Select'), button:has-text('Project'), .dropdown-toggle");
         if (projectSelectorButton != null)
         {
-            Output.WriteLine("Project selector button found - testing interaction");
+            TestLogger.LogDebug("Project selector button found - testing interaction", Output);
             
             await projectSelectorButton.ClickAsync();
             await Task.Delay(1000);
             
             // Check if dropdown appeared
             var dropdownVisible = await Page.IsVisibleAsync(".dropdown-menu, .show");
-            Output.WriteLine($"Dropdown appeared: {dropdownVisible}");
+            TestLogger.LogTestStep($"Dropdown appeared: {dropdownVisible}", Output);
             
             if (dropdownVisible)
             {
                 // Look for project options
                 var projectOptions = await Page.QuerySelectorAllAsync(".dropdown-item, option");
-                Output.WriteLine($"Found {projectOptions.Count} project options");
+                TestLogger.LogDebug($"Found {projectOptions.Count} project options", Output);
                 
                 // Close dropdown by clicking elsewhere
                 await Page.ClickAsync("body");
@@ -93,10 +94,10 @@ public class DebugProjectSelectorTests : AuthenticatedE2ETestBase
         }
         else
         {
-            Output.WriteLine("No project selector button found");
+            TestLogger.LogDebug("No project selector button found", Output);
         }
         
-        Output.WriteLine("Project selector debug test completed");
+        TestLogger.LogDebug("Project selector debug test completed", Output);
         
         // Assert test completed
         Assert.True(true, "Project selector debug test completed");

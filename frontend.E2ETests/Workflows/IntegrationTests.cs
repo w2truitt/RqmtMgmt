@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -43,10 +44,10 @@ public class IntegrationTests : AuthenticatedE2ETestBase
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
             Assert.Contains(pagePath, Page.Url);
-            Output.WriteLine($"Successfully navigated to: {pagePath}");
+            TestLogger.LogDebug($"Successfully navigated to: {pagePath}", Output);
         }
         
-        Output.WriteLine("Successfully navigated between all major pages");
+        TestLogger.LogDebug("Successfully navigated between all major pages", Output);
     }
     
     [Fact]
@@ -80,7 +81,7 @@ public class IntegrationTests : AuthenticatedE2ETestBase
                                   await Page.IsVisibleAsync("h2:has-text('Requirements')");
         
         Assert.True(isOnRequirementsPage, "Should be able to navigate from projects to requirements");
-        Output.WriteLine("Project to requirements workflow works");
+        TestLogger.LogTestStep("Project to requirements workflow works", Output);
     }
     
     [Fact]
@@ -111,7 +112,7 @@ public class IntegrationTests : AuthenticatedE2ETestBase
                                await Page.IsVisibleAsync("h3:has-text('Test Cases')");
         
         Assert.True(isOnTestCasesPage, "Should be able to navigate from requirements to test cases");
-        Output.WriteLine("Requirements to test cases workflow works");
+        TestLogger.LogTestStep("Requirements to test cases workflow works", Output);
     }
     
     [Fact]
@@ -124,7 +125,7 @@ public class IntegrationTests : AuthenticatedE2ETestBase
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         // Debug: Check what's on the users page
-        Output.WriteLine($"Users page URL: {Page.Url}");
+        TestLogger.LogAuthentication($"Users page URL: {Page.Url}", Output);
         Output.WriteLine($"Page title: {await Page.TitleAsync()}");
         
         // Wait for page content to load
@@ -146,12 +147,12 @@ public class IntegrationTests : AuthenticatedE2ETestBase
         // Additional check: verify we're not redirected to login
         var isAuthenticated = !Page.Url.Contains("/Account/Login");
         
-        Output.WriteLine($"Has user management elements: {hasUserManagement}");
-        Output.WriteLine($"Is authenticated: {isAuthenticated}");
+        TestLogger.LogAuthentication($"Has user management elements: {hasUserManagement}", Output);
+        TestLogger.LogAuthentication($"Is authenticated: {isAuthenticated}", Output);
         
         // Assert - Should have access to user management
         Assert.True(hasUserManagement && isAuthenticated, "Admin should have access to user management functions");
-        Output.WriteLine("User management workflow accessible");
+        TestLogger.LogAuthentication("User management workflow accessible", Output);
     }
     
     [Fact]
@@ -180,15 +181,15 @@ public class IntegrationTests : AuthenticatedE2ETestBase
                 await searchInput.FillAsync(""); // Clear search
                 await Task.Delay(500);
                 
-                Output.WriteLine($"Search functionality works on: {pagePath}");
+                TestLogger.LogDebug($"Search functionality works on: {pagePath}", Output);
             }
             else
             {
-                Output.WriteLine($"No search functionality found on: {pagePath}");
+                TestLogger.LogDebug($"No search functionality found on: {pagePath}", Output);
             }
         }
         
-        Output.WriteLine("Search functionality tested across all pages");
+        TestLogger.LogDebug("Search functionality tested across all pages", Output);
     }
     
     [Fact]
@@ -217,9 +218,9 @@ public class IntegrationTests : AuthenticatedE2ETestBase
                                await Page.IsVisibleAsync(".sidebar");
             
             Assert.True(hasNavigation, $"Navigation should be present on {pagePath}");
-            Output.WriteLine($"Navigation menu present on: {pagePath}");
+            TestLogger.LogDebug($"Navigation menu present on: {pagePath}", Output);
         }
         
-        Output.WriteLine("Navigation menu consistency verified across all pages");
+        TestLogger.LogDebug("Navigation menu consistency verified across all pages", Output);
     }
 }

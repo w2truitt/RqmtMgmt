@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mssql
+  namespace: rqmtmgmt
+  labels:
+    app: mssql
+    component: database
+spec:
+  serviceName: "mssql-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql
+  template:
+    metadata:
+      labels:
+        app: mssql
+        component: database
+    spec:
+      containers:
+      - name: mssql
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        ports:
+        - containerPort: 1433
+          name: mssql
+        env:
+        - name: SA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mssql-secret
+              key: SA_PASSWORD
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: MSSQL_MEMORY_LIMIT_MB
+          value: "4096"
+        - name: MSSQL_PID
+          value: "Developer"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: mssql-data
+          mountPath: /var/opt/mssql
+        livenessProbe:
+          tcpSocket:
+            port: 1433
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 1433
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+  volumeClaimTemplates:
+  - metadata:
+      name: mssql-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql-service
+  namespace: rqmtmgmt
+  labels:
+    app: mssql
+spec:
+  selector:
+    app: mssql
+  ports:
+  - name: mssql
+    port: 1433
+    targetPort: 1433
+    protocol: TCP
+  type: ClusterIP  # Regular service for applications to connect
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mssql-secret
+  namespace: rqmtmgmt
+type: Opaque
+data:
+  SA_PASSWORD: WW91cl9wYXNzd29yZDEyMw==  # Base64 encoded "Your_password123"

@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,8 +27,8 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated via base class
         
-        Output.WriteLine("Starting JWT token email extraction test");
-        Output.WriteLine($"Current user should be: admin@rqmtmgmt.local");
+        TestLogger.LogAuthentication("Starting JWT token email extraction test", Output);
+        TestLogger.LogAuthentication($"Current user should be: admin@rqmtmgmt.local", Output);
         
         // Navigate to a protected page to ensure we have tokens and proper context
         await Page.GotoAsync($"{BaseUrl}/projects");
@@ -37,7 +38,7 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
         Assert.Contains("/projects", Page.Url);
         Assert.DoesNotContain("/Account/Login", Page.Url);
         
-        Output.WriteLine($"Navigated to protected page: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to protected page: {Page.Url}", Output);
         
         // Try to extract JWT token from browser storage or cookies (with error handling)
         var tokenInfo = await Page.EvaluateAsync<object>(@"
@@ -74,7 +75,7 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
             }
         ");
         
-        Output.WriteLine($"Token extraction info: {tokenInfo}");
+        TestLogger.LogAuthentication($"Token extraction info: {tokenInfo}", Output);
         
         // Try to get user info from the page (with error handling)
         var userInfo = await Page.EvaluateAsync<string>(@"
@@ -102,13 +103,13 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
             }
         ");
         
-        Output.WriteLine($"User info from page: {userInfo}");
+        TestLogger.LogAuthentication($"User info from page: {userInfo}", Output);
         
         // Assert - Test completed successfully
         Assert.Contains("/projects", Page.Url);
         Assert.NotEqual("Not found", userInfo);
         Assert.DoesNotContain("extraction-error", userInfo);
-        Output.WriteLine("JWT token email extraction test completed");
+        TestLogger.LogAuthentication("JWT token email extraction test completed", Output);
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated via base class
         
-        Output.WriteLine("Starting user identity validation test");
+        TestLogger.LogAuthentication("Starting user identity validation test", Output);
         
         // Navigate to different pages and check user context
         var pages = new[] { "/projects", "/users", "/requirements" };
@@ -128,20 +129,20 @@ public class JwtTokenEmailExtractionTests : AuthenticatedE2ETestBase
                 await Page.GotoAsync($"{BaseUrl}{pagePath}");
                 await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                 
-                Output.WriteLine($"Navigated to: {Page.Url}");
+                TestLogger.LogDebug($"Navigated to: {Page.Url}", Output);
                 
                 // Check if user context is maintained
                 var isAuthenticated = !Page.Url.Contains("/Account/Login");
                 Assert.True(isAuthenticated, $"Should remain authenticated on {pagePath}");
                 
-                Output.WriteLine($"User identity maintained on {pagePath}");
+                TestLogger.LogAuthentication($"User identity maintained on {pagePath}", Output);
             }
             catch (Exception ex)
             {
-                Output.WriteLine($"Error navigating to {pagePath}: {ex.Message}");
+                TestLogger.LogDebug($"Error navigating to {pagePath}: {ex.Message}", Output);
             }
         }
         
-        Output.WriteLine("User identity validation test completed");
+        TestLogger.LogAuthentication("User identity validation test completed", Output);
     }
 }

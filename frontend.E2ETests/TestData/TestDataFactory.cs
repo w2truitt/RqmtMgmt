@@ -133,9 +133,9 @@ public static class TestDataFactory
         var staticProjects = new[]
         {
             (Id: 1, Name: "Legacy Requirements", Code: "LEG"),
-            (Id: 2, Name: "E2E Test Project 3625e50c", Code: "E2E3625E50C"),
-            (Id: 3, Name: "E2E Test Project 69633ddf", Code: "E2E69633DDF"),
-            (Id: 4, Name: "E2E Test Project 0b85cc00", Code: "E2E0B85CC00")
+            (Id: 2, Name: "Performance Test Project 638944753472742469", Code: "PTP3474"),
+            (Id: 3, Name: "Requirements Test Project 638944753477280014", Code: "RTP198"),
+            (Id: 4, Name: "Test Project", Code: "TST")
         };
 
         if (projectIndex < 0 || projectIndex >= staticProjects.Length)

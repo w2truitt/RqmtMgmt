@@ -56,6 +56,14 @@ spec:
             name: identityserver-service
             port:
               number: 80
+      # IdentityServer Account pages (login, logout, etc.)
+      - path: /Account
+        pathType: Prefix
+        backend:
+          service:
+            name: identityserver-service
+            port:
+              number: 80
       # Frontend - catch all other routes
       - path: /
         pathType: Prefix

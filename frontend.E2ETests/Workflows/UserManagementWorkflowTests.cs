@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -35,13 +36,13 @@ public class UserManagementWorkflowTests : AuthenticatedE2ETestBase
         var username = $"workflowuser{testId}";
         var email = $"workflowuser{testId}@example.com";
         
-        Output.WriteLine($"Testing user management workflow with user: {username}");
+        TestLogger.LogAuthentication($"Testing user management workflow with user: {username}", Output);
         
         // Check if create button exists
         var createButton = await Page.QuerySelectorAsync("button:has-text('Create'), button:has-text('Add')");
         if (createButton != null)
         {
-            Output.WriteLine("Create button found - proceeding with user creation test");
+            TestLogger.LogAuthentication("Create button found - proceeding with user creation test", Output);
             
             await createButton.ClickAsync();
             await Task.Delay(1000);
@@ -50,7 +51,7 @@ public class UserManagementWorkflowTests : AuthenticatedE2ETestBase
             var formVisible = await Page.IsVisibleAsync("form, .modal, [data-testid*='form']");
             if (formVisible)
             {
-                Output.WriteLine("User creation form opened successfully");
+                TestLogger.LogAuthentication("User creation form opened successfully", Output);
                 
                 // Try to fill basic fields if they exist
                 var nameInput = await Page.QuerySelectorAsync("input[name*='name'], input[name*='username'], [data-testid*='name']");
@@ -60,7 +61,7 @@ public class UserManagementWorkflowTests : AuthenticatedE2ETestBase
                 {
                     await nameInput.FillAsync(username);
                     await emailInput.FillAsync(email);
-                    Output.WriteLine("Form fields filled successfully");
+                    TestLogger.LogDebug("Form fields filled successfully", Output);
                 }
                 
                 // Cancel the form to avoid creating test data
@@ -68,21 +69,21 @@ public class UserManagementWorkflowTests : AuthenticatedE2ETestBase
                 if (cancelButton != null)
                 {
                     await cancelButton.ClickAsync();
-                    Output.WriteLine("Form cancelled successfully");
+                    TestLogger.LogDebug("Form cancelled successfully", Output);
                 }
             }
             else
             {
-                Output.WriteLine("User creation form did not appear");
+                TestLogger.LogAuthentication("User creation form did not appear", Output);
             }
         }
         else
         {
-            Output.WriteLine("No create button found - user creation may not be available");
+            TestLogger.LogAuthentication("No create button found - user creation may not be available", Output);
         }
         
         // Assert test completed
         Assert.Contains("/users", Page.Url);
-        Output.WriteLine("User management workflow test completed");
+        TestLogger.LogAuthentication("User management workflow test completed", Output);
     }
 }

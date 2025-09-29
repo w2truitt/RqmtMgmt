@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -54,21 +55,21 @@ public class ProjectRequirementsFilterTest : AuthenticatedE2ETestBase
                     
                     // Assert that we're still on the requirements page
                     Assert.Contains("requirements", Page.Url);
-                    Output.WriteLine("Requirements filtering test completed successfully");
+                    TestLogger.LogTestStep("Requirements filtering test completed successfully", Output);
                 }
                 else
                 {
-                    Output.WriteLine("No search/filter input found on requirements page");
+                    TestLogger.LogDebug("No search/filter input found on requirements page", Output);
                 }
             }
             else
             {
-                Output.WriteLine("No requirements link found in project");
+                TestLogger.LogDebug("No requirements link found in project", Output);
             }
         }
         else
         {
-            Output.WriteLine("No projects found for filtering test");
+            TestLogger.LogDebug("No projects found for filtering test", Output);
         }
         
         // Assert test completed

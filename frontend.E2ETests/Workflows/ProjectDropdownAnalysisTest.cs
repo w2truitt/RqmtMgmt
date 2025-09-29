@@ -2,6 +2,7 @@ using frontend.E2ETests.Fixtures;
 using Microsoft.Playwright;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -24,17 +25,17 @@ public class ProjectDropdownAnalysisTest : AuthenticatedE2ETestBase
         await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to: {Page.Url}", Output);
         
         // Find and click the project selector
         var projectSelectorButton = await Page.QuerySelectorAsync("button:has-text('Select Project'), button:has(.bi-folder), .project-selector-btn");
         if (projectSelectorButton == null)
         {
-            Output.WriteLine("No project selector button found");
+            TestLogger.LogDebug("No project selector button found", Output);
             return;
         }
         
-        Output.WriteLine("Found project selector button");
+        TestLogger.LogDebug("Found project selector button", Output);
         await projectSelectorButton.ClickAsync();
         await Page.WaitForTimeoutAsync(1000);
         
@@ -53,7 +54,7 @@ public class ProjectDropdownAnalysisTest : AuthenticatedE2ETestBase
         
         // Get all dropdown items
         var dropdownItems = await Page.QuerySelectorAllAsync(".dropdown-item");
-        Output.WriteLine($"Found {dropdownItems.Count} dropdown items");
+        TestLogger.LogDebug($"Found {dropdownItems.Count} dropdown items", Output);
         
         // Extract project names
         var projectNames = new List<string>();
@@ -71,20 +72,20 @@ public class ProjectDropdownAnalysisTest : AuthenticatedE2ETestBase
             }
         }
         
-        Output.WriteLine($"Total project names found: {projectNames.Count}");
+        TestLogger.LogDebug($"Total project names found: {projectNames.Count}", Output);
         
         // Look specifically for our test project
         var targetProject = "E2E Test Project 3625e50c";
         var found = projectNames.Any(p => p.Contains(targetProject));
-        Output.WriteLine($"Target project '{targetProject}' found: {found}");
+        TestLogger.LogDebug($"Target project '{targetProject}' found: {found}", Output);
         
         if (!found)
         {
-            Output.WriteLine("Looking for partial matches:");
+            TestLogger.LogTestStep("Looking for partial matches:", Output);
             var partialMatches = projectNames.Where(p => p.Contains("E2E Test Project") || p.Contains("3625e50c")).ToList();
             foreach (var match in partialMatches)
             {
-                Output.WriteLine($"  Partial match: {match}");
+                TestLogger.LogTestStep($"  Partial match: {match}", Output);
             }
         }
     }

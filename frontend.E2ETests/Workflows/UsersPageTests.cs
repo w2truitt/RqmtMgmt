@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -39,7 +40,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         // FIXED: Page uses <h1 class="h3">Users</h1>, not <h3>
         await Expect(Page.Locator("h1:has-text('Users')")).ToBeVisibleAsync();
         
-        Output.WriteLine($"Successfully navigated to users page: {Page.Url}");
+        TestLogger.LogAuthentication($"Successfully navigated to users page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -57,7 +58,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.Contains("/users", Page.Url);
-        Output.WriteLine("Users page loaded without errors");
+        TestLogger.LogAuthentication("Users page loaded without errors", Output);
     }
     
     [Fact]
@@ -80,7 +81,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
                              await Page.IsVisibleAsync("[data-testid='user-row']");
         
         // Users display is optional - page might be empty
-        Output.WriteLine("Users page elements are present");
+        TestLogger.LogAuthentication("Users page elements are present", Output);
     }
     
     [Fact]
@@ -110,7 +111,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         
         // Assert - Page should still be functional
         Assert.Contains("/users", Page.Url);
-        Output.WriteLine("Users search functionality tested");
+        TestLogger.LogAuthentication("Users search functionality tested", Output);
     }
     
     [Fact]
@@ -131,7 +132,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         
         // Some indication of user data should be present
         Assert.True(hasUserCounts || Page.Url.Contains("/users"), "Should show user data or be on users page");
-        Output.WriteLine("Users count/data display tested");
+        TestLogger.LogAuthentication("Users count/data display tested", Output);
     }
     
     [Fact]
@@ -178,7 +179,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         
         // Assert - Should be back on users page or show success
         Assert.Contains("/users", Page.Url);
-        Output.WriteLine("User creation workflow tested");
+        TestLogger.LogAuthentication("User creation workflow tested", Output);
     }
     
     [Fact]
@@ -205,7 +206,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         
         // Assert - Test completed (may or may not have users to edit)
         Assert.True(true, "User editing functionality tested");
-        Output.WriteLine("User editing workflow tested");
+        TestLogger.LogAuthentication("User editing workflow tested", Output);
     }
     
     [Fact]
@@ -237,7 +238,7 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         
         // Assert - Test completed (may or may not have users to delete)
         Assert.True(true, "User deletion functionality tested");
-        Output.WriteLine("User deletion workflow tested");
+        TestLogger.LogAuthentication("User deletion workflow tested", Output);
     }
     
     [Fact]
@@ -249,26 +250,26 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         try
         {
             // Act - Enhanced resource management
-            Output.WriteLine("Starting form validation test");
+            TestLogger.LogDebug("Starting form validation test", Output);
             
             // Clear any potential resource issues
             await Page.EvaluateAsync("() => { if (window.gc) window.gc(); }"); // Trigger garbage collection if available
             
             await usersPage.NavigateToAsync();
             
-            Output.WriteLine($"Successfully navigated to users page: {Page.Url}");
+            TestLogger.LogAuthentication($"Successfully navigated to users page: {Page.Url}", Output);
         }
         catch (TimeoutException ex)
         {
-            Output.WriteLine($"Navigation timeout occurred: {ex.Message}");
-            Output.WriteLine($"Current URL: {Page.Url}");
+            TestLogger.LogTestStep($"Navigation timeout occurred: {ex.Message}", Output);
+            TestLogger.LogDebug($"Current URL: {Page.Url}", Output);
             Output.WriteLine($"Page title: {await Page.TitleAsync()}");
             
             // Try a fallback navigation approach
-            Output.WriteLine("Attempting fallback navigation...");
+            TestLogger.LogTestStep("Attempting fallback navigation...", Output);
             await Page.GotoAsync($"{BaseUrl}/users", new PageGotoOptions { Timeout = 60000 });
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            Output.WriteLine($"Fallback navigation successful: {Page.Url}");
+            TestLogger.LogDebug($"Fallback navigation successful: {Page.Url}", Output);
         }
         
         // FIXED: Use correct button selector
@@ -297,6 +298,6 @@ public class UsersPageTests : AuthenticatedE2ETestBase
         
         // Assert - Should still be on users page
         Assert.Contains("/users", Page.Url);
-        Output.WriteLine("User form validation tested");
+        TestLogger.LogAuthentication("User form validation tested", Output);
     }
 }

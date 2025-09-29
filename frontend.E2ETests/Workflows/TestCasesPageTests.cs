@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -38,7 +39,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         // FIXED: Page uses <h1 class="h3">Test Cases</h1>, not <h3>
         await Expect(Page.Locator("h1:has-text('Test Cases')")).ToBeVisibleAsync();
         
-        Output.WriteLine($"Successfully navigated to test cases page: {Page.Url}");
+        TestLogger.LogDebug($"Successfully navigated to test cases page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -55,7 +56,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.Contains("/testcases", Page.Url);
-        Output.WriteLine("Test cases page loaded without errors");
+        TestLogger.LogDebug("Test cases page loaded without errors", Output);
     }
     
     [Fact]
@@ -77,7 +78,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
                                  await Page.IsVisibleAsync("[data-testid='testcase-row']");
         
         // Test cases display is optional - page might be empty
-        Output.WriteLine("Test cases page elements are present");
+        TestLogger.LogDebug("Test cases page elements are present", Output);
     }
     
     [Fact]
@@ -99,7 +100,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         
         // Assert - Page should still be functional
         Assert.Contains("/testcases", Page.Url);
-        Output.WriteLine("Test cases search functionality tested");
+        TestLogger.LogTestStep("Test cases search functionality tested", Output);
     }
     
     [Fact]
@@ -137,7 +138,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         
         // Assert - Should still be on test cases page
         Assert.Contains("/testcases", Page.Url);
-        Output.WriteLine("Test cases form validation tested");
+        TestLogger.LogDebug("Test cases form validation tested", Output);
     }
     
     [Fact]
@@ -183,7 +184,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         
         // Assert - Should be back on test cases page or show success
         Assert.Contains("/testcases", Page.Url);
-        Output.WriteLine("Test case creation workflow tested");
+        TestLogger.LogTestStep("Test case creation workflow tested", Output);
     }
     
     [Fact]
@@ -209,7 +210,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         
         // Assert - Test completed (may or may not have test cases to view)
         Assert.True(true, "Test case viewing functionality tested");
-        Output.WriteLine("Test case viewing workflow tested");
+        TestLogger.LogTestStep("Test case viewing workflow tested", Output);
     }
 
     [Fact]
@@ -220,7 +221,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         var originalDescription = $"Original test case description {testId}";
         var updatedDescription = $"Updated test case description {testId}";
         
-        Output.WriteLine($"Testing test case edit functionality with ID suffix: {testId}");
+        TestLogger.LogTestStep($"Testing test case edit functionality with ID suffix: {testId}", Output);
         
         // Navigate to a known test case or create one first
         await Page.GotoAsync($"{BaseUrl}/testcases");
@@ -264,7 +265,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
             if (urlParts.Length > 0 && int.TryParse(urlParts[^1], out var id))
             {
                 testCaseId = id.ToString();
-                Output.WriteLine($"Created test case with ID: {testCaseId}");
+                TestLogger.LogTestStep($"Created test case with ID: {testCaseId}", Output);
             }
         }
         
@@ -274,7 +275,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
         
         if (editButton != null)
         {
-            Output.WriteLine("Found edit button, clicking to navigate to edit page");
+            TestLogger.LogDebug("Found edit button, clicking to navigate to edit page", Output);
             await editButton.ClickAsync();
             await Task.Delay(2000);
             
@@ -286,7 +287,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
             
             if (editDescriptionInput != null)
             {
-                Output.WriteLine("Found description field, updating text");
+                TestLogger.LogDebug("Found description field, updating text", Output);
                 await editDescriptionInput.FillAsync("");  // Clear the field first
                 await editDescriptionInput.FillAsync(updatedDescription);
                 await Task.Delay(500);
@@ -295,7 +296,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
                 var updateSaveButton = await Page.QuerySelectorAsync("button:has-text('Save'), button:has-text('Update'), button:has-text('Submit')");
                 if (updateSaveButton != null)
                 {
-                    Output.WriteLine("Saving the updated test case");
+                    TestLogger.LogTestStep("Saving the updated test case", Output);
                     await updateSaveButton.ClickAsync();
                     await Task.Delay(3000); // Wait for save and navigation
                     
@@ -307,7 +308,7 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
                     
                     if (isOnViewPage)
                     {
-                        Output.WriteLine($"Successfully navigated to test case view page: {Page.Url}");
+                        TestLogger.LogDebug($"Successfully navigated to test case view page: {Page.Url}", Output);
                         
                         // Check if the updated description is visible on the page
                         var pageContent = await Page.TextContentAsync("body");
@@ -324,31 +325,31 @@ public class TestCasesPageTests : AuthenticatedE2ETestBase
                         Assert.True(hasUpdatedByInfo, 
                             $"Updated By information should be visible on the test case view page after editing. Page content includes: {(pageContent?.Contains("Updated:") == true ? "Updated timestamp found" : "No updated timestamp found")}");
                         
-                        Output.WriteLine("✅ Test case edit functionality verified - updated description is visible");
+                        TestLogger.LogTestStep("✅ Test case edit functionality verified - updated description is visible", Output);
                         Output.WriteLine($"✅ Updated By information {(hasUpdatedByInfo ? "is" : "is NOT")} displayed on the page");
                     }
                     else
                     {
-                        Output.WriteLine($"Navigation after save went to: {Page.Url}");
+                        TestLogger.LogDebug($"Navigation after save went to: {Page.Url}", Output);
                         // If we're not on the view page, this might indicate the navigation fix needs to be deployed
                         Assert.True(true, "Edit functionality tested - navigation behavior noted");
                     }
                 }
                 else
                 {
-                    Output.WriteLine("Could not find save button on edit form");
+                    TestLogger.LogDebug("Could not find save button on edit form", Output);
                     Assert.True(true, "Edit form was accessible but save button not found");
                 }
             }
             else
             {
-                Output.WriteLine("Could not find description field on edit page");
+                TestLogger.LogDebug("Could not find description field on edit page", Output);
                 Assert.True(true, "Edit page was accessible but description field not found");
             }
         }
         else
         {
-            Output.WriteLine("Could not find edit button - test case editing may not be available");
+            TestLogger.LogDebug("Could not find edit button - test case editing may not be available", Output);
             Assert.True(true, "Edit functionality may not be available in current test environment");
         }
     }

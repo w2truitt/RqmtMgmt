@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -50,7 +51,7 @@ public class TestRunSessionsPageTests : AuthenticatedE2ETestBase
         
         Assert.True(hasHeader, "Should see Test Run Sessions header or be on correct page");
         
-        Output.WriteLine($"Successfully navigated to test run sessions page: {Page.Url}");
+        TestLogger.LogAuthentication($"Successfully navigated to test run sessions page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -67,6 +68,6 @@ public class TestRunSessionsPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.Contains("/testrunsessions", Page.Url);
-        Output.WriteLine("Test run sessions page loaded without errors");
+        TestLogger.LogAuthentication("Test run sessions page loaded without errors", Output);
     }
 }

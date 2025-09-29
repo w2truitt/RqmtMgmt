@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -45,10 +46,10 @@ public class RoleAssignmentValidationTests : AuthenticatedE2ETestBase
             Assert.DoesNotContain("/Account/Login", Page.Url);
             Assert.Contains(page, Page.Url);
             
-            Output.WriteLine($"Admin successfully accessed {featureName}: {page}");
+            TestLogger.LogDebug($"Admin successfully accessed {featureName}: {page}", Output);
         }
         
-        Output.WriteLine("Admin role has access to all system features");
+        TestLogger.LogTestStep("Admin role has access to all system features", Output);
     }
     
     [Fact]
@@ -72,10 +73,10 @@ public class RoleAssignmentValidationTests : AuthenticatedE2ETestBase
             
             Assert.DoesNotContain("/Account/Login", Page.Url);
             
-            Output.WriteLine($"Project Manager successfully accessed {featureName}: {page}");
+            TestLogger.LogDebug($"Project Manager successfully accessed {featureName}: {page}", Output);
         }
         
-        Output.WriteLine("Project Manager role has appropriate project access");
+        TestLogger.LogTestStep("Project Manager role has appropriate project access", Output);
     }
     
     [Fact]
@@ -99,9 +100,9 @@ public class RoleAssignmentValidationTests : AuthenticatedE2ETestBase
             
             Assert.DoesNotContain("/Account/Login", Page.Url);
             
-            Output.WriteLine($"Tester successfully accessed {featureName}: {page}");
+            TestLogger.LogDebug($"Tester successfully accessed {featureName}: {page}", Output);
         }
         
-        Output.WriteLine("Tester role has appropriate testing access");
+        TestLogger.LogTestStep("Tester role has appropriate testing access", Output);
     }
 }

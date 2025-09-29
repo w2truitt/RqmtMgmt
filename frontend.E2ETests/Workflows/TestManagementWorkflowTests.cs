@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,13 +27,13 @@ public class TestManagementWorkflowTests : AuthenticatedE2ETestBase
     {
         // Arrange - Tester user already authenticated via base class
         
-        Output.WriteLine("Starting test management workflow");
+        TestLogger.LogTestStep("Starting test management workflow", Output);
         
         // Navigate to test cases page
         await Page.GotoAsync($"{BaseUrl}/testcases");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to test cases: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to test cases: {Page.Url}", Output);
         
         // Wait for content to load
         await Page.WaitForTimeoutAsync(2000);
@@ -54,7 +55,7 @@ public class TestManagementWorkflowTests : AuthenticatedE2ETestBase
         var createButton = await Page.QuerySelectorAsync("button:has-text('Create'), button:has-text('Add'), button:has-text('New')");
         if (createButton != null)
         {
-            Output.WriteLine("Test case creation capability found");
+            TestLogger.LogDebug("Test case creation capability found", Output);
             
             await createButton.ClickAsync();
             await Task.Delay(1000);
@@ -62,14 +63,14 @@ public class TestManagementWorkflowTests : AuthenticatedE2ETestBase
             var formVisible = await Page.IsVisibleAsync("form, .modal, [data-testid*='form']");
             if (formVisible)
             {
-                Output.WriteLine("Test case creation form opened successfully");
+                TestLogger.LogDebug("Test case creation form opened successfully", Output);
                 
                 // Cancel to avoid creating test data
                 var cancelButton = await Page.QuerySelectorAsync("button:has-text('Cancel'), .btn-secondary");
                 if (cancelButton != null)
                 {
                     await cancelButton.ClickAsync();
-                    Output.WriteLine("Form cancelled successfully");
+                    TestLogger.LogDebug("Form cancelled successfully", Output);
                 }
             }
         }
@@ -78,12 +79,12 @@ public class TestManagementWorkflowTests : AuthenticatedE2ETestBase
         await Page.GotoAsync($"{BaseUrl}/testplans");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to test plans: {Page.Url}");
+        TestLogger.LogDebug($"Navigated to test plans: {Page.Url}", Output);
         
         var hasTestPlans = await Page.IsVisibleAsync("table, .test-plans-container, h1, h2, h3");
-        Output.WriteLine($"Test plans page loaded: {hasTestPlans}");
+        TestLogger.LogDebug($"Test plans page loaded: {hasTestPlans}", Output);
         
-        Output.WriteLine("Test management workflow completed");
+        TestLogger.LogTestStep("Test management workflow completed", Output);
         
         // Assert workflow completed
         Assert.Contains("/testplans", Page.Url);

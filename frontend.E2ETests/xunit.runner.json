@@ -5,5 +5,7 @@
   "maxParallelThreads": 2,
   "preEnumerateTheories": false,
   "shadowCopy": false,
-  "stopOnFail": false
+  "stopOnFail": false,
+  "methodDisplay": "method",
+  "methodDisplayOptions": "replaceUnderscoreWithSpace"
 }

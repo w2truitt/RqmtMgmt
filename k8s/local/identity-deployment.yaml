@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: identityserver
-        image: localhost:5000/rqmtmgmt-identity:latest
+        image: localhost:5000/rqmtmgmt-identity:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -37,6 +37,8 @@ spec:
             configMapKeyRef:
               name: app-config
               key: ConnectionStrings__IdentityConnection
+        - name: IdentityServer__IssuerUri
+          value: "https://rqmtmgmt.local"
         livenessProbe:
           httpGet:
             path: /.well-known/openid-configuration

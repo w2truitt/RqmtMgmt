@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -38,7 +39,7 @@ public class TestSuitesPageTests : AuthenticatedE2ETestBase
         // FIXED: Page uses <h1 class="h3">Test Suites</h1>, not <h3>
         await Expect(Page.Locator("h1:has-text('Test Suites')")).ToBeVisibleAsync();
         
-        Output.WriteLine($"Successfully navigated to test suites page: {Page.Url}");
+        TestLogger.LogDebug($"Successfully navigated to test suites page: {Page.Url}", Output);
     }
     
     [Fact]
@@ -55,7 +56,7 @@ public class TestSuitesPageTests : AuthenticatedE2ETestBase
         Assert.Empty(errors);
         
         Assert.Contains("/testsuites", Page.Url);
-        Output.WriteLine("Test suites page loaded without errors");
+        TestLogger.LogDebug("Test suites page loaded without errors", Output);
     }
     
     [Fact]
@@ -77,6 +78,6 @@ public class TestSuitesPageTests : AuthenticatedE2ETestBase
                                   await Page.IsVisibleAsync("[data-testid='testsuite-row']");
         
         // Test suites display is optional - page might be empty
-        Output.WriteLine("Test suites page elements are present");
+        TestLogger.LogDebug("Test suites page elements are present", Output);
     }
 }

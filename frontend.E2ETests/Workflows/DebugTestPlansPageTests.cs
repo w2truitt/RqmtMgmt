@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -34,18 +35,18 @@ public class DebugTestPlansPageTests : AuthenticatedE2ETestBase
         var pageTitle = await Page.TitleAsync();
         var url = Page.Url;
         
-        Output.WriteLine($"Test Plans Page Debug:");
-        Output.WriteLine($"Title: {pageTitle}");
-        Output.WriteLine($"URL: {url}");
+        TestLogger.LogDebug($"Test Plans Page Debug:", Output);
+        TestLogger.LogDebug($"Title: {pageTitle}", Output);
+        TestLogger.LogDebug($"URL: {url}", Output);
         
         // Check for common page elements
         var hasTable = await Page.IsVisibleAsync("table");
         var hasCreateButton = await Page.IsVisibleAsync("button:has-text('Create'), button:has-text('Add'), button:has-text('New')");
         var hasHeader = await Page.IsVisibleAsync("h1, h2, h3");
         
-        Output.WriteLine($"Has table: {hasTable}");
-        Output.WriteLine($"Has create button: {hasCreateButton}");
-        Output.WriteLine($"Has header: {hasHeader}");
+        TestLogger.LogTestStep($"Has table: {hasTable}", Output);
+        TestLogger.LogDebug($"Has create button: {hasCreateButton}", Output);
+        TestLogger.LogTestStep($"Has header: {hasHeader}", Output);
         
         // Get page content for debugging
         var headers = await Page.EvaluateAsync<string[]>(@"
@@ -62,6 +63,6 @@ public class DebugTestPlansPageTests : AuthenticatedE2ETestBase
         
         // Assert test completed
         Assert.Contains("/testplans", Page.Url);
-        Output.WriteLine("Test Plans page debug completed");
+        TestLogger.LogDebug("Test Plans page debug completed", Output);
     }
 }

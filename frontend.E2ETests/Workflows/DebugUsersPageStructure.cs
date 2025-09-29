@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,13 +27,13 @@ public class DebugUsersPageStructure : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated via base class
         
-        Output.WriteLine("Starting users page structure analysis");
+        TestLogger.LogAuthentication("Starting users page structure analysis", Output);
         
         // Navigate to users page
         await Page.GotoAsync($"{BaseUrl}/users");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        Output.WriteLine($"Navigated to users page: {Page.Url}");
+        TestLogger.LogAuthentication($"Navigated to users page: {Page.Url}", Output);
         
         // Analyze page structure
         var pageInfo = await Page.EvaluateAsync<object>(@"
@@ -61,22 +62,22 @@ public class DebugUsersPageStructure : AuthenticatedE2ETestBase
             }
         ");
         
-        Output.WriteLine($"Page analysis results: {pageInfo}");
+        TestLogger.LogDebug($"Page analysis results: {pageInfo}", Output);
         
         // Check for specific user management elements
         var hasUserTable = await Page.IsVisibleAsync("table");
         var hasCreateButton = await Page.IsVisibleAsync("button:has-text('Create'), button:has-text('Add')");
         var hasSearchInput = await Page.IsVisibleAsync("input[type='search'], input[placeholder*='search']");
         
-        Output.WriteLine($"User management elements:");
-        Output.WriteLine($"- User table: {hasUserTable}");
-        Output.WriteLine($"- Create button: {hasCreateButton}");
-        Output.WriteLine($"- Search input: {hasSearchInput}");
+        TestLogger.LogAuthentication($"User management elements:", Output);
+        TestLogger.LogAuthentication($"- User table: {hasUserTable}", Output);
+        TestLogger.LogDebug($"- Create button: {hasCreateButton}", Output);
+        TestLogger.LogDebug($"- Search input: {hasSearchInput}", Output);
         
         // Test basic interactions
         if (hasCreateButton)
         {
-            Output.WriteLine("Testing create button interaction");
+            TestLogger.LogDebug("Testing create button interaction", Output);
             var createButton = await Page.QuerySelectorAsync("button:has-text('Create'), button:has-text('Add')");
             if (createButton != null)
             {
@@ -84,7 +85,7 @@ public class DebugUsersPageStructure : AuthenticatedE2ETestBase
                 await Task.Delay(1000);
                 
                 var modalAppeared = await Page.IsVisibleAsync(".modal, form, [data-testid*='form']");
-                Output.WriteLine($"Modal/form appeared after create click: {modalAppeared}");
+                TestLogger.LogDebug($"Modal/form appeared after create click: {modalAppeared}", Output);
                 
                 if (modalAppeared)
                 {
@@ -93,13 +94,13 @@ public class DebugUsersPageStructure : AuthenticatedE2ETestBase
                     if (closeButton != null)
                     {
                         await closeButton.ClickAsync();
-                        Output.WriteLine("Modal closed successfully");
+                        TestLogger.LogTestStep("Modal closed successfully", Output);
                     }
                 }
             }
         }
         
-        Output.WriteLine("Users page structure analysis completed");
+        TestLogger.LogAuthentication("Users page structure analysis completed", Output);
         
         // Assert test completed
         Assert.Contains("/users", Page.Url);

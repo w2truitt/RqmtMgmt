@@ -6,6 +6,7 @@ using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
 using static Microsoft.Playwright.Assertions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -39,17 +40,26 @@ public class AuthenticatedWorkflowTests : AuthenticatedE2ETestBase
         // Act & Assert - Admin should access all pages
         foreach (var page in protectedPages)
         {
+            TestLogger.LogDebug($"Attempting to access: {page}", Output);
             await Page.GotoAsync($"{BaseUrl}{page}");
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
+            // Add debugging info
+            TestLogger.LogDebug($"Current URL after navigating to {page}: {Page.Url}", Output);
+            
             // Should not be redirected to login
+            if (Page.Url.Contains("/Account/Login"))
+            {
+                TestLogger.LogAuthentication($"ERROR: Was redirected to login when accessing {page}. Full URL: {Page.Url}", Output);
+            }
+            
             Assert.DoesNotContain("/Account/Login", Page.Url);
             Assert.Contains(page, Page.Url);
             
-            Output.WriteLine($"Admin successfully accessed: {page}");
+            TestLogger.LogDebug($"Admin successfully accessed: {page}", Output);
         }
         
-        Output.WriteLine("Admin user has access to all protected pages");
+        TestLogger.LogAuthentication("Admin user has access to all protected pages", Output);
     }
     
     [Fact]
@@ -74,10 +84,10 @@ public class AuthenticatedWorkflowTests : AuthenticatedE2ETestBase
             // Should not be redirected to login
             Assert.DoesNotContain("/Account/Login", Page.Url);
             
-            Output.WriteLine($"Tester successfully accessed: {page}");
+            TestLogger.LogDebug($"Tester successfully accessed: {page}", Output);
         }
         
-        Output.WriteLine("Tester user has appropriate page access");
+        TestLogger.LogAuthentication("Tester user has appropriate page access", Output);
     }
     
     [Fact]
@@ -101,10 +111,10 @@ public class AuthenticatedWorkflowTests : AuthenticatedE2ETestBase
             // Should not be redirected to login
             Assert.DoesNotContain("/Account/Login", Page.Url);
             
-            Output.WriteLine($"Viewer successfully accessed: {page}");
+            TestLogger.LogDebug($"Viewer successfully accessed: {page}", Output);
         }
         
-        Output.WriteLine("Viewer user has appropriate limited access");
+        TestLogger.LogAuthentication("Viewer user has appropriate limited access", Output);
     }
     
     [Fact]
@@ -133,7 +143,7 @@ public class AuthenticatedWorkflowTests : AuthenticatedE2ETestBase
             }
         }
         
-        Output.WriteLine("Authentication session persists across multiple page navigations");
+        TestLogger.LogAuthentication("Authentication session persists across multiple page navigations", Output);
     }
     
     [Fact]
@@ -161,9 +171,9 @@ public class AuthenticatedWorkflowTests : AuthenticatedE2ETestBase
             Assert.DoesNotContain("/Account/Login", Page.Url);
             Assert.Contains(testPage, Page.Url);
             
-            Output.WriteLine($"User {email} successfully accessed {testPage}");
+            TestLogger.LogAuthentication($"User {email} successfully accessed {testPage}", Output);
         }
         
-        Output.WriteLine("Multiple user role authentication works correctly");
+        TestLogger.LogAuthentication("Multiple user role authentication works correctly", Output);
     }
 }

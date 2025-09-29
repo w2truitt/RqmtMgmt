@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -26,8 +27,8 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated via base class
         
-        Output.WriteLine("Starting backend email extraction workflow test");
-        Output.WriteLine($"Testing with admin user: admin@rqmtmgmt.local");
+        TestLogger.LogAuthentication("Starting backend email extraction workflow test", Output);
+        TestLogger.LogAuthentication($"Testing with admin user: admin@rqmtmgmt.local", Output);
         
         // Act - Navigate to a protected page to verify authentication
         await Page.GotoAsync($"{BaseUrl}/projects");
@@ -37,7 +38,7 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
         Assert.Contains("/projects", Page.Url);
         Assert.DoesNotContain("/Account/Login", Page.Url);
         
-        Output.WriteLine("User context validation completed successfully");
+        TestLogger.LogAuthentication("User context validation completed successfully", Output);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated
         
-        Output.WriteLine("Verifying email extraction from authentication context");
+        TestLogger.LogAuthentication("Verifying email extraction from authentication context", Output);
         
         // Act - Navigate to protected page first to ensure proper context
         await Page.GotoAsync($"{BaseUrl}/projects");
@@ -82,20 +83,20 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
             }
         ");
         
-        Output.WriteLine($"Extracted user info: {userInfo}");
+        TestLogger.LogAuthentication($"Extracted user info: {userInfo}", Output);
         
         // Assert - Should have some form of user identification
         Assert.NotEqual("not-found", userInfo);
         Assert.DoesNotContain("extraction-error", userInfo);
         
-        Output.WriteLine("Email extraction verification completed");
+        TestLogger.LogAuthentication("Email extraction verification completed", Output);
     }
 
     [Fact]
     public async Task BackendEmailExtraction_TestUserSwitching()
     {
         // Arrange - Start with admin user
-        Output.WriteLine("Testing user switching functionality");
+        TestLogger.LogAuthentication("Testing user switching functionality", Output);
         
         // Verify current user
         await Page.GotoAsync($"{BaseUrl}/users");
@@ -112,7 +113,7 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
         Assert.Contains("/projects", Page.Url);
         Assert.DoesNotContain("/Account/Login", Page.Url);
         
-        Output.WriteLine("User switching test completed successfully");
+        TestLogger.LogAuthentication("User switching test completed successfully", Output);
     }
 
     [Fact]
@@ -126,7 +127,7 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
             ("dev@rqmtmgmt.local", "Dev123!")
         };
         
-        Output.WriteLine("Testing multiple user contexts for email extraction");
+        TestLogger.LogAuthentication("Testing multiple user contexts for email extraction", Output);
         
         foreach (var (email, password) in userRoles)
         {
@@ -140,10 +141,10 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
             // Assert - Should be authenticated
             Assert.DoesNotContain("/Account/Login", Page.Url);
             
-            Output.WriteLine($"Successfully validated context for: {email}");
+            TestLogger.LogAuthentication($"Successfully validated context for: {email}", Output);
         }
         
-        Output.WriteLine("Multiple user contexts validation completed");
+        TestLogger.LogAuthentication("Multiple user contexts validation completed", Output);
     }
 
     [Fact]
@@ -151,7 +152,7 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
     {
         // Arrange - Admin user already authenticated
         
-        Output.WriteLine("Testing authentication token persistence");
+        TestLogger.LogAuthentication("Testing authentication token persistence", Output);
         
         // Act - Navigate between multiple pages to test token persistence
         var pages = new[] { "/dashboard", "/projects", "/users", "/requirements" };
@@ -165,9 +166,9 @@ public class BackendEmailExtractionWorkflowTests : AuthenticatedE2ETestBase
             Assert.DoesNotContain("/Account/Login", Page.Url);
             Assert.Contains(page, Page.Url);
             
-            Output.WriteLine($"Token persisted for page: {page}");
+            TestLogger.LogAuthentication($"Token persisted for page: {page}", Output);
         }
         
-        Output.WriteLine("Token persistence verification completed");
+        TestLogger.LogAuthentication("Token persistence verification completed", Output);
     }
 }

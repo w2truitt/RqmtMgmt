@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -37,7 +38,7 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
             await projectLinks[0].ClickAsync();
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
-            Output.WriteLine($"Navigated to project: {Page.Url}");
+            TestLogger.LogDebug($"Navigated to project: {Page.Url}", Output);
             
             // Look for requirements navigation
             var requirementsLink = await Page.QuerySelectorAsync("a[href*='requirements'], .nav-link:has-text('Requirements')");
@@ -46,7 +47,7 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
                 await requirementsLink.ClickAsync();
                 await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                 
-                Output.WriteLine($"Navigated to project requirements: {Page.Url}");
+                TestLogger.LogDebug($"Navigated to project requirements: {Page.Url}", Output);
                 
                 // Verify we're on the requirements page
                 Assert.Contains("requirements", Page.Url);
@@ -59,7 +60,7 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
                 }
                 else
                 {
-                    Output.WriteLine("Project requirements header not found - checking for other headers");
+                    TestLogger.LogDebug("Project requirements header not found - checking for other headers", Output);
                     var headers = await Page.EvaluateAsync<string[]>(@"
                         () => {
                             const headers = [];
@@ -74,12 +75,12 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
             }
             else
             {
-                Output.WriteLine("Requirements navigation not found in project");
+                TestLogger.LogDebug("Requirements navigation not found in project", Output);
             }
         }
         else
         {
-            Output.WriteLine("No projects found for requirements testing");
+            TestLogger.LogDebug("No projects found for requirements testing", Output);
         }
         
         // Assert test completed
@@ -91,7 +92,7 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
     {
         // Arrange - Project manager already authenticated via base class
         
-        Output.WriteLine("Testing project requirements creation workflow");
+        TestLogger.LogTestStep("Testing project requirements creation workflow", Output);
         
         // Navigate to projects and select one
         await Page.GotoAsync($"{BaseUrl}/projects");
@@ -114,7 +115,7 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
                 var createButton = await Page.QuerySelectorAsync("button:has-text('Create'), button:has-text('Add'), button:has-text('New')");
                 if (createButton != null)
                 {
-                    Output.WriteLine("Requirements creation button found");
+                    TestLogger.LogDebug("Requirements creation button found", Output);
                     
                     await createButton.ClickAsync();
                     await Task.Delay(1000);
@@ -122,29 +123,29 @@ public class ProjectRequirementsE2ETests : AuthenticatedE2ETestBase
                     var formVisible = await Page.IsVisibleAsync("form, .modal, [data-testid*='form']");
                     if (formVisible)
                     {
-                        Output.WriteLine("Requirements creation form opened");
+                        TestLogger.LogDebug("Requirements creation form opened", Output);
                         
                         // Cancel to avoid creating test data
                         var cancelButton = await Page.QuerySelectorAsync("button:has-text('Cancel'), .btn-secondary");
                         if (cancelButton != null)
                         {
                             await cancelButton.ClickAsync();
-                            Output.WriteLine("Requirements form cancelled");
+                            TestLogger.LogDebug("Requirements form cancelled", Output);
                         }
                     }
                     else
                     {
-                        Output.WriteLine("Requirements creation form did not appear");
+                        TestLogger.LogDebug("Requirements creation form did not appear", Output);
                     }
                 }
                 else
                 {
-                    Output.WriteLine("No requirements creation button found");
+                    TestLogger.LogDebug("No requirements creation button found", Output);
                 }
             }
         }
         
-        Output.WriteLine("Project requirements creation workflow test completed");
+        TestLogger.LogTestStep("Project requirements creation workflow test completed", Output);
         
         // Assert test completed
         Assert.True(true, "Requirements creation workflow test completed");

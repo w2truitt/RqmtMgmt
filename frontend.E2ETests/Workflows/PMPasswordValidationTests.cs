@@ -4,6 +4,7 @@ using Microsoft.Playwright;
 using RqmtMgmtShared;
 using Xunit;
 using Xunit.Abstractions;
+using frontend.E2ETests.Infrastructure;
 
 namespace frontend.E2ETests.Workflows;
 
@@ -29,13 +30,13 @@ public class PMPasswordValidationTests : AuthenticatedE2ETestBase
         // Act & Assert - Document that password validation is working
         // The fact that we successfully authenticated proves password validation is working
         
-        Output.WriteLine("Password validation successful - PM user authenticated");
+        TestLogger.LogAuthentication("Password validation successful - PM user authenticated", Output);
         
         // Navigate to a protected page to verify authentication is maintained
         await Page.GotoAsync($"{BaseUrl}/projects");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
         Assert.Contains("/projects", Page.Url);
-        Output.WriteLine("PM user maintains authentication across navigation");
+        TestLogger.LogAuthentication("PM user maintains authentication across navigation", Output);
     }
 }
