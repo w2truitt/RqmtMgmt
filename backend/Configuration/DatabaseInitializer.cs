@@ -82,8 +82,16 @@ namespace backend.Configuration
                     await context.Database.MigrateAsync();
                 }
                 
-                await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
-                logger.LogInformation("Database seeded with development data successfully");
+                // Only seed if database is empty (no users exist)
+                if (!await context.Users.AnyAsync())
+                {
+                    await backend.Data.DatabaseSeeder.SeedAsync(context, includeTestData: true);
+                    logger.LogInformation("Database seeded with development data successfully");
+                }
+                else
+                {
+                    logger.LogInformation("Database already contains data, skipping seeding");
+                }
             }
             else if (app.Environment.IsEnvironment("Testing"))
             {
