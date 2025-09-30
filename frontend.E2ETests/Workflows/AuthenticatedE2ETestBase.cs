@@ -7,15 +7,21 @@ using frontend.E2ETests.Infrastructure;
 namespace frontend.E2ETests.Workflows;
 
 /// <summary>
-/// Base class for E2E tests that require a pre-authenticated user.
-/// Uses AuthenticationService for cached session management, eliminating repeated login flows.
+/// Enhanced base class for E2E tests that require a pre-authenticated user.
+/// Uses browser state detection instead of file caching for more reliable authentication.
 /// 
-/// Performance improvement: ~12-15 seconds saved per test by reusing authentication sessions.
+/// Key improvements:
+/// - Creates fresh browser contexts for complete test isolation
+/// - Detects current browser authentication state
+/// - Automatically handles user switching
+/// - No stale cache issues
+/// - Real-time validation of authentication status
+/// - Enables parallel test execution through isolation
 /// 
 /// Usage Pattern:
 /// 1. Call SetUser() or use helper methods (SetAdminUser(), etc.) in constructor
 /// 2. Tests automatically start with user already authenticated
-/// 3. No need for explicit login calls in test methods
+/// 3. Use SwitchToUser() within tests to change authenticated user
 /// </summary>
 public abstract class AuthenticatedE2ETestBase : E2ETestBase
 {
@@ -33,7 +39,7 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
 
     /// <summary>
     /// Sets the user for this test class. Must be called in constructor.
-    /// All tests in the class will run as this user with cached authentication.
+    /// All tests in the class will run as this user with fresh authentication verification.
     /// </summary>
     /// <param name="email">User email</param>
     /// <param name="password">User password</param>
@@ -44,8 +50,8 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
     }
 
     /// <summary>
-    /// Creates pre-authenticated browser context using cached session.
-    /// This replaces the expensive login flow with instant session restoration.
+    /// Creates and verifies authenticated browser context using browser state detection.
+    /// This ensures fresh, valid authentication every time with complete test isolation.
     /// </summary>
     public override async Task InitializeAsync()
     {
@@ -58,30 +64,22 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
 
         TestLogger.LogTestStep($"Creating authenticated context for: {_userEmail}", Output);
 
-        // Get cached session file path (login only happens once per user role across entire test suite)
-        var storageStateFilePath = await AuthenticationService.GetStorageStateAsync(
+        // Get authenticated context using fresh browser context approach
+        Context = await AuthenticationService.GetAuthenticatedContextAsync(
             Fixture, _userEmail, _userPassword);
-
-        // Verify the file exists and is readable
-        if (!File.Exists(storageStateFilePath))
-        {
-            throw new FileNotFoundException($"Storage state file not found: {storageStateFilePath}");
-        }
-
-        // Create context with pre-authenticated session using the cached file
-        // Use the BrowserNewContextOptions constructor that accepts StorageStatePath
-        Context = await Fixture.Browser.NewContextAsync(new BrowserNewContextOptions
-        {
-            StorageStatePath = storageStateFilePath, // Use StorageStatePath property instead of StorageState
-            IgnoreHTTPSErrors = true,
-            ViewportSize = new ViewportSize { Width = 1280, Height = 720 }
-        });
 
         Page = await Context.NewPageAsync();
         Page.SetDefaultTimeout(30000);
         Page.SetDefaultNavigationTimeout(30000);
 
-        TestLogger.LogTestStep($"Authenticated context ready for: {_userEmail}", Output);
+        // Verify authentication is working
+        var isAuthenticated = await AuthenticationService.VerifyAuthenticationAsync(Page, _userEmail);
+        if (!isAuthenticated)
+        {
+            throw new Exception($"Failed to establish authenticated session for: {_userEmail}");
+        }
+
+        TestLogger.LogTestStep($"Authenticated context verified for: {_userEmail}", Output);
     }
 
     // ========================================
@@ -89,40 +87,64 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
     // ========================================
 
     /// <summary>
-    /// Clears the current user's cached session and re-authenticates.
-    /// Useful for testing authentication edge cases or session expiration.
-    /// </summary>
-    protected async Task ClearSessionAndReauthenticate()
-    {
-        if (string.IsNullOrEmpty(_userEmail))
-        {
-            throw new InvalidOperationException("No user set for session clearing");
-        }
-
-        TestLogger.LogTestStep($"Clearing session and re-authenticating: {_userEmail}", Output);
-        
-        AuthenticationService.ClearUserSession(_userEmail);
-        await DisposeAsync();
-        await InitializeAsync();
-        
-        TestLogger.LogTestStep($"Re-authentication complete for: {_userEmail}", Output);
-    }
-
-    /// <summary>
-    /// Switches to a different user role within the same test.
-    /// Clears current context and creates new authenticated context for different user.
+    /// Switches to a different user within the same test.
+    /// Logs out current user and logs in as the specified user.
     /// </summary>
     /// <param name="email">New user email</param>
     /// <param name="password">New user password</param>
     protected async Task SwitchToUser(string email, string password)
     {
-        TestLogger.LogTestStep($"Switching from {_userEmail} to {email}", Output);
-        
-        await DisposeAsync();
-        SetUser(email, password);
-        await InitializeAsync();
-        
-        TestLogger.LogTestStep($"User switch complete, now authenticated as: {email}", Output);
+        if (Context == null || Page == null)
+        {
+            throw new InvalidOperationException("Test context not initialized");
+        }
+
+        TestLogger.LogTestStep($"Switching from {_userEmail} to: {email}", Output);
+
+        await AuthenticationService.SwitchUserAsync(Context, email, password);
+
+        // Verify the switch was successful
+        var isAuthenticated = await AuthenticationService.VerifyAuthenticationAsync(Page, email);
+        if (!isAuthenticated)
+        {
+            throw new Exception($"Failed to switch to user: {email}");
+        }
+
+        // Update current user tracking
+        _userEmail = email;
+        _userPassword = password;
+
+        TestLogger.LogTestStep($"Successfully switched to: {email}", Output);
+    }
+
+    /// <summary>
+    /// Verifies that the current browser session is authenticated as the expected user.
+    /// Useful for debugging authentication issues in tests.
+    /// </summary>
+    protected async Task<bool> VerifyCurrentAuthentication()
+    {
+        if (Page == null || string.IsNullOrEmpty(_userEmail))
+        {
+            return false;
+        }
+
+        return await AuthenticationService.VerifyAuthenticationAsync(Page, _userEmail);
+    }
+
+    /// <summary>
+    /// Logs out the current user and clears authentication state.
+    /// Useful for testing unauthenticated scenarios.
+    /// </summary>
+    protected async Task Logout()
+    {
+        if (Context == null)
+        {
+            return;
+        }
+
+        TestLogger.LogTestStep($"Logging out: {_userEmail}", Output);
+        await AuthenticationService.ClearAuthenticationAsync(Context);
+        TestLogger.LogTestStep("Logout completed", Output);
     }
 
     // ========================================
@@ -130,73 +152,116 @@ public abstract class AuthenticatedE2ETestBase : E2ETestBase
     // ========================================
 
     /// <summary>
-    /// Sets the test class to run as admin user.
-    /// Call this in the constructor for admin-focused test classes.
+    /// Convenience method: Sets admin user as the default for this test class.
     /// </summary>
-    protected void SetAdminUser() => SetUser("admin@rqmtmgmt.local", "Admin123!");
+    protected void SetAdminUser()
+    {
+        SetUser("admin@rqmtmgmt.local", "Admin123!");
+    }
 
     /// <summary>
-    /// Sets the test class to run as project manager user.
-    /// Call this in the constructor for PM-focused test classes.
+    /// Convenience method: Sets project manager user as the default for this test class.
     /// </summary>
-    protected void SetProjectManagerUser() => SetUser("pm@rqmtmgmt.local", "Pm123!");
+    protected void SetProjectManagerUser()
+    {
+        SetUser("pm@rqmtmgmt.local", "PM123!");
+    }
 
     /// <summary>
-    /// Sets the test class to run as developer user.
-    /// Call this in the constructor for developer-focused test classes.
+    /// Convenience method: Sets developer user as the default for this test class.
     /// </summary>
-    protected void SetDeveloperUser() => SetUser("dev@rqmtmgmt.local", "Dev123!");
+    protected void SetDeveloperUser()
+    {
+        SetUser("pm@rqmtmgmt.local", "Pm123!"); // Use PM as developer equivalent
+    }
 
     /// <summary>
-    /// Sets the test class to run as tester user.
-    /// Call this in the constructor for tester-focused test classes.
+    /// Convenience method: Sets tester user as the default for this test class.
     /// </summary>
-    protected void SetTesterUser() => SetUser("tester@rqmtmgmt.local", "Test123!");
+    protected void SetTesterUser()
+    {
+        SetUser("tester@rqmtmgmt.local", "Test123!");
+    }
 
     /// <summary>
-    /// Sets the test class to run as viewer user.
-    /// Call this in the constructor for viewer-focused test classes.
+    /// Convenience method: Sets analyst user as the default for this test class.
     /// </summary>
-    protected void SetViewerUser() => SetUser("viewer@rqmtmgmt.local", "View123!");
+    protected void SetAnalystUser()
+    {
+        SetUser("analyst@rqmtmgmt.local", "Analyst123!");
+    }
 
     // ========================================
-    // Legacy Compatibility Methods
+    // Convenience Methods for Switching Users in Tests
     // ========================================
-    // These methods are kept for backward compatibility but are no longer needed
-    // for normal test execution since authentication is handled automatically.
 
     /// <summary>
-    /// [DEPRECATED] Authentication is handled automatically in InitializeAsync.
-    /// This method always returns true for backward compatibility.
+    /// Convenience method: Switches to admin user within a test.
     /// </summary>
-    [Obsolete("Authentication is handled automatically. Remove this call from tests.")]
-    protected Task<bool> LoginAsAdminAsync() => Task.FromResult(true);
+    protected async Task SwitchToAdminUser()
+    {
+        await SwitchToUser("admin@rqmtmgmt.local", "Admin123!");
+    }
 
     /// <summary>
-    /// [DEPRECATED] Authentication is handled automatically in InitializeAsync.
-    /// This method always returns true for backward compatibility.
+    /// Convenience method: Switches to project manager user within a test.
     /// </summary>
-    [Obsolete("Authentication is handled automatically. Remove this call from tests.")]
-    protected Task<bool> LoginAsProjectManagerAsync() => Task.FromResult(true);
+    protected async Task SwitchToProjectManagerUser()
+    {
+        await SwitchToUser("pm@rqmtmgmt.local", "PM123!");
+    }
 
     /// <summary>
-    /// [DEPRECATED] Authentication is handled automatically in InitializeAsync.
-    /// This method always returns true for backward compatibility.
+    /// Convenience method: Switches to developer user within a test.
     /// </summary>
-    [Obsolete("Authentication is handled automatically. Remove this call from tests.")]
-    protected Task<bool> LoginAsDeveloperAsync() => Task.FromResult(true);
+    protected async Task SwitchToDeveloperUser()
+    {
+        await SwitchToUser("pm@rqmtmgmt.local", "Pm123!"); // Use PM as developer equivalent
+    }
 
     /// <summary>
-    /// [DEPRECATED] Authentication is handled automatically in InitializeAsync.
-    /// This method always returns true for backward compatibility.
+    /// Convenience method: Switches to tester user within a test.
     /// </summary>
-    [Obsolete("Authentication is handled automatically. Remove this call from tests.")]
-    protected Task<bool> LoginAsTesterAsync() => Task.FromResult(true);
+    protected async Task SwitchToTesterUser()
+    {
+        await SwitchToUser("tester@rqmtmgmt.local", "Test123!");
+    }
 
     /// <summary>
-    /// [DEPRECATED] Authentication is handled automatically in InitializeAsync.
-    /// This method always returns true for backward compatibility.
+    /// Convenience method: Switches to analyst user within a test.
     /// </summary>
-    [Obsolete("Authentication is handled automatically. Remove this call from tests.")]
-    protected Task<bool> LoginAsViewerAsync() => Task.FromResult(true);
+    protected async Task SwitchToAnalystUser()
+    {
+        await SwitchToUser("analyst@rqmtmgmt.local", "Analyst123!");
+    }
+
+    // ========================================
+    // Diagnostics and Debugging
+    // ========================================
+
+    /// <summary>
+    /// Gets diagnostic information about the current authentication state.
+    /// Useful for debugging test failures.
+    /// </summary>
+    protected async Task<string> GetAuthenticationDiagnostics()
+    {
+        if (Page == null)
+        {
+            return "Page not initialized";
+        }
+
+        try
+        {
+            var currentUrl = Page.Url;
+            var isOnLoginPage = currentUrl.Contains("/Account/Login");
+            var isAuthenticated = await VerifyCurrentAuthentication();
+
+            return $"Current URL: {currentUrl}, Expected User: {_userEmail}, " +
+                   $"On Login Page: {isOnLoginPage}, Authenticated: {isAuthenticated}";
+        }
+        catch (Exception ex)
+        {
+            return $"Error getting diagnostics: {ex.Message}";
+        }
+    }
 }

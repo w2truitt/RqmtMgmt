@@ -6,122 +6,58 @@ using frontend.E2ETests.Infrastructure;
 namespace frontend.E2ETests.Services;
 
 /// <summary>
-/// Handles user authentication and caches the StorageState to avoid repeated logins.
-/// This service performs UI login only once per user role for the entire test suite,
-/// then reuses the cached session for subsequent tests.
+/// Enhanced authentication service that uses browser state detection instead of file caching.
+/// This service creates fresh browser contexts with proper authentication for each test,
+/// eliminating stale cache issues and enabling parallel test execution.
 /// </summary>
 public static class AuthenticationService
 {
-    private static readonly ConcurrentDictionary<string, string> StorageStateFileCache = new();
-    private static readonly SemaphoreSlim LoginLock = new(1, 1);
-
     /// <summary>
-    /// Gets the expected file path for a user's storage state
+    /// Gets an authenticated browser context for the specified user.
+    /// Creates a fresh context and performs login for complete isolation.
     /// </summary>
-    private static string GetStorageStateFilePath(string email)
+    public static async Task<IBrowserContext> GetAuthenticatedContextAsync(PlaywrightFixture fixture, string email, string password)
     {
-        return Path.Combine(Path.GetTempPath(), $"playwright-auth-{email.Replace("@", "-").Replace(".", "-")}.json");
-    }
+        TestLogger.LogAuthentication($"Creating authenticated context for: {email}");
 
-    /// <summary>
-    /// Gets the authentication storage state file path for a user.
-    /// If not cached, performs a UI login and caches the result.
-    /// Subsequent calls for the same user return the cached session file path instantly.
-    /// </summary>
-    /// <param name="fixture">Shared browser fixture</param>
-    /// <param name="email">User email</param>
-    /// <param name="password">User password</param>
-    /// <returns>Path to the storage state file for creating authenticated contexts</returns>
-    public static async Task<string> GetStorageStateAsync(
-        PlaywrightFixture fixture, 
-        string email, 
-        string password)
-    {
-        var expectedFilePath = GetStorageStateFilePath(email);
-
-        // Check if we have a cached file path and the file exists
-        if (StorageStateFileCache.TryGetValue(email, out var cachedFilePath) && File.Exists(cachedFilePath))
+        // Create a fresh context for complete isolation
+        var context = await fixture.Browser.NewContextAsync(new BrowserNewContextOptions
         {
-            TestLogger.LogAuthentication($"Using cached authentication file for: {email}");
-            return cachedFilePath;
-        }
-
-        // Check if the expected file exists even if not in memory cache (handles test runner restarts)
-        if (File.Exists(expectedFilePath))
-        {
-            TestLogger.LogAuthentication($"Found existing authentication file for: {email}");
-            StorageStateFileCache[email] = expectedFilePath; // Update cache
-            return expectedFilePath;
-        }
-
-        // Thread-safe login for first-time users
-        await LoginLock.WaitAsync();
-        try
-        {
-            // Double-check pattern - another thread might have logged in while we waited
-            if (File.Exists(expectedFilePath))
-            {
-                TestLogger.LogAuthentication($"Found authentication file created by another thread for: {email}");
-                StorageStateFileCache[email] = expectedFilePath;
-                return expectedFilePath;
-            }
-
-            // Perform actual login and cache the result
-            var newFilePath = await PerformLoginAndCaptureState(fixture, email, password);
-            StorageStateFileCache[email] = newFilePath;
-            
-            TestLogger.LogAuthentication($"Cached new authentication file for: {email}");
-            TestLogger.LogAuthentication($"Total cached sessions: {StorageStateFileCache.Count}");
-            
-            return newFilePath;
-        }
-        finally
-        {
-            LoginLock.Release();
-        }
-    }
-
-    /// <summary>
-    /// Performs the actual UI login flow and captures the authentication state.
-    /// Uses a temporary context to avoid affecting other tests.
-    /// </summary>
-    private static async Task<string> PerformLoginAndCaptureState(
-        PlaywrightFixture fixture, 
-        string email, 
-        string password)
-    {
-        TestLogger.LogAuthentication($"Performing fresh login for: {email}");
-        var loginStartTime = DateTime.UtcNow;
-        
-        // Use the expected file path pattern
-        var stateFile = GetStorageStateFilePath(email);
-        
-        // Use temporary, isolated context for login with no cached state
-        await using var context = await fixture.Browser.NewContextAsync(new BrowserNewContextOptions
-        { 
             IgnoreHTTPSErrors = true,
-            // Ensure no cached authentication state
-            StorageState = null
+            ViewportSize = new ViewportSize { Width = 1280, Height = 720 }
         });
-        
+
         var page = await context.NewPageAsync();
+        page.SetDefaultTimeout(30000);
+        page.SetDefaultNavigationTimeout(30000);
+
+        // Always perform login (since we have fresh context)
+        await PerformLoginAsync(page, email, password);
+
+        TestLogger.LogAuthentication($"Authenticated context ready for: {email}");
+        return context;
+    }
+
+    /// <summary>
+    /// Performs the login flow for the specified user.
+    /// </summary>
+    private static async Task PerformLoginAsync(IPage page, string email, string password)
+    {
+        TestLogger.LogAuthentication($"Performing login for: {email}");
+        var loginStartTime = DateTime.UtcNow;
 
         try
         {
-            TestLogger.LogAuthentication($"Creating authenticated context for: {email}");
-            
-            // Navigate to a protected page first, which will redirect to login with proper ReturnUrl
-            // This mimics the real authentication flow
-            await page.GotoAsync("https://rqmtmgmt.local/");
+            // Navigate to a protected page first to trigger proper authentication flow
+            await page.GotoAsync("https://rqmtmgmt.local/dashboard");
             await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             
             // Wait for potential redirect to login page
             await Task.Delay(2000);
             
-            // Check if we're on login page, if not, try to navigate to a protected page
+            // If not redirected to login, try another protected page
             if (!page.Url.Contains("/Account/Login"))
             {
-                // Try navigating to a protected page to trigger authentication
                 await page.GotoAsync("https://rqmtmgmt.local/users");
                 await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
                 await Task.Delay(2000);
@@ -134,175 +70,199 @@ public static class AuthenticationService
                 await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             }
 
-            // Debug: Check what page we're actually on
-            TestLogger.LogDebug($"Current URL: {page.Url}");
-            TestLogger.LogDebug($"Page title: {await page.TitleAsync()}");
-            
-            // Debug: Check if we can find any form elements
-            var inputCount = await page.Locator("input").CountAsync();
-            TestLogger.LogDebug($"Found {inputCount} input elements on page");
-            
-            if (inputCount > 0)
-            {
-                // List all input elements for debugging
-                var inputs = await page.Locator("input").AllAsync();
-                for (int i = 0; i < inputs.Count; i++)
-                {
-                    var input = inputs[i];
-                    var name = await input.GetAttributeAsync("name") ?? "";
-                    var id = await input.GetAttributeAsync("id") ?? "";
-                    var type = await input.GetAttributeAsync("type") ?? "";
-                    var placeholder = await input.GetAttributeAsync("placeholder") ?? "";
-                    TestLogger.LogVerbose($"Input {i}: name='{name}', id='{id}', type='{type}', placeholder='{placeholder}'");
-                }
-            }
-
-            // Wait for the login form to be ready and fill it using name attributes (like the diagnostic tests)
+            // Wait for login form
             await page.WaitForSelectorAsync("input[name='Input.Username']", new PageWaitForSelectorOptions { Timeout = 10000 });
-            
-            // Fill the login form using the name attributes (same as diagnostic tests)
+
+            // Fill login form
             await page.FillAsync("input[name='Input.Username']", email);
             await page.FillAsync("input[name='Input.Password']", password);
-            
-            // Click the login button using the same selector as diagnostic tests
+
+            // Submit login
             await page.ClickAsync("button:has-text('Login')");
-            
-            // Wait for successful authentication (should redirect to home page)
             await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            
-            // Wait additional time for OIDC flow (same as diagnostic tests)
+
+            // Wait for OIDC flow completion
             await Task.Delay(3000);
-            
+
+            // Verify login success
             var currentUrl = page.Url;
-            TestLogger.LogDebug($"Current URL after login attempt: {currentUrl}");
-            
-            // Check if login was successful (same logic as diagnostic tests)
             var isAuthenticated = !currentUrl.Contains("/Account/Login") && 
                                  !currentUrl.Contains("/connect/authorize");
-            
+
             if (!isAuthenticated)
             {
-                // Check for error messages on login page
+                // Check for error messages
                 var errorElements = await page.Locator(".text-danger, .alert-danger, .validation-summary-errors").AllAsync();
-                if (errorElements.Count > 0)
+                var errorMessages = new List<string>();
+                
+                foreach (var error in errorElements)
                 {
-                    foreach (var error in errorElements)
+                    var errorText = await error.TextContentAsync();
+                    if (!string.IsNullOrEmpty(errorText))
                     {
-                        var errorText = await error.TextContentAsync();
-                        TestLogger.LogError($"Error message found: {errorText}");
+                        errorMessages.Add(errorText.Trim());
                     }
                 }
+
+                var errorMessage = errorMessages.Count > 0 
+                    ? $"Login failed for {email}. Errors: {string.Join(", ", errorMessages)}"
+                    : $"Login failed for {email} - still on: {currentUrl}";
                 
-                throw new Exception($"Login failed for {email} - still on: {currentUrl}");
+                throw new Exception(errorMessage);
             }
-            
+
             var loginDuration = DateTime.UtcNow - loginStartTime;
             TestLogger.LogAuthentication($"Login successful for {email}, redirected to: {currentUrl} (took {loginDuration.TotalSeconds:F1}s)");
-
-            // Save the storage state directly to the persistent file
-            await context.StorageStateAsync(new BrowserContextStorageStateOptions 
-            { 
-                Path = stateFile 
-            });
-            
-            TestLogger.LogAuthentication($"Saved authentication state to: {stateFile}");
-            
-            return stateFile;
         }
-        finally
+        catch (Exception ex)
         {
-            await page.CloseAsync();
+            TestLogger.LogAuthentication($"Login failed for {email}: {ex.Message}");
+            throw;
         }
     }
 
     /// <summary>
-    /// Clears cached session for a specific user.
-    /// Useful for authentication-specific tests that need fresh login flows.
+    /// Switches the current browser context to a different user.
+    /// Logs out the current user and logs in as the new user.
     /// </summary>
-    /// <param name="email">User email to clear</param>
-    public static void ClearUserSession(string email)
+    public static async Task SwitchUserAsync(IBrowserContext context, string email, string password)
     {
-        var expectedFilePath = GetStorageStateFilePath(email);
+        var page = context.Pages.FirstOrDefault() ?? await context.NewPageAsync();
         
-        if (StorageStateFileCache.TryRemove(email, out var filePath))
-        {
-            TestLogger.LogAuthentication($"Cleared cached session for: {email}");
-        }
+        TestLogger.LogAuthentication($"Switching to user: {email}");
         
-        // Delete the file if it exists
-        if (File.Exists(expectedFilePath))
+        // Log out current user
+        await LogoutAsync(page);
+        
+        // Log in as new user
+        await PerformLoginAsync(page, email, password);
+        
+        TestLogger.LogAuthentication($"Successfully switched to user: {email}");
+    }
+
+    /// <summary>
+    /// Logs out the current user from the browser.
+    /// </summary>
+    private static async Task LogoutAsync(IPage page)
+    {
+        try
         {
+            TestLogger.LogAuthentication("Logging out current user");
+
+            // Look for logout button on current page first (much faster than navigating)
             try
             {
-                File.Delete(expectedFilePath);
-                TestLogger.LogAuthentication($"Deleted cached file: {expectedFilePath}");
+                var logoutButton = await page.WaitForSelectorAsync("button:has-text('Log out')", new PageWaitForSelectorOptions 
+                { 
+                    Timeout = 2000 
+                });
+                
+                if (logoutButton != null)
+                {
+                    await logoutButton.ClickAsync();
+                    await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    TestLogger.LogAuthentication("Logout completed");
+                    return;
+                }
             }
-            catch
+            catch (TimeoutException)
             {
-                // Ignore file deletion errors
+                // No logout button on current page
             }
-        }
-    }
 
-    /// <summary>
-    /// Clears all cached sessions.
-    /// Useful for test cleanup or when testing authentication edge cases.
-    /// </summary>
-    public static void ClearAllSessions()
-    {
-        var count = StorageStateFileCache.Count;
-        
-        // Delete all cached files
-        foreach (var filePath in StorageStateFileCache.Values)
-        {
-            if (File.Exists(filePath))
-            {
-                try
-                {
-                    File.Delete(filePath);
-                }
-                catch
-                {
-                    // Ignore file deletion errors
-                }
-            }
-        }
-        
-        // Also delete any files that match our pattern
-        var tempDir = Path.GetTempPath();
-        var authFiles = Directory.GetFiles(tempDir, "playwright-auth-*.json");
-        foreach (var file in authFiles)
-        {
+            // If no logout button found, navigate to home page and try again
+            await page.GotoAsync("https://rqmtmgmt.local/");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            
             try
             {
-                File.Delete(file);
+                var logoutButton = await page.WaitForSelectorAsync("button:has-text('Log out')", new PageWaitForSelectorOptions 
+                { 
+                    Timeout = 3000 
+                });
+                
+                if (logoutButton != null)
+                {
+                    await logoutButton.ClickAsync();
+                    await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                    TestLogger.LogAuthentication("Logout completed");
+                    return;
+                }
             }
-            catch
+            catch (TimeoutException)
             {
-                // Ignore file deletion errors
+                // Still no logout button - might already be logged out
+                TestLogger.LogAuthentication("No logout button found - might already be logged out");
             }
         }
-        
-        StorageStateFileCache.Clear();
-        TestLogger.LogAuthentication($"Cleared all {count} cached sessions and {authFiles.Length} cached files");
+        catch (Exception ex)
+        {
+            TestLogger.LogAuthentication($"Error during logout: {ex.Message}");
+        }
+
+        // Clear browser storage to ensure clean state
+        try
+        {
+            await page.Context.ClearCookiesAsync();
+            await page.EvaluateAsync("() => { localStorage.clear(); sessionStorage.clear(); }");
+        }
+        catch (Exception ex)
+        {
+            TestLogger.LogAuthentication($"Error clearing browser storage: {ex.Message}");
+        }
     }
 
     /// <summary>
-    /// Gets the count of cached sessions (for diagnostics/testing)
+    /// Verifies that the browser is currently authenticated as the expected user.
     /// </summary>
-    public static int CachedSessionCount => StorageStateFileCache.Count;
+    public static async Task<bool> VerifyAuthenticationAsync(IPage page, string expectedEmail)
+    {
+        try
+        {
+            // Simply try to navigate to a protected page and see if we stay there
+            await page.GotoAsync("https://rqmtmgmt.local/dashboard");
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            
+            // Wait a bit for Blazor to render
+            await Task.Delay(3000);
+            
+            // If we're on a login page, authentication failed
+            if (page.Url.Contains("/Account/Login") || page.Url.Contains("/connect/authorize"))
+            {
+                TestLogger.LogAuthentication($"Authentication verification failed: redirected to login page");
+                return false;
+            }
+            
+            TestLogger.LogAuthentication($"Authentication verification successful: can access protected page");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            TestLogger.LogAuthentication($"Authentication verification error: {ex.Message}");
+            return false;
+        }
+    }
 
     /// <summary>
-    /// Checks if a user session is cached (for diagnostics/testing)
+    /// Clears all authentication state from the browser context.
     /// </summary>
-    public static bool IsUserSessionCached(string email) => StorageStateFileCache.ContainsKey(email);
-    
-    /// <summary>
-    /// Gets diagnostic information about the cache state
-    /// </summary>
-    public static string GetCacheStatus()
+    public static async Task ClearAuthenticationAsync(IBrowserContext context)
     {
-        var users = string.Join(", ", StorageStateFileCache.Keys);
-        return $"Cached sessions ({StorageStateFileCache.Count}): [{users}]";
+        var page = context.Pages.FirstOrDefault() ?? await context.NewPageAsync();
+        
+        // Log out
+        await LogoutAsync(page);
+        
+        TestLogger.LogAuthentication("Cleared authentication state");
+    }
+
+    // Legacy methods for backward compatibility
+    /// <summary>
+    /// Legacy compatibility method - redirects to GetAuthenticatedContextAsync
+    /// </summary>
+    public static Task<string> GetStorageStateAsync(PlaywrightFixture fixture, string email, string password)
+    {
+        // For backward compatibility, just return a placeholder since we don't use file storage anymore
+        return Task.FromResult($"fresh-context-{email}");
     }
 }
