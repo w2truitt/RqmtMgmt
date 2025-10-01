@@ -265,12 +265,18 @@ public class DocumentManagementWorkflowTests : AuthenticatedE2ETestBase
         await Page.ClickAsync("button:has-text('Create Document')");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
-        // Wait for the page to fully render
-        await Page.WaitForTimeoutAsync(2000);
+        // Wait for the section manager to load
+        await Page.WaitForSelectorAsync("div.card:has-text('Document Sections')", new() { Timeout = 10000 });
+        try
+        {
+            await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Detached, Timeout = 5000 });
+        }
+        catch { }
+        await Page.WaitForTimeoutAsync(1000);
         
         // Act - Try to add a section - wait for the button with a longer timeout
         var addSectionButton = Page.Locator("button:has-text('Add First Section'), button:has-text('Add Section')").First;
-        await addSectionButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await addSectionButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
         await addSectionButton.ClickAsync();
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
@@ -313,11 +319,39 @@ public class DocumentManagementWorkflowTests : AuthenticatedE2ETestBase
         
         await Page.ClickAsync("button:has-text('Create Document')");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Page.WaitForTimeoutAsync(2000);
+        
+        // Debug: Check what page we landed on
+        var currentUrl = Page.Url;
+        Output.WriteLine($"After document creation, current URL: {currentUrl}");
+        
+        // Check if we're on the document details page
+        if (!currentUrl.Contains("/documents/") || currentUrl.EndsWith("/new") || currentUrl.EndsWith("/documents"))
+        {
+            Output.WriteLine("WARNING: Not on document details page!");
+            // Take a screenshot for debugging
+            await Page.ScreenshotAsync(new() { Path = $"/tmp/document-create-fail-{Guid.NewGuid().ToString()[..8]}.png" });
+        }
+        
+        // Wait for the document page to fully load and the section manager to finish loading
+        // The SectionManager component starts with isLoading=true and shows a spinner
+        // We need to wait for the spinner to disappear and buttons to appear
+        await Page.WaitForSelectorAsync("div.card:has-text('Document Sections')", new() { Timeout = 10000 });
+        
+        // Wait for either the spinner to disappear OR the button to appear
+        try
+        {
+            await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Detached, Timeout = 5000 });
+        }
+        catch
+        {
+            // Spinner might have already disappeared
+        }
+        
+        await Page.WaitForTimeoutAsync(1000);
         
         // Act - Add first section - wait for button to be available
         var addFirstButton = Page.Locator("button:has-text('Add First Section'), button:has-text('Add Section')").First;
-        await addFirstButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await addFirstButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
         await addFirstButton.ClickAsync();
         
         await Page.FillAsync("input[placeholder='Enter section title']", "3.1 Authentication and Authorization");
@@ -360,11 +394,19 @@ public class DocumentManagementWorkflowTests : AuthenticatedE2ETestBase
         
         await Page.ClickAsync("button:has-text('Create Document')");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Page.WaitForTimeoutAsync(2000);
+        
+        // Wait for the section manager to load
+        await Page.WaitForSelectorAsync("div.card:has-text('Document Sections')", new() { Timeout = 10000 });
+        try
+        {
+            await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Detached, Timeout = 5000 });
+        }
+        catch { }
+        await Page.WaitForTimeoutAsync(1000);
         
         // Add a section first - wait for button
         var addButton = Page.Locator("button:has-text('Add First Section'), button:has-text('Add Section')").First;
-        await addButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await addButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
         await addButton.ClickAsync();
         await Page.FillAsync("input[placeholder='Enter section title']", "3.1 Authentication");
         await Page.Locator("form").GetByRole(AriaRole.Button, new() { Name = "Add Section" }).ClickAsync();
@@ -393,11 +435,19 @@ public class DocumentManagementWorkflowTests : AuthenticatedE2ETestBase
         
         await Page.ClickAsync("button:has-text('Create Document')");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Page.WaitForTimeoutAsync(2000);
+        
+        // Wait for the section manager to load
+        await Page.WaitForSelectorAsync("div.card:has-text('Document Sections')", new() { Timeout = 10000 });
+        try
+        {
+            await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Detached, Timeout = 5000 });
+        }
+        catch { }
+        await Page.WaitForTimeoutAsync(1000);
         
         // Act - Try to add section without title - wait for button
         var addButton = Page.Locator("button:has-text('Add First Section'), button:has-text('Add Section')").First;
-        await addButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await addButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
         await addButton.ClickAsync();
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
