@@ -43,9 +43,9 @@ public class SRSDocumentWorkflowTests : AuthenticatedE2ETestBase
         
         // Assert - Document should be created successfully
         await Expect(Page.Locator($"text={documentTitle}")).ToBeVisibleAsync();
-        await Expect(Page.Locator("text=Software Requirement Specification")).ToBeVisibleAsync();
-        await Expect(Page.Locator("text=Draft")).ToBeVisibleAsync();
-        await Expect(Page.Locator("text=Version 1.0")).ToBeVisibleAsync();
+        await Expect(Page.Locator("text=Software Requirement Specification").First).ToBeVisibleAsync();
+        await Expect(Page.Locator("text=Draft").First).ToBeVisibleAsync();
+        await Expect(Page.Locator("text=Version 1.0").First).ToBeVisibleAsync();
         
         // Should show project context
         await Expect(Page.Locator("text=Project: 1")).ToBeVisibleAsync();
@@ -113,7 +113,8 @@ public class SRSDocumentWorkflowTests : AuthenticatedE2ETestBase
             var section = sections[i];
             
             await Expect(Page.Locator($"text={sectionNumber}. {section.Title}")).ToBeVisibleAsync();
-            await Expect(Page.Locator($"text={section.Description}")).ToBeVisibleAsync();
+            // Use .First since descriptions appear in both management area and document body
+            await Expect(Page.Locator($"text={section.Description}").First).ToBeVisibleAsync();
         }
         
         // Each section should have requirement management capabilities
@@ -229,7 +230,7 @@ public class SRSDocumentWorkflowTests : AuthenticatedE2ETestBase
         
         // Step 3: Verify complete document structure
         await Expect(Page.Locator($"text={documentTitle}")).ToBeVisibleAsync();
-        await Expect(Page.Locator("text=Software Requirement Specification")).ToBeVisibleAsync();
+        await Expect(Page.Locator("text=Software Requirement Specification").First).ToBeVisibleAsync();
         await Expect(Page.Locator($"text=Sections: {coreSections.Length}")).ToBeVisibleAsync();
         
         // Each section should be properly structured
@@ -281,14 +282,25 @@ public class SRSDocumentWorkflowTests : AuthenticatedE2ETestBase
         await Page.ClickAsync("button:has-text('Create Document')");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         
+        // Wait for navigation to complete
+        await Page.WaitForTimeoutAsync(2000);
+        
         // Extract document ID from URL
         var url = Page.Url;
         var match = Regex.Match(url, @"/documents/(\d+)");
+        if (!match.Success)
+        {
+            // Try waiting a bit more and check again
+            await Page.WaitForTimeoutAsync(1000);
+            url = Page.Url;
+            match = Regex.Match(url, @"/documents/(\d+)");
+        }
+        
         if (match.Success)
         {
             return match.Groups[1].Value;
         }
         
-        throw new InvalidOperationException("Could not extract document ID from URL");
+        throw new InvalidOperationException($"Could not extract document ID from URL: {url}");
     }
 }
