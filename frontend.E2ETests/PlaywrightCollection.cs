@@ -4,8 +4,9 @@ using Xunit;
 namespace frontend.E2ETests;
 
 /// <summary>
-/// xUnit collection definition that enables sharing PlaywrightFixture across test classes.
-/// All test classes decorated with [Collection("Playwright")] will share the same browser instance.
+/// xUnit collection definition for tests that explicitly need shared browser resources.
+/// Most tests now run in parallel without collection constraints via E2ETestBase.
+/// Only use [Collection("Playwright")] for tests that specifically require collection-level sharing.
 /// This dramatically improves performance by eliminating per-test browser startup overhead.
 /// </summary>
 [CollectionDefinition("Playwright")]

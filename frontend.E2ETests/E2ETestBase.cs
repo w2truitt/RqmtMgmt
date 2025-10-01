@@ -9,9 +9,10 @@ namespace frontend.E2ETests;
 /// Creates lightweight BrowserContext + Page instead of expensive full browser creation.
 /// 
 /// Performance improvement: ~2-3 seconds saved per test by reusing browser instance.
+/// Tests can run in parallel across multiple threads as configured in xunit.runner.json.
+/// Each test class gets its own PlaywrightFixture instance via IClassFixture.
 /// </summary>
-[Collection("Playwright")]
-public abstract class E2ETestBase : IAsyncLifetime
+public abstract class E2ETestBase : IAsyncLifetime, IClassFixture<PlaywrightFixture>
 {
     protected readonly PlaywrightFixture Fixture;
     public IBrowserContext Context { get; protected set; } = null!;
