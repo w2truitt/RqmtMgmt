@@ -135,6 +135,14 @@
             }
         </div>
 
+        <!-- Document Sections Management -->
+        @if (!isReadingMode)
+        {
+            <div class="document-section mb-4">
+                <SectionManager DocumentId="@DocumentId" OnSectionsChanged="OnSectionsChanged" />
+            </div>
+        }
+
         <!-- Document Sections with Requirements using DocumentSection Component -->
         @if (sections.Any())
         {
@@ -338,6 +346,13 @@
         {
             Navigation.NavigateTo("/documents");
         }
+    }
+
+    private async Task OnSectionsChanged()
+    {
+        // Reload sections when they change
+        sections = await DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
+        StateHasChanged();
     }
 
     private string GetDocumentTypeDisplayName(DocumentType type) => type switch

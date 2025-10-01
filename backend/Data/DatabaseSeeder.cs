@@ -114,31 +114,32 @@ namespace backend.Data
             await context.SaveChangesAsync();
 
             // Create static E2E test projects that tests expect to exist
+            // These must match exactly what TestDataFactory.GetStaticProject() returns
             var staticE2EProjects = new[]
             {
                 new Project 
                 { 
-                    Name = "E2E Test Project 3625e50c", 
-                    Code = "E2E3625E50C", 
-                    Description = "Static E2E test project for automated testing", 
+                    Name = "Performance Test Project 638944753472742469", 
+                    Code = "PTP3474", 
+                    Description = "Static E2E test project for performance testing scenarios", 
                     Status = ProjectStatus.Active, 
                     OwnerId = adminUser.Id, 
                     CreatedAt = DateTime.UtcNow 
                 },
                 new Project 
                 { 
-                    Name = "E2E Test Project 69633ddf", 
-                    Code = "E2E69633DDF", 
-                    Description = "Static E2E test project for automated testing", 
+                    Name = "Requirements Test Project 638944753477280014", 
+                    Code = "RTP198", 
+                    Description = "Static E2E test project for requirements testing workflows", 
                     Status = ProjectStatus.Active, 
                     OwnerId = adminUser.Id, 
                     CreatedAt = DateTime.UtcNow 
                 },
                 new Project 
                 { 
-                    Name = "E2E Test Project 0b85cc00", 
-                    Code = "E2E0B85CC00", 
-                    Description = "Static E2E test project for automated testing", 
+                    Name = "Test Project", 
+                    Code = "TST", 
+                    Description = "General purpose test project for E2E testing", 
                     Status = ProjectStatus.Active, 
                     OwnerId = adminUser.Id, 
                     CreatedAt = DateTime.UtcNow 

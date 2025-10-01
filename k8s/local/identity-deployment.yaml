@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: identityserver
-        image: localhost:5000/rqmtmgmt-identity:v1.0.0
+        image: localhost:5000/rqmtmgmt-identity:v1.0.1
         imagePullPolicy: Always
         ports:
         - containerPort: 80

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
 
 namespace identityserver.Pages.Account;
 
@@ -46,8 +47,11 @@ public class LoginModel : PageModel
 
     public LoginViewModel View { get; set; } = new();
 
-    public async Task<IActionResult> OnGet(string returnUrl)
+    public async Task<IActionResult> OnGet(string? returnUrl = null)
     {
+        // Default to home page if no return URL is provided (OIDC compliant)
+        returnUrl ??= "~/";
+        
         await BuildModelAsync(returnUrl);
         
         if (View.IsExternalLoginOnly)
@@ -158,9 +162,10 @@ public class LoginModel : PageModel
                                              !uri.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
     }
 
-    private async Task BuildModelAsync(string returnUrl)
+    private async Task BuildModelAsync(string? returnUrl)
     {
-        Input.ReturnUrl = returnUrl;
+        // Ensure we always have a valid return URL (OIDC compliant default)
+        Input.ReturnUrl = returnUrl ?? "~/";
 
         var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
         if (context?.IdP != null && await _schemeProvider.GetSchemeAsync(context.IdP) != null)
@@ -216,10 +221,17 @@ public class LoginModel : PageModel
 
 public class LoginInputModel
 {
+    [Required]
     public string Username { get; set; } = "";
+    
+    [Required]
     public string Password { get; set; } = "";
+    
     public bool RememberLogin { get; set; }
+    
+    // ReturnUrl should NOT be required for OIDC compliance - allows direct login page access
     public string ReturnUrl { get; set; } = "";
+    
     public string Button { get; set; } = "";
 }
 

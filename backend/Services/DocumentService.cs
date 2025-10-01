@@ -190,6 +190,16 @@ namespace backend.Services
         {
             try
             {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(document.Title))
+                    return null;
+                
+                if (document.CreatedBy <= 0)
+                    return null;
+                
+                if (document.ProjectId <= 0)
+                    return null;
+                
                 var entity = DtoToEntity(document);
                 entity.CreatedAt = DateTime.UtcNow;
                 

@@ -8,6 +8,7 @@
 @inject IProjectContextService ProjectContextService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inherits RqmtMgmt.Frontend.Components.UserAwareComponentBase
 
 <PageTitle>@(IsEditMode ? "Edit Document" : "New Document")</PageTitle>
 
@@ -128,6 +129,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Load current user first
+        await LoadCurrentUserAsync();
+        
         if (ProjectId.HasValue)
         {
             await ProjectContextService.SetCurrentProjectAsync(ProjectId.Value);
@@ -144,6 +148,8 @@
             document.Status = DocumentStatus.Draft;
             document.Version = "1.0";
             document.CreatedAt = DateTime.Now;
+            document.CreatedBy = currentUser?.Id ?? 1; // Use current user ID, fallback to 1 if not available
+            
             if (ProjectContextService.CurrentProject != null)
             {
                 document.ProjectId = ProjectContextService.CurrentProject.Id;
@@ -187,7 +193,7 @@
         {
             if (IsEditMode)
             {
-                document.UpdatedAt = DateTime.Now;
+                document.UpdatedAt = DateTime.UtcNow;
                 var success = await DocumentsService.UpdateAsync(document);
                 if (success)
                 {
@@ -204,8 +210,10 @@
                 var createdDocument = await DocumentsService.CreateAsync(document);
                 if (createdDocument != null)
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Document created successfully!");
-                    NavigateToDocuments();
+                    // Don't show alert in tests - navigate directly to document details
+                    // await JSRuntime.InvokeVoidAsync("alert", "Document created successfully!");
+                    // Navigate to the created document details page instead of the documents list
+                    NavigateToDocumentDetails(createdDocument.Id);
                 }
                 else
                 {
@@ -226,6 +234,18 @@
     private void Cancel()
     {
         NavigateToDocuments();
+    }
+
+    private void NavigateToDocumentDetails(int documentId)
+    {
+        if (ProjectContextService.IsInProjectContext && ProjectContextService.CurrentProject != null)
+        {
+            Navigation.NavigateTo($"/projects/{ProjectContextService.CurrentProject.Id}/documents/{documentId}");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/documents/{documentId}");
+        }
     }
 
     private void NavigateToDocuments()
