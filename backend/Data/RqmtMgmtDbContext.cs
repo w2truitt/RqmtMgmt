@@ -370,6 +370,24 @@ namespace backend.Data
                 .HasForeignKey(ds => ds.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // DocumentSection self-referencing for hierarchical structure
+            modelBuilder.Entity<DocumentSection>()
+                .HasOne(ds => ds.ParentSection)
+                .WithMany(ds => ds.ChildSections)
+                .HasForeignKey(ds => ds.ParentSectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Check constraint: DocumentSection must have either DocumentId or ParentSectionId
+            // Note: This constraint is not supported by InMemory database provider
+            if (!Database.IsInMemory())
+            {
+                modelBuilder.Entity<DocumentSection>()
+                    .ToTable(t => t.HasCheckConstraint(
+                        "CK_DocumentSection_ParentReference",
+                        "([DocumentId] IS NOT NULL) OR ([ParentSectionId] IS NOT NULL)"));
+            }
+
+
             // Requirement -> Document/Section relationships
             modelBuilder.Entity<Requirement>()
                 .HasOne(r => r.Document)
@@ -414,6 +432,15 @@ namespace backend.Data
             modelBuilder.Entity<DocumentSection>()
                 .HasIndex(ds => new { ds.DocumentId, ds.SectionOrder })
                 .HasDatabaseName("IX_DocumentSections_DocumentId_SectionOrder");
+
+            modelBuilder.Entity<DocumentSection>()
+                .HasIndex(ds => new { ds.ParentSectionId, ds.SectionOrder })
+                .HasDatabaseName("IX_DocumentSections_ParentSectionId_SectionOrder");
+
+            modelBuilder.Entity<DocumentSection>()
+                .HasIndex(ds => ds.Level)
+                .HasDatabaseName("IX_DocumentSections_Level");
+
 
             modelBuilder.Entity<RequirementTrace>()
                 .HasIndex(rt => new { rt.SourceRequirementId, rt.TraceType })

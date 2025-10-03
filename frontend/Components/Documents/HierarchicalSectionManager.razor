@@ -1,0 +1,366 @@
+@using RqmtMgmtShared
+@using frontend.Services
+@inject IDocumentSectionService DocumentSectionsService
+@inject IJSRuntime JSRuntime
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-list-nested me-2"></i>
+            Document Sections
+        </h5>
+        <button class="btn btn-sm btn-primary" @onclick="ShowAddSectionModal">
+            <i class="bi bi-plus-circle me-1"></i>
+            Add Root Section
+        </button>
+    </div>
+    <div class="card-body">
+        @if (isLoading)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading sections...</span>
+                </div>
+            </div>
+        }
+        else if (!hierarchicalSections.Any())
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-list-nested display-4 text-muted"></i>
+                <h6 class="mt-2">No Sections Yet</h6>
+                <p class="text-muted small">Add sections to organize your document content.</p>
+                <button class="btn btn-outline-primary btn-sm" @onclick="ShowAddSectionModal">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Add First Section
+                </button>
+            </div>
+        }
+        else
+        {
+            <CascadingValue Value="@expandedSections">
+                <div class="hierarchical-section-list">
+                    @foreach (var sectionItem in hierarchicalSections)
+                    {
+                        <SectionTreeNode SectionDto="@sectionItem" 
+                                         Level="1" 
+                                         IsExpanded="@IsExpanded(sectionItem.Id)" 
+                                         OnEdit="@EditSection" 
+                                         OnDelete="@DeleteSection" 
+                                         OnAddChild="@ShowAddChildSectionModal" 
+                                         OnMove="@OnMoveCallback" 
+                                         OnToggleExpand="@OnToggleExpandCallback" />
+                    }
+                </div>
+            </CascadingValue>
+        }
+    </div>
+</div>
+
+@if (showSectionModal)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @if ((editingSection?.Id ?? 0) > 0)
+                        {
+                            <text>Edit Section</text>
+                        }
+                        else if (parentSectionForNew != null)
+                        {
+                            <text>Add Subsection to "@parentSectionForNew.Title"</text>
+                        }
+                        else
+                        {
+                            <text>Add Root Section</text>
+                        }
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HideSectionModal"></button>
+                </div>
+                <EditForm Model="editingSection" OnValidSubmit="SaveSection">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="sectionTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <InputText id="sectionTitle" class="form-control" @bind-Value="editingSection!.Title" 
+                                     placeholder="Enter section title" />
+                            <ValidationMessage For="@(() => editingSection!.Title)" />
+                        </div>
+                        
+                        @if (parentSectionForNew != null)
+                        {
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                This will be a subsection under: <strong>@parentSectionForNew.SectionNumber @parentSectionForNew.Title</strong>
+                            </div>
+                        }
+                        
+                        <div class="mb-3">
+                            <label for="sectionDescription" class="form-label">Description</label>
+                            <InputTextArea id="sectionDescription" class="form-control" rows="3" 
+                                         @bind-Value="editingSection!.Description" 
+                                         placeholder="Optional description of this sectionItem..." />
+                        </div>
+                        
+                        <div class="form-check">
+                            <InputCheckbox id="isNotApplicable" class="form-check-input" @bind-Value="editingSection!.IsNotApplicable" />
+                            <label class="form-check-label" for="isNotApplicable">
+                                Mark as Not Applicable (N/A)
+                            </label>
+                            <div class="form-text">
+                                Use this for template sections that don't apply to this document.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="HideSectionModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            }
+                            @((editingSection?.Id ?? 0) > 0 ? "Update Section" : "Add Section")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int DocumentId { get; set; }
+    [Parameter] public EventCallback OnSectionsChanged { get; set; }
+
+    private List<DocumentSectionDto> hierarchicalSections = new();
+    private HashSet<int> expandedSections = new();
+    private bool isLoading = true;
+    private bool showSectionModal = false;
+    private bool isSaving = false;
+    private DocumentSectionDto? editingSection;
+    private DocumentSectionDto? parentSectionForNew;
+    
+    private EventCallback<int> OnToggleExpandCallback => EventCallback.Factory.Create<int>(this, ToggleExpanded);
+    private EventCallback<(DocumentSectionDto, string)> OnMoveCallback => EventCallback.Factory.Create<(DocumentSectionDto, string)>(this, args => MoveSection(args.Item1, args.Item2));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSections();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DocumentId > 0)
+        {
+            await LoadSections();
+        }
+    }
+
+    private async Task LoadSections()
+    {
+        if (DocumentId <= 0) return;
+
+        isLoading = true;
+        try
+        {
+            hierarchicalSections = await DocumentSectionsService.GetSectionHierarchyAsync(DocumentId);
+            
+            // Auto-expand all sections by default
+            ExpandAllSections(hierarchicalSections);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sections: {ex.Message}");
+            hierarchicalSections = new List<DocumentSectionDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ExpandAllSections(List<DocumentSectionDto> sections)
+    {
+        foreach (var sect in sections)
+        {
+            expandedSections.Add(sect.Id);
+            if (sect.ChildSections?.Any() == true)
+            {
+                ExpandAllSections(sect.ChildSections);
+            }
+        }
+    }
+
+    private void ShowAddSectionModal()
+    {
+        parentSectionForNew = null;
+        editingSection = new DocumentSectionDto 
+        { 
+            Title = "",
+            DocumentId = DocumentId,
+            SectionOrder = 0, // Auto-assign
+            CreatedAt = DateTime.Now
+        };
+        showSectionModal = true;
+    }
+
+    private void ShowAddChildSectionModal(DocumentSectionDto parent)
+    {
+        parentSectionForNew = parent;
+        editingSection = new DocumentSectionDto 
+        { 
+            Title = "",
+            ParentSectionId = parent.Id,
+            SectionOrder = 0, // Auto-assign
+            CreatedAt = DateTime.Now
+        };
+        showSectionModal = true;
+    }
+
+    private void EditSection(DocumentSectionDto section)
+    {
+        parentSectionForNew = null;
+        editingSection = new DocumentSectionDto
+        {
+            Id = section.Id,
+            DocumentId = section.DocumentId,
+            ParentSectionId = section.ParentSectionId,
+            Title = section.Title,
+            Description = section.Description,
+            SectionOrder = section.SectionOrder,
+            IsNotApplicable = section.IsNotApplicable,
+            Level = section.Level,
+            CreatedAt = section.CreatedAt,
+            UpdatedAt = section.UpdatedAt
+        };
+        showSectionModal = true;
+    }
+
+    private void HideSectionModal()
+    {
+        showSectionModal = false;
+        editingSection = null;
+        parentSectionForNew = null;
+    }
+
+    private async Task SaveSection()
+    {
+        if (editingSection == null) return;
+
+        isSaving = true;
+        try
+        {
+            if (editingSection.Id > 0)
+            {
+                editingSection.UpdatedAt = DateTime.Now;
+                var success = await DocumentSectionsService.UpdateAsync(editingSection);
+                if (success)
+                {
+                    HideSectionModal();
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to update sectionItem. Please try again.");
+                }
+            }
+            else
+            {
+                var createdSection = await DocumentSectionsService.CreateAsync(editingSection);
+                if (createdSection != null)
+                {
+                    HideSectionModal();
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                    
+                    // Auto-expand parent if this is a new child
+                    if (parentSectionForNew != null)
+                    {
+                        expandedSections.Add(parentSectionForNew.Id);
+                    }
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to create sectionItem. Check for circular dependencies.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error saving section: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteSection(DocumentSectionDto section)
+    {
+        var hasChildren = section.ChildSections?.Any() == true;
+        var confirmMessage = hasChildren 
+            ? $"Cannot delete '{section.Title}' because it has subsections. Please delete or move the subsections first."
+            : $"Are you sure you want to delete the section '{section.Title}'?";
+
+        if (hasChildren)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", confirmMessage);
+            return;
+        }
+
+        if (await JSRuntime.InvokeAsync<bool>("confirm", confirmMessage))
+        {
+            try
+            {
+                var success = await DocumentSectionsService.DeleteAsync(section.Id);
+                if (success)
+                {
+                    await LoadSections();
+                    await OnSectionsChanged.InvokeAsync();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Failed to delete sectionItem. It may have requirements or subsections.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting section: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task MoveSection(DocumentSectionDto docSection, string direction)
+    {
+        // This is a simplified move - in a full implementation, you'd want more control
+        // For now, we'll just reload after a move
+        await JSRuntime.InvokeVoidAsync("alert", "Move functionality coming soon!");
+    }
+
+    private void ToggleExpanded(int sectionId)
+    {
+        if (expandedSections.Contains(sectionId))
+        {
+            expandedSections.Remove(sectionId);
+        }
+        else
+        {
+            expandedSections.Add(sectionId);
+        }
+        StateHasChanged();
+    }
+
+    private bool IsExpanded(int sectionId) => expandedSections.Contains(sectionId);
+}
+
+<style>
+    .hierarchical-section-list {
+        font-size: 0.95rem;
+    }
+
+    .modal {
+        z-index: 1055;
+    }
+</style>

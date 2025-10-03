@@ -4,8 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.38</Version>
-    <PackageVersion>1.0.38</PackageVersion>
+    <Version>1.0.40</Version>
+    <PackageVersion>1.0.40</PackageVersion>
+    <PackageReleaseNotes>Added hierarchical section service methods - query hierarchy, move sections, validate references, generate section numbers</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

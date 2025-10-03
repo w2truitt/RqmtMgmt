@@ -127,7 +127,7 @@ namespace backend.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Failed to create document section", badRequestResult.Value);
+            Assert.Equal("Failed to create document section. Check parent reference and circular dependencies.", badRequestResult.Value);
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace backend.Tests
         }
 
         [Fact]
-        public async Task Delete_ReturnsNotFound_WhenServiceReturnsFalse()
+        public async Task Delete_ReturnsBadRequest_WhenServiceReturnsFalse()
         {
             // Arrange
             _mockService.Setup(s => s.DeleteAsync(999)).ReturnsAsync(false);
@@ -216,18 +216,22 @@ namespace backend.Tests
             var result = await _controller.Delete(999);
 
             // Assert
-            Assert.IsType<NotFoundResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
         public async Task ReorderSections_ReturnsNoContent_WhenSuccessful()
         {
             // Arrange
-            var sectionIds = new List<int> { 3, 1, 2 };
-            _mockService.Setup(s => s.ReorderSectionsAsync(1, sectionIds)).ReturnsAsync(true);
+            var request = new ReorderSectionsRequest 
+            { 
+                ParentId = null, 
+                SectionIds = new List<int> { 3, 1, 2 } 
+            };
+            _mockService.Setup(s => s.ReorderSectionsAsync(null, request.SectionIds)).ReturnsAsync(true);
 
             // Act
-            var result = await _controller.ReorderSections(1, sectionIds);
+            var result = await _controller.ReorderSections(request);
 
             // Assert
             Assert.IsType<NoContentResult>(result);
@@ -237,11 +241,15 @@ namespace backend.Tests
         public async Task ReorderSections_ReturnsBadRequest_WhenServiceReturnsFalse()
         {
             // Arrange
-            var sectionIds = new List<int> { 3, 1, 2 };
-            _mockService.Setup(s => s.ReorderSectionsAsync(1, sectionIds)).ReturnsAsync(false);
+            var request = new ReorderSectionsRequest 
+            { 
+                ParentId = 1, 
+                SectionIds = new List<int> { 3, 1, 2 } 
+            };
+            _mockService.Setup(s => s.ReorderSectionsAsync(1, request.SectionIds)).ReturnsAsync(false);
 
             // Act
-            var result = await _controller.ReorderSections(1, sectionIds);
+            var result = await _controller.ReorderSections(request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
@@ -251,8 +259,15 @@ namespace backend.Tests
         [Fact]
         public async Task ReorderSections_ReturnsBadRequest_WhenSectionIdsIsNull()
         {
+            // Arrange
+            var request = new ReorderSectionsRequest 
+            { 
+                ParentId = 1, 
+                SectionIds = null!
+            };
+
             // Act
-            var result = await _controller.ReorderSections(1, null);
+            var result = await _controller.ReorderSections(request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
@@ -262,8 +277,15 @@ namespace backend.Tests
         [Fact]
         public async Task ReorderSections_ReturnsBadRequest_WhenSectionIdsIsEmpty()
         {
+            // Arrange
+            var request = new ReorderSectionsRequest 
+            { 
+                ParentId = 1, 
+                SectionIds = new List<int>() 
+            };
+
             // Act
-            var result = await _controller.ReorderSections(1, new List<int>());
+            var result = await _controller.ReorderSections(request);
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);

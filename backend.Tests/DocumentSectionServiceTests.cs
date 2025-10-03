@@ -232,7 +232,7 @@ namespace backend.Tests
             var newOrder = new List<int> { section3.Id, section1.Id, section2.Id };
 
             // Act
-            var result = await service.ReorderSectionsAsync(document.Id, newOrder);
+            var result = await service.ReorderSectionsAsync(null, newOrder);
 
             // Assert
             Assert.True(result);

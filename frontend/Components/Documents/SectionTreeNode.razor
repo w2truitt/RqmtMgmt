@@ -1,0 +1,235 @@
+@using RqmtMgmtShared
+
+<div class="section-tree-node" style="margin-left: @((Level - 1) * 1.5)rem;">
+    <div class="section-item border rounded p-3 mb-2 @(SectionDto.IsNotApplicable ? "bg-light" : "")" 
+         data-section-id="@SectionDto.Id">
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1 d-flex align-items-start">
+                @* Expand/Collapse Toggle *@
+                @if (SectionDto.ChildSections?.Any() == true)
+                {
+                    <button class="btn btn-sm btn-link p-0 me-2 expand-toggle" 
+                            @onclick="() => OnToggleExpand.InvokeAsync(SectionDto.Id)"
+                            title="@(IsExpanded ? "Collapse" : "Expand")">
+                        <i class="bi @(IsExpanded ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                    </button>
+                }
+                else
+                {
+                    <span class="expand-toggle-spacer"></span>
+                }
+                
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        @* Section Number Badge *@
+                        <span class="badge bg-secondary me-2 section-number-badge">
+                            @(SectionDto.SectionNumber ?? $"{SectionDto.SectionOrder}")
+                        </span>
+                        
+                        @* Section Title *@
+                        <h6 class="mb-0 section-title @(SectionDto.IsNotApplicable ? "text-muted text-decoration-line-through" : "")">
+                            @SectionDto.Title
+                        </h6>
+                        
+                        @* N/A Badge *@
+                        @if (SectionDto.IsNotApplicable)
+                        {
+                            <span class="badge bg-warning text-dark ms-2">N/A</span>
+                        }
+                        
+                        @* Level Indicator *@
+                        <span class="badge bg-light text-dark ms-2">L@SectionDto.Level</span>
+                        
+                        @* Requirement Count *@
+                        @if (SectionDto.RequirementCount > 0 || SectionDto.TotalRequirementCount > 0)
+                        {
+                            <span class="badge bg-info text-dark ms-2" 
+                                  title="@SectionDto.RequirementCount direct, @SectionDto.TotalRequirementCount total">
+                                <i class="bi bi-file-text me-1"></i>
+                                @if (SectionDto.TotalRequirementCount > SectionDto.RequirementCount)
+                                {
+                                    <text>@SectionDto.RequirementCount / @SectionDto.TotalRequirementCount</text>
+                                }
+                                else
+                                {
+                                    <text>@SectionDto.RequirementCount</text>
+                                }
+                            </span>
+                        }
+                        
+                        @* Child Count *@
+                        @if (SectionDto.ChildSections?.Any() == true)
+                        {
+                            <span class="badge bg-light text-dark ms-2" title="@SectionDto.ChildSections.Count subsections">
+                                <i class="bi bi-diagram-3 me-1"></i>@SectionDto.ChildSections.Count
+                            </span>
+                        }
+                    </div>
+                    
+                    @* Description *@
+                    @if (!string.IsNullOrEmpty(SectionDto.Description))
+                    {
+                        <p class="text-muted small mb-0 section-description @(SectionDto.IsNotApplicable ? "text-decoration-line-through" : "")">
+                            @SectionDto.Description
+                        </p>
+                    }
+                </div>
+            </div>
+            
+            @* Action Buttons *@
+            <div class="section-actions d-flex gap-1 ms-2">
+                <button class="btn btn-sm btn-outline-success" 
+                        @onclick="() => OnAddChild.InvokeAsync(SectionDto)"
+                        title="Add subsection">
+                    <i class="bi bi-plus-circle"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" 
+                        @onclick="() => OnEdit.InvokeAsync(SectionDto)"
+                        title="Edit section">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" 
+                        @onclick="() => OnDelete.InvokeAsync(SectionDto)"
+                        title="Delete section"
+                        disabled="@(SectionDto.ChildSections?.Any() == true)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    @* Render Children Recursively *@
+    @if (IsExpanded && SectionDto.ChildSections?.Any() == true)
+    {
+        <div class="section-children">
+            @foreach (var child in SectionDto.ChildSections.OrderBy(s => s.SectionOrder))
+            {
+                <SectionTreeNode 
+                    SectionDto="@child" 
+                    Level="@(Level + 1)"
+                    OnEdit="@OnEdit"
+                    OnDelete="@OnDelete"
+                    OnAddChild="@OnAddChild"
+                    OnMove="@OnMove"
+                    OnToggleExpand="@OnToggleExpand"
+                    IsExpanded="@IsChildExpanded(child.Id)" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public DocumentSectionDto SectionDto { get; set; } = new() { Title = "" };
+    [Parameter] public int Level { get; set; } = 1;
+    [Parameter] public bool IsExpanded { get; set; } = true;
+    [Parameter] public EventCallback<DocumentSectionDto> OnEdit { get; set; }
+    [Parameter] public EventCallback<DocumentSectionDto> OnDelete { get; set; }
+    [Parameter] public EventCallback<DocumentSectionDto> OnAddChild { get; set; }
+    [Parameter] public EventCallback<(DocumentSectionDto, string)> OnMove { get; set; }
+    [Parameter] public EventCallback<int> OnToggleExpand { get; set; }
+    
+    [CascadingParameter] private HashSet<int>? ExpandedSections { get; set; }
+
+    private bool IsChildExpanded(int childId)
+    {
+        return ExpandedSections?.Contains(childId) ?? true;
+    }
+}
+
+<style>
+    .section-tree-node {
+        position: relative;
+    }
+
+    .section-item {
+        transition: all 0.2s ease;
+        background-color: white;
+    }
+
+    .section-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        transform: translateY(-1px);
+    }
+
+    .expand-toggle {
+        color: #6c757d;
+        text-decoration: none;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+    }
+
+    .expand-toggle:hover {
+        color: #495057;
+        background-color: rgba(0,0,0,0.05);
+        border-radius: 4px;
+    }
+
+    .expand-toggle-spacer {
+        display: inline-block;
+        width: 24px;
+        margin-right: 0.5rem;
+    }
+
+    .section-number-badge {
+        font-size: 0.8rem;
+        font-weight: 600;
+        min-width: 2rem;
+        text-align: center;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 500;
+        word-break: break-word;
+    }
+
+    .section-description {
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        line-height: 1.4;
+    }
+
+    .section-actions {
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .section-item:hover .section-actions {
+        opacity: 1;
+    }
+
+    .section-children {
+        position: relative;
+    }
+
+    .section-children::before {
+        content: '';
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0.5rem;
+        width: 2px;
+        background: linear-gradient(to bottom, #dee2e6 0%, #dee2e6 90%, transparent 100%);
+    }
+
+    /* Print styles */
+    @@media print {
+        .section-actions {
+            display: none !important;
+        }
+        
+        .expand-toggle {
+            display: none !important;
+        }
+        
+        .section-item {
+            box-shadow: none !important;
+            page-break-inside: avoid;
+        }
+    }
+</style>

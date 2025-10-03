@@ -5,8 +5,9 @@ using RqmtMgmtShared;
 namespace backend.Controllers
 {
     /// <summary>
-    /// API controller for managing document sections with full CRUD operations.
-    /// Provides endpoints for creating, reading, updating, and deleting sections within documents.
+    /// API controller for managing document sections with full CRUD operations and hierarchical support.
+    /// Provides endpoints for creating, reading, updating, and deleting sections within documents,
+    /// as well as managing hierarchical section relationships.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -23,34 +24,61 @@ namespace backend.Controllers
             _documentSectionService = documentSectionService;
         }
 
+        #region Basic CRUD Endpoints
+
         /// <summary>
-        /// Retrieves all sections for a specific document.
+        /// Retrieves sections for a specific document.
         /// </summary>
         /// <param name="documentId">The ID of the document.</param>
-        /// <returns>A list of sections for the specified document, ordered by section order.</returns>
-        /// <response code="200">Returns the list of sections for the document.</response>
+        /// <param name="includeChildren">If true, returns hierarchical tree structure; if false, returns flat list.</param>
+        /// <returns>A list or tree of sections for the specified document.</returns>
+        /// <response code="200">Returns the sections for the document.</response>
         [HttpGet("document/{documentId}")]
-        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> GetByDocumentId(int documentId)
+        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> GetByDocumentId(
+            int documentId, 
+            [FromQuery] bool includeChildren = false)
         {
-            var sections = await _documentSectionService.GetByDocumentIdAsync(documentId);
-            return Ok(sections);
+            if (includeChildren)
+            {
+                var hierarchy = await _documentSectionService.GetSectionHierarchyAsync(documentId);
+                return Ok(hierarchy);
+            }
+            else
+            {
+                var sections = await _documentSectionService.GetByDocumentIdAsync(documentId);
+                return Ok(sections);
+            }
         }
 
         /// <summary>
         /// Retrieves a specific document section by its ID.
         /// </summary>
         /// <param name="id">The ID of the document section.</param>
+        /// <param name="includeChildren">If true, includes child sections; if false, returns only the section.</param>
+        /// <param name="depth">The depth of children to include (-1 for all, 0 for none, 1+ for levels).</param>
         /// <returns>The document section if found.</returns>
         /// <response code="200">Returns the document section.</response>
         /// <response code="404">If the document section is not found.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<DocumentSectionDto>> GetById(int id)
+        public async Task<ActionResult<DocumentSectionDto>> GetById(
+            int id,
+            [FromQuery] bool includeChildren = false,
+            [FromQuery] int depth = -1)
         {
-            var section = await _documentSectionService.GetByIdAsync(id);
-            if (section == null)
-                return NotFound();
-
-            return Ok(section);
+            if (includeChildren)
+            {
+                var section = await _documentSectionService.GetSectionWithChildrenAsync(id, depth);
+                if (section == null)
+                    return NotFound();
+                return Ok(section);
+            }
+            else
+            {
+                var section = await _documentSectionService.GetByIdAsync(id);
+                if (section == null)
+                    return NotFound();
+                return Ok(section);
+            }
         }
 
         /// <summary>
@@ -68,7 +96,7 @@ namespace backend.Controllers
 
             var createdSection = await _documentSectionService.CreateAsync(section);
             if (createdSection == null)
-                return BadRequest("Failed to create document section");
+                return BadRequest("Failed to create document section. Check parent reference and circular dependencies.");
 
             return CreatedAtAction(nameof(GetById), new { id = createdSection.Id }, createdSection);
         }
@@ -100,40 +128,194 @@ namespace backend.Controllers
 
         /// <summary>
         /// Deletes a document section by its ID.
+        /// Will fail if section has child sections.
         /// </summary>
         /// <param name="id">The ID of the document section to delete.</param>
         /// <returns>No content if successful.</returns>
         /// <response code="204">If the deletion was successful.</response>
+        /// <response code="400">If the section has children.</response>
         /// <response code="404">If the document section is not found.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _documentSectionService.DeleteAsync(id);
             if (!success)
-                return NotFound();
+                return BadRequest("Cannot delete section. It may have child sections or not exist.");
+
+            return NoContent();
+        }
+
+        #endregion
+
+        #region Hierarchical Query Endpoints
+
+        /// <summary>
+        /// Retrieves the full hierarchical structure of sections for a document.
+        /// </summary>
+        /// <param name="documentId">The ID of the document.</param>
+        /// <returns>A tree structure of sections.</returns>
+        /// <response code="200">Returns the section hierarchy.</response>
+        [HttpGet("document/{documentId}/hierarchy")]
+        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> GetHierarchy(int documentId)
+        {
+            var hierarchy = await _documentSectionService.GetSectionHierarchyAsync(documentId);
+            return Ok(hierarchy);
+        }
+
+        /// <summary>
+        /// Retrieves direct child sections of a parent section.
+        /// </summary>
+        /// <param name="parentId">The ID of the parent section.</param>
+        /// <returns>A list of child sections.</returns>
+        /// <response code="200">Returns the child sections.</response>
+        [HttpGet("{parentId}/children")]
+        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> GetChildren(int parentId)
+        {
+            var children = await _documentSectionService.GetChildSectionsAsync(parentId);
+            return Ok(children);
+        }
+
+        /// <summary>
+        /// Retrieves root-level sections for a document.
+        /// </summary>
+        /// <param name="documentId">The ID of the document.</param>
+        /// <returns>A list of root sections.</returns>
+        /// <response code="200">Returns the root sections.</response>
+        [HttpGet("document/{documentId}/roots")]
+        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> GetRoots(int documentId)
+        {
+            var roots = await _documentSectionService.GetRootSectionsAsync(documentId);
+            return Ok(roots);
+        }
+
+        #endregion
+
+        #region Hierarchy Management Endpoints
+
+        /// <summary>
+        /// Moves a section to a new parent (or document root) and optionally reorders it.
+        /// </summary>
+        /// <param name="id">The ID of the section to move.</param>
+        /// <param name="request">The move request containing new parent ID and order.</param>
+        /// <returns>No content if successful.</returns>
+        /// <response code="204">If the move was successful.</response>
+        /// <response code="400">If the move would create a circular reference.</response>
+        /// <response code="404">If the section is not found.</response>
+        [HttpPost("{id}/move")]
+        public async Task<IActionResult> MoveSection(int id, [FromBody] MoveSectionRequest request)
+        {
+            var success = await _documentSectionService.MoveSectionAsync(id, request.NewParentId, request.NewOrder);
+            if (!success)
+                return BadRequest("Failed to move section. Check for circular references.");
 
             return NoContent();
         }
 
         /// <summary>
-        /// Reorders sections within a document based on the provided section IDs.
+        /// Reorders sections within a parent (or document root).
         /// </summary>
-        /// <param name="documentId">The ID of the document.</param>
-        /// <param name="sectionIds">The list of section IDs in the desired order.</param>
+        /// <param name="request">The reorder request containing parent ID and section IDs.</param>
         /// <returns>No content if successful.</returns>
         /// <response code="204">If the reordering was successful.</response>
         /// <response code="400">If the section IDs are invalid or incomplete.</response>
-        [HttpPost("document/{documentId}/reorder")]
-        public async Task<IActionResult> ReorderSections(int documentId, [FromBody] List<int>? sectionIds)
+        [HttpPost("reorder")]
+        public async Task<IActionResult> ReorderSections([FromBody] ReorderSectionsRequest request)
         {
-            if (sectionIds == null || sectionIds.Count == 0)
+            if (request.SectionIds == null || request.SectionIds.Count == 0)
                 return BadRequest("Section IDs are required");
 
-            var success = await _documentSectionService.ReorderSectionsAsync(documentId, sectionIds);
+            var success = await _documentSectionService.ReorderSectionsAsync(request.ParentId, request.SectionIds);
             if (!success)
                 return BadRequest("Failed to reorder sections");
 
             return NoContent();
         }
+
+        /// <summary>
+        /// Validates if a parent reference is valid (no circular references).
+        /// </summary>
+        /// <param name="sectionId">The ID of the section.</param>
+        /// <param name="parentId">The proposed parent ID.</param>
+        /// <returns>True if valid, false otherwise.</returns>
+        /// <response code="200">Returns validation result.</response>
+        [HttpGet("{sectionId}/validate-parent/{parentId}")]
+        public async Task<ActionResult<bool>> ValidateParent(int sectionId, int parentId)
+        {
+            var isValid = await _documentSectionService.ValidateParentReferenceAsync(sectionId, parentId);
+            return Ok(isValid);
+        }
+
+        #endregion
+
+        #region Utility Endpoints
+
+        /// <summary>
+        /// Generates a section number for a section based on its position in the hierarchy.
+        /// </summary>
+        /// <param name="id">The ID of the section.</param>
+        /// <returns>The generated section number.</returns>
+        /// <response code="200">Returns the section number.</response>
+        /// <response code="404">If the section is not found.</response>
+        [HttpGet("{id}/generate-number")]
+        public async Task<ActionResult<string>> GenerateNumber(int id)
+        {
+            var number = await _documentSectionService.GenerateSectionNumberAsync(id);
+            if (number == null)
+                return NotFound();
+
+            return Ok(number);
+        }
+
+        /// <summary>
+        /// Gets the requirement count for a section.
+        /// </summary>
+        /// <param name="id">The ID of the section.</param>
+        /// <param name="recursive">Whether to include requirements from child sections.</param>
+        /// <returns>The requirement count.</returns>
+        /// <response code="200">Returns the requirement count.</response>
+        [HttpGet("{id}/requirement-count")]
+        public async Task<ActionResult<int>> GetRequirementCount(int id, [FromQuery] bool recursive = false)
+        {
+            var count = await _documentSectionService.GetRequirementCountAsync(id, recursive);
+            return Ok(count);
+        }
+
+        #endregion
     }
+
+    #region Request Models
+
+    /// <summary>
+    /// Request model for moving a section.
+    /// </summary>
+    public class MoveSectionRequest
+    {
+        /// <summary>
+        /// The new parent section ID (null for document root).
+        /// </summary>
+        public int? NewParentId { get; set; }
+
+        /// <summary>
+        /// The new order position (null to append).
+        /// </summary>
+        public int? NewOrder { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for reordering sections.
+    /// </summary>
+    public class ReorderSectionsRequest
+    {
+        /// <summary>
+        /// The parent section ID (null for document root).
+        /// </summary>
+        public int? ParentId { get; set; }
+
+        /// <summary>
+        /// The list of section IDs in the desired order.
+        /// </summary>
+        public List<int> SectionIds { get; set; } = new();
+    }
+
+    #endregion
 }

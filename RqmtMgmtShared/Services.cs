@@ -193,16 +193,32 @@ public interface IDocumentService
 }
 
 /// <summary>
-/// Service interface for document section operations
+/// Service interface for document section operations.
+/// Supports hierarchical section organization with parent-child relationships.
 /// </summary>
 public interface IDocumentSectionService
 {
+    // Basic CRUD operations
     Task<List<DocumentSectionDto>> GetByDocumentIdAsync(int documentId);
     Task<DocumentSectionDto?> GetByIdAsync(int id);
     Task<DocumentSectionDto?> CreateAsync(DocumentSectionDto section);
     Task<bool> UpdateAsync(DocumentSectionDto section);
     Task<bool> DeleteAsync(int id);
-    Task<bool> ReorderSectionsAsync(int documentId, List<int> sectionIds);
+    
+    // Hierarchical query operations
+    Task<List<DocumentSectionDto>> GetSectionHierarchyAsync(int documentId);
+    Task<DocumentSectionDto?> GetSectionWithChildrenAsync(int sectionId, int depth = -1);
+    Task<List<DocumentSectionDto>> GetChildSectionsAsync(int parentSectionId);
+    Task<List<DocumentSectionDto>> GetRootSectionsAsync(int documentId);
+    
+    // Hierarchy management operations
+    Task<bool> MoveSectionAsync(int sectionId, int? newParentId, int? newOrder = null);
+    Task<bool> ReorderSectionsAsync(int? parentId, List<int> sectionIds);
+    Task<bool> ValidateParentReferenceAsync(int sectionId, int? parentId);
+    
+    // Utility operations
+    Task<string?> GenerateSectionNumberAsync(int sectionId);
+    Task<int> GetRequirementCountAsync(int sectionId, bool recursive = false);
 }
 
 /// <summary>
