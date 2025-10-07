@@ -48,6 +48,10 @@ The backend server is built using .NET 8 Web API with Entity Framework Core for 
 
 ### 3.1 Authentication and Authorization
 
+Requirements for user authentication and role-based access control
+
+- **REQ-AUTH-001**: The system SHALL support JWT bearer token authentication
+
 #### 3.1.1 User Authentication
 - **REQ-AUTH-001**: The system SHALL support JWT bearer token authentication
 - **REQ-AUTH-002**: The system SHALL integrate with OAuth 2.0/OpenID Connect providers (Azure AD, Okta, Google, IdentityServer)
@@ -61,6 +65,8 @@ The backend server is built using .NET 8 Web API with Entity Framework Core for 
 - **REQ-AUTH-008**: The system SHALL maintain user role assignments per project
 
 ### 3.2 User Management
+
+Requirements for user account operations, profile management, and role assignments
 
 #### 3.2.1 User Operations
 - **REQ-USER-001**: The system SHALL provide CRUD operations for user accounts

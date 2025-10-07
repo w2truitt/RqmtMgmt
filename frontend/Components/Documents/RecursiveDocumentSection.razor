@@ -1,0 +1,164 @@
+@* RecursiveDocumentSection.razor - Simple recursive component for hierarchical document display *@
+@using RqmtMgmtShared
+
+<!-- Display this section -->
+<div class="document-section" style="margin-left: @(Level * 20)px;">
+    <div class="section-header-container">
+        <h2 class="section-header">
+            @Section.Title
+            @if (Section.IsNotApplicable)
+            {
+                <span class="text-muted ms-2">(Not Applicable)</span>
+            }
+            @if (!IsReadingMode)
+            {
+                <button class="btn btn-sm btn-outline-secondary ms-2 d-print-none" @onclick="() => OnEditSection.InvokeAsync(Section.Id)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            }
+        </h2>
+    </div>
+    
+    @if (Section.IsNotApplicable)
+    {
+        <div class="section-content">
+            <em class="text-muted">This section is not applicable to this document.</em>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Section.Description))
+    {
+        <div class="section-content">
+            @Section.Description
+        </div>
+    }
+
+    <!-- REQUIREMENTS IN THIS SECTION -->
+    @{
+        var sectionRequirements = AllRequirements.Where(r => r.SectionId == Section.Id).ToList();
+    }
+    
+    @if (sectionRequirements.Any())
+    {
+        <div class="section-requirements">
+            @foreach (var requirement in sectionRequirements.OrderBy(r => r.Title))
+            {
+                <div class="requirement-item">
+                    <div class="requirement-header d-flex justify-content-between align-items-start">
+                        <div class="requirement-info flex-grow-1">
+                            <h4 class="requirement-title">
+                                <span class="requirement-id">@requirement.FullRequirementId</span>
+                                @requirement.Title
+                                <span class="badge bg-secondary ms-2">@requirement.Status</span>
+                                <span class="badge bg-light text-dark ms-1">@requirement.Type</span>
+                            </h4>
+                        </div>
+                        @if (!IsReadingMode)
+                        {
+                            <button class="btn btn-sm btn-outline-primary d-print-none" @onclick="() => OnEditRequirement.InvokeAsync(requirement.Id)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        }
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(requirement.Description))
+                    {
+                        <div class="requirement-description">
+                            @requirement.Description
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else if (!IsReadingMode && (Section.ChildSections?.Count ?? 0) == 0)
+    {
+        <div class="no-requirements d-print-none">
+            <p class="text-muted fst-italic">No requirements in this section.</p>
+            <button class="btn btn-outline-primary btn-sm" @onclick="() => OnAddRequirement.InvokeAsync(Section.Id)">
+                <i class="bi bi-plus me-1"></i>Add Requirement to Section
+            </button>
+        </div>
+    }
+</div>
+
+<!-- CHILD SECTIONS (RECURSIVE) -->
+@if (Section.ChildSections?.Any() == true)
+{
+    @foreach (var childSection in Section.ChildSections.OrderBy(s => s.SectionOrder))
+    {
+        <RecursiveDocumentSection 
+            Section="childSection" 
+            AllRequirements="AllRequirements"
+            IsReadingMode="IsReadingMode"
+            OnEditSection="OnEditSection"
+            OnEditRequirement="OnEditRequirement"
+            OnAddRequirement="OnAddRequirement"
+            Level="Level + 1" />
+    }
+}
+
+<style>
+    .document-section {
+        margin-bottom: 1.5rem;
+        page-break-inside: avoid;
+    }
+
+    .section-header {
+        font-size: calc(1.5rem - @(Level * 0.1)rem);
+        color: #333;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.25rem;
+    }
+
+    .section-content {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-left: 3px solid #6c757d;
+    }
+
+    .section-requirements {
+        margin-bottom: 1rem;
+    }
+
+    .requirement-item {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        border-left: 3px solid #007bff;
+        background-color: #f8f9fa;
+        page-break-inside: avoid;
+    }
+
+    .requirement-title {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .requirement-id {
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .requirement-description {
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+    }
+
+    .no-requirements {
+        padding: 1rem;
+        text-align: center;
+        border: 1px dashed #ddd;
+        border-radius: 0.375rem;
+    }
+</style>
+
+@code {
+    [Parameter] public DocumentSectionDto Section { get; set; } = new() { Title = "" };
+    [Parameter] public List<RequirementDto> AllRequirements { get; set; } = new();
+    [Parameter] public bool IsReadingMode { get; set; } = true;
+    [Parameter] public EventCallback<int> OnEditSection { get; set; }
+    [Parameter] public EventCallback<int> OnEditRequirement { get; set; }
+    [Parameter] public EventCallback<int> OnAddRequirement { get; set; }
+    [Parameter] public int Level { get; set; } = 0;
+}

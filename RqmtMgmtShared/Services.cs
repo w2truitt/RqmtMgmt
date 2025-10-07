@@ -219,6 +219,11 @@ public interface IDocumentSectionService
     // Utility operations
     Task<string?> GenerateSectionNumberAsync(int sectionId);
     Task<int> GetRequirementCountAsync(int sectionId, bool recursive = false);
+    
+    // Search and duplicate detection operations
+    Task<List<DocumentSectionDto>> SearchSectionsAsync(int documentId, string searchTerm, bool fuzzyMatch = true, double similarityThreshold = 0.8);
+    Task<List<DocumentSectionDto>> FindPotentialDuplicatesAsync(int documentId, string title, double similarityThreshold = 0.8);
+    Task<DocumentSectionDto?> FindExistingSectionAsync(int documentId, string title, int? parentId = null, double similarityThreshold = 0.9);
 }
 
 /// <summary>

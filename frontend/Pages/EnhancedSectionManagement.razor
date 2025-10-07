@@ -1,0 +1,383 @@
+@page "/documents/{documentId:int}/sections-enhanced"
+@using RqmtMgmtShared
+@using frontend.Services
+@using frontend.Components.Documents
+@inject IDocumentSectionService DocumentSectionsService
+@inject IDocumentService DocumentService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>Enhanced Section Management - @documentTitle</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/documents" class="text-decoration-none">Documents</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/documents/@DocumentId" class="text-decoration-none">@documentTitle</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Enhanced Sections</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-search me-2"></i>
+                        Enhanced Section Management
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Advanced search and duplicate detection for document sections
+                    </p>
+                </div>
+                <div>
+                    <a href="/documents/@DocumentId" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back to Document
+                    </a>
+                    <button class="btn btn-primary" @onclick="RefreshAll">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading document sections...</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- Enhanced Search Panel -->
+            <div class="col-lg-6 mb-4">
+                <EnhancedSectionSearch DocumentId="@DocumentId" 
+                                       OnSectionSelected="@OnSectionSelected" />
+            </div>
+
+            <!-- Section Management Panel -->
+            <div class="col-lg-6 mb-4">
+                <HierarchicalSectionManager DocumentId="@DocumentId" 
+                                            OnSectionsChanged="@OnSectionsChanged" />
+            </div>
+        </div>
+
+        <!-- Section Statistics -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bar-chart me-2"></i>
+                            Section Statistics
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <h3 class="text-primary mb-1">@totalSections</h3>
+                                    <p class="text-muted small mb-0">Total Sections</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <h3 class="text-success mb-1">@rootSections</h3>
+                                    <p class="text-muted small mb-0">Root Sections</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <h3 class="text-info mb-1">@childSections</h3>
+                                    <p class="text-muted small mb-0">Child Sections</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <h3 class="text-warning mb-1">@notApplicableSections</h3>
+                                    <p class="text-muted small mb-0">N/A Sections</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-lightning me-2"></i>
+                            Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-primary w-100" @onclick="FindAllDuplicates">
+                                    <i class="bi bi-files me-2"></i>
+                                    Find All Duplicates
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-info w-100" @onclick="ValidateStructure">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    Validate Structure
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-success w-100" @onclick="ExportSections">
+                                    <i class="bi bi-download me-2"></i>
+                                    Export Sections
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int DocumentId { get; set; }
+
+    private string documentTitle = "Loading...";
+    private bool isLoading = true;
+    
+    // Statistics
+    private int totalSections = 0;
+    private int rootSections = 0;
+    private int childSections = 0;
+    private int notApplicableSections = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDocumentInfo();
+        await LoadStatistics();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DocumentId > 0)
+        {
+            await LoadDocumentInfo();
+            await LoadStatistics();
+        }
+    }
+
+    private async Task LoadDocumentInfo()
+    {
+        try
+        {
+            var document = await DocumentService.GetByIdAsync(DocumentId);
+            documentTitle = document?.Title ?? "Unknown Document";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading document: {ex.Message}");
+            documentTitle = "Error Loading Document";
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        isLoading = true;
+        try
+        {
+            var sections = await DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
+            
+            totalSections = sections.Count;
+            rootSections = sections.Count(s => !s.ParentSectionId.HasValue);
+            childSections = sections.Count(s => s.ParentSectionId.HasValue);
+            notApplicableSections = sections.Count(s => s.IsNotApplicable);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading statistics: {ex.Message}");
+            totalSections = rootSections = childSections = notApplicableSections = 0;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnSectionSelected(DocumentSectionDto section)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", 
+            $"Selected Section:\n\nTitle: {section.Title}\nID: {section.Id}\nSection Number: {section.SectionNumber}\n\nDescription: {section.Description ?? "No description"}");
+    }
+
+    private async Task OnSectionsChanged()
+    {
+        await LoadStatistics();
+        StateHasChanged();
+    }
+
+    private async Task RefreshAll()
+    {
+        await LoadDocumentInfo();
+        await LoadStatistics();
+        StateHasChanged();
+    }
+
+    private async Task FindAllDuplicates()
+    {
+        try
+        {
+            var sections = await DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
+            var duplicateGroups = new List<List<DocumentSectionDto>>();
+            
+            foreach (var section in sections)
+            {
+                var duplicates = await DocumentSectionsService.FindPotentialDuplicatesAsync(
+                    DocumentId, section.Title, 0.8);
+                
+                if (duplicates.Count > 1) // More than just the section itself
+                {
+                    duplicateGroups.Add(duplicates);
+                }
+            }
+
+            if (duplicateGroups.Any())
+            {
+                var message = $"Found {duplicateGroups.Count} groups of potential duplicates:\n\n";
+                foreach (var group in duplicateGroups.Take(5)) // Show first 5 groups
+                {
+                    message += $"• {group.First().Title} ({group.Count} duplicates)\n";
+                }
+                await JSRuntime.InvokeVoidAsync("alert", message);
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "No duplicates found! All section titles appear to be unique.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error finding duplicates: {ex.Message}");
+        }
+    }
+
+    private async Task ValidateStructure()
+    {
+        try
+        {
+            var hierarchy = await DocumentSectionsService.GetSectionHierarchyAsync(DocumentId);
+            var issues = new List<string>();
+            
+            // Check for orphaned sections
+            var allSections = await DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
+            var orphaned = allSections.Where(s => s.ParentSectionId.HasValue && 
+                !allSections.Any(p => p.Id == s.ParentSectionId.Value)).ToList();
+            
+            if (orphaned.Any())
+            {
+                issues.Add($"Found {orphaned.Count} orphaned sections (parent doesn't exist)");
+            }
+            
+            // Check for empty sections
+            var emptySections = allSections.Where(s => string.IsNullOrWhiteSpace(s.Description)).Count();
+            if (emptySections > 0)
+            {
+                issues.Add($"Found {emptySections} sections without descriptions");
+            }
+
+            var message = issues.Any() 
+                ? $"Structure validation found {issues.Count} issues:\n\n" + string.Join("\n", issues)
+                : "Document structure validation passed! No issues found.";
+                
+            await JSRuntime.InvokeVoidAsync("alert", message);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error validating structure: {ex.Message}");
+        }
+    }
+
+    private async Task ExportSections()
+    {
+        try
+        {
+            var sections = await DocumentSectionsService.GetSectionHierarchyAsync(DocumentId);
+            var exportData = sections.Select(s => new 
+            {
+                s.Id,
+                s.Title,
+                s.Description,
+                s.SectionNumber,
+                ParentId = s.ParentSectionId,
+                s.IsNotApplicable,
+                ChildCount = s.ChildSections?.Count ?? 0
+            });
+            
+            var json = System.Text.Json.JsonSerializer.Serialize(exportData, new System.Text.Json.JsonSerializerOptions 
+            { 
+                WriteIndented = true 
+            });
+            
+            await JSRuntime.InvokeVoidAsync("downloadFile", "sections-export.json", "application/json", json);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error exporting sections: {ex.Message}");
+        }
+    }
+}
+
+<style>
+    .stat-item {
+        padding: 1rem;
+        border-radius: 0.375rem;
+        background-color: #f8f9fa;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-item h3 {
+        font-size: 2rem;
+        font-weight: 600;
+    }
+    
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+    }
+</style>
+
+<script>
+    window.downloadFile = function(filename, contentType, content) {
+        const blob = new Blob([content], { type: contentType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+</script>

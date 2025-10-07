@@ -148,41 +148,60 @@ def create_document_section(token: str, document_id: int, section_data: Dict) ->
         return None
 
 
-def parse_requirements_from_srs(file_path: str) -> Dict[str, List[Dict[str, str]]]:
+def parse_sections_and_requirements_from_srs(file_path: str) -> tuple[Dict[str, Dict], Dict[str, List[Dict[str, str]]]]:
     """
-    Parse requirements from the SRS markdown file.
+    Parse sections and requirements from the SRS markdown file.
     
-    Returns a dictionary mapping section names to lists of requirements.
-    Each requirement is a dict with 'id', 'title', and 'description'.
+    Returns:
+        Tuple of (sections_dict, requirements_by_section)
+        sections_dict maps section numbers to section data
+        requirements_by_section maps section numbers to lists of requirements
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
+    sections = {}
     requirements_by_section = {}
-    current_section = None
-    
-    # Pattern to match requirement lines like:
-    # - **REQ-AUTH-001**: The system SHALL support JWT bearer token authentication
-    req_pattern = re.compile(r'^-\s+\*\*([A-Z]+-[A-Z]+-\d+)\*\*:\s+(.+)$', re.MULTILINE)
-    
-    # Pattern to match section headers
-    section_pattern = re.compile(r'^###\s+(\d+\.\d+)\s+(.+)$', re.MULTILINE)
     
     lines = content.split('\n')
-    i = 0
+    current_section = None
+    current_parent = None
     
-    while i < len(lines):
-        line = lines[i].strip()
+    for line in lines:
+        line = line.strip()
         
-        # Check for section header
-        section_match = re.match(r'^###\s+(\d+\.\d+)\s+(.+)$', line)
-        if section_match:
-            section_num = section_match.group(1)
-            section_name = section_match.group(2)
-            current_section = f"{section_num} {section_name}"
-            if current_section not in requirements_by_section:
-                requirements_by_section[current_section] = []
-            i += 1
+        # Check for main section header (### 3.1 Title)
+        main_match = re.match(r'^###\s+(\d+\.\d+)\s+(.+)$', line)
+        if main_match:
+            section_num = main_match.group(1)
+            section_name = main_match.group(2)
+            current_section = section_num
+            current_parent = None
+            sections[section_num] = {
+                'number': section_num,
+                'title': section_name,
+                'level': 1,
+                'parent': None
+            }
+            requirements_by_section[section_num] = []
+            continue
+        
+        # Check for subsection header (#### 3.1.1 Title)
+        sub_match = re.match(r'^####\s+(\d+\.\d+\.\d+)\s+(.+)$', line)
+        if sub_match:
+            section_num = sub_match.group(1)
+            section_name = sub_match.group(2)
+            current_section = section_num
+            # Find parent (e.g., 3.1 for 3.1.1)
+            parent_num = '.'.join(section_num.split('.')[:-1])
+            current_parent = parent_num
+            sections[section_num] = {
+                'number': section_num,
+                'title': section_name,
+                'level': 2,
+                'parent': parent_num
+            }
+            requirements_by_section[section_num] = []
             continue
         
         # Check for requirement
@@ -191,18 +210,15 @@ def parse_requirements_from_srs(file_path: str) -> Dict[str, List[Dict[str, str]
             req_id = req_match.group(1)
             req_description = req_match.group(2)
             
-            # Create requirement object
             requirement = {
                 'id': req_id,
-                'title': f"{req_id}: {req_description[:100]}",  # Truncate title if too long
+                'title': f"{req_id}: {req_description[:100]}",
                 'description': req_description
             }
             
             requirements_by_section[current_section].append(requirement)
-        
-        i += 1
     
-    return requirements_by_section
+    return sections, requirements_by_section
 
 
 def create_requirement(token: str, requirement: Dict[str, any]) -> Optional[Dict]:
@@ -245,6 +261,61 @@ def create_requirement(token: str, requirement: Dict[str, any]) -> Optional[Dict
         return None
 
 
+def ensure_sections_exist(token: str, document_id: int, sections: Dict[str, Dict], existing_sections: List[Dict]) -> Dict[str, int]:
+    """
+    Ensure all sections exist in the document, creating them if necessary.
+    
+    Args:
+        token: JWT bearer token
+        document_id: Document ID
+        sections: Dictionary of sections to create
+        existing_sections: List of existing sections
+        
+    Returns:
+        Mapping of section numbers to section IDs
+    """
+    # Build mapping of existing sections
+    existing_mapping = {}
+    for section in existing_sections:
+        section_num = section.get('number')
+        if section_num:
+            existing_mapping[section_num] = section['id']
+    
+    # Sort sections by level and number to create parents first
+    sorted_sections = sorted(sections.items(), key=lambda x: (x[1]['level'], x[0]))
+    
+    section_ids = existing_mapping.copy()
+    
+    for section_num, section_data in sorted_sections:
+        if section_num in section_ids:
+            continue  # Already exists
+        
+        # Create the section
+        parent_id = None
+        if section_data['parent']:
+            parent_id = section_ids.get(section_data['parent'])
+            if not parent_id:
+                print(f"⚠ Warning: Parent section {section_data['parent']} not found for {section_num}")
+        
+        section_dto = {
+            "documentId": document_id,
+            "number": section_num,
+            "title": section_data['title'],
+            "description": "",  # Can be updated later
+            "parentId": parent_id,
+            "order": 0  # Can be updated later
+        }
+        
+        print(f"Creating section: {section_num} {section_data['title']}")
+        created_section = create_document_section(token, document_id, section_dto)
+        if created_section:
+            section_ids[section_num] = created_section['id']
+        else:
+            print(f"✗ Failed to create section {section_num}")
+    
+    return section_ids
+
+
 def main():
     """Main execution function."""
     print("=" * 80)
@@ -272,37 +343,44 @@ def main():
     
     # Get document sections
     print("Fetching document sections...")
-    sections = get_document_sections(token, DOCUMENT_ID)
+    existing_sections = get_document_sections(token, DOCUMENT_ID)
     
-    if not sections:
+    if not existing_sections:
         print("⚠ Warning: Could not fetch existing sections")
         print("   Proceeding anyway - sections will need to be created")
     else:
-        print(f"✓ Found {len(sections)} existing sections")
-        for section in sections:
+        print(f"✓ Found {len(existing_sections)} existing sections")
+        for section in existing_sections:
             print(f"  - {section.get('number')}. {section.get('title')} (ID: {section.get('id')})")
     print()
     
-    # Build section mapping
-    section_mapping = {}
-    if sections:
-        for section in sections:
-            section_title = f"{section.get('number')}. {section.get('title')}"
-            section_mapping[section_title] = section.get('id')
-    
-    # Parse requirements from SRS file
-    print("Parsing requirements from SOFTWARE_REQUIREMENTS_SPECIFICATION.md...")
+    # Parse sections and requirements from SRS file
+    print("Parsing sections and requirements from SOFTWARE_REQUIREMENTS_SPECIFICATION.md...")
     srs_file = "SOFTWARE_REQUIREMENTS_SPECIFICATION.md"
-    requirements_by_section = parse_requirements_from_srs(srs_file)
+    sections, requirements_by_section = parse_sections_and_requirements_from_srs(srs_file)
     
     total_requirements = sum(len(reqs) for reqs in requirements_by_section.values())
-    print(f"✓ Found {total_requirements} requirements across {len(requirements_by_section)} sections")
+    print(f"✓ Found {len(sections)} sections and {total_requirements} requirements")
     print()
     
-    # Display summary
-    for section, reqs in requirements_by_section.items():
+    # Display sections
+    for section_num, section_data in sections.items():
+        level = "  " * (section_data['level'] - 1)
+        print(f"{level}{section_num} {section_data['title']}")
+    print()
+    
+    # Display requirements summary
+    for section_num, reqs in requirements_by_section.items():
         if len(reqs) > 0:
-            print(f"  {section}: {len(reqs)} requirements")
+            section_data = sections[section_num]
+            level = "  " * (section_data['level'] - 1)
+            print(f"{level}{section_num} {section_data['title']}: {len(reqs)} requirements")
+    print()
+    
+    # Ensure all sections exist
+    print("Ensuring all sections exist...")
+    section_ids = ensure_sections_exist(token, DOCUMENT_ID, sections, existing_sections)
+    print(f"✓ Section mapping complete: {len(section_ids)} sections")
     print()
     
     # Ask for confirmation
@@ -320,29 +398,21 @@ def main():
     failed_count = 0
     skipped_count = 0
     
-    for section_name, reqs in requirements_by_section.items():
+    for section_num, reqs in requirements_by_section.items():
         if len(reqs) == 0:
-            skipped_count += len(reqs) if reqs else 0
             continue
             
-        # Try to find section ID
-        section_id = section_mapping.get(section_name)
-        
-        # Try alternative formatting
-        if not section_id:
-            # Remove leading numbers if present
-            alt_name = re.sub(r'^\d+\.\d+\s+', '', section_name)
-            for key in section_mapping.keys():
-                if alt_name in key or section_name in key:
-                    section_id = section_mapping[key]
-                    break
+        # Get section ID
+        section_id = section_ids.get(section_num)
         
         if not section_id:
-            print(f"⚠ Warning: No section found for '{section_name}', skipping {len(reqs)} requirements...")
+            print(f"⚠ Warning: No section ID found for '{section_num}', skipping {len(reqs)} requirements...")
             skipped_count += len(reqs)
             continue
         
-        print(f"\nSection: {section_name} (ID: {section_id})")
+        section_data = sections[section_num]
+        level = "  " * (section_data['level'] - 1)
+        print(f"\n{level}Section: {section_num} {section_data['title']} (ID: {section_id})")
         print("-" * 40)
         
         for req in reqs:
@@ -355,7 +425,8 @@ def main():
                 "projectId": PROJECT_ID,
                 "documentId": DOCUMENT_ID,
                 "sectionId": section_id,
-                "version": 1
+                "version": 1,
+                "createdBy": 1  # Required field
             }
             
             result = create_requirement(token, req_dto)

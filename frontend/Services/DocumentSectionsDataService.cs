@@ -137,6 +137,39 @@ namespace frontend.Services
 
         #endregion
 
+        #region Enhanced Search Operations
+
+        /// <summary>
+        /// Searches sections by title with optional fuzzy matching.
+        /// </summary>
+        public async Task<List<DocumentSectionDto>> SearchSectionsAsync(int documentId, string searchTerm, bool fuzzyMatch = false, double similarityThreshold = 0.8)
+        {
+            var url = $"/api/documentsections/document/{documentId}/search?searchTerm={Uri.EscapeDataString(searchTerm)}&fuzzyMatch={fuzzyMatch}&similarityThreshold={similarityThreshold}";
+            return await GetListAsync<DocumentSectionDto>(url);
+        }
+
+        /// <summary>
+        /// Finds potential duplicates for a section title.
+        /// </summary>
+        public async Task<List<DocumentSectionDto>> FindPotentialDuplicatesAsync(int documentId, string title, double similarityThreshold = 0.8)
+        {
+            var url = $"/api/documentsections/document/{documentId}/duplicates?title={Uri.EscapeDataString(title)}&similarityThreshold={similarityThreshold}";
+            return await GetListAsync<DocumentSectionDto>(url);
+        }
+
+        /// <summary>
+        /// Finds an existing section that matches the given title and parent.
+        /// </summary>
+        public async Task<DocumentSectionDto?> FindExistingSectionAsync(int documentId, string title, int? parentId = null, double similarityThreshold = 0.9)
+        {
+            var url = $"/api/documentsections/document/{documentId}/find-existing?title={Uri.EscapeDataString(title)}&similarityThreshold={similarityThreshold}";
+            if (parentId.HasValue)
+                url += $"&parentId={parentId.Value}";
+            return await GetAsync<DocumentSectionDto>(url);
+        }
+
+        #endregion
+
         #region Utility Operations
 
         /// <summary>

@@ -1,0 +1,6533 @@
+Software Requirement Specification Draft Version 1.0
+TestFlow Pro Backend Server - Software
+Requirements Specification
+Project: 25
+Document Type: Software Requirement Specification
+Status: Draft
+Version: 1.0
+Created: Oct 01, 2025
+Requirements: 355 | Sections: 88
+Objective
+This Software Requirements Specification (SRS) defines the functional and nonfunctional
+requirements for the backend server component of the Requirements & Test
+Management System. The backend serves as a RESTful API providing data
+management, business logic, authentication, and integration capabilities for the webbased
+enterprise tool.
+Background & Context
+The backend server supports management of Customer Requirement Documents
+(CRD), Product Requirement Documents (PRD), Software Requirement Specifications
+(SRS), Test Suites, Test Cases, Test Plans, Test Runs, and provides comprehensive
+traceability and reporting capabilities. Built using .NET 8 Web API with Entity
+Framework Core for data access, providing RESTful endpoints for frontend
+consumption and third-party integrations.
+DASHBOARD
+Home
+REQUIREMENTS
+MANAGEMENT
+Documents
+Requirements
+PROJECT
+MANAGEMENT
+Projects
+TEST MANAGEMENT
+Test Suites
+Test Cases
+Test Plans
+TEST EXECUTION
+Test Execution
+ADMINISTRATION
+Users
+ TestFlow Pro
+ Select Project
+
+
+
+
+
+
+About Hello, admin@rqmtmgmt.local! Log out
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 1/169
+1
+.
+3.1 Authentication and Authorization
+Requirements for user authentication and role-basedaccess control
+-REQ-007
+REQ-AUTH-001: JWT Bearer TokenAuthentication
+Draft
+SRS
+The system SHALL support JWT bearer tokenauthentication
+-REQ-1185
+REQ-AUTH-001: The system SHALLsupport JWT bearer token authentication
+Draft
+SRS
+The system SHALL support JWT bearer tokenauthentication
+-REQ-1007
+Test Requirement
+Draft
+SRS
+Test description
+1
+.
+3.1.1 User Authentication
+2
+.
+3.1.2 Authorization
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 2/169
+90
+.
+User Interfaces
+-REQ-1163
+REQ-UI-001: The system SHALLprovide RESTful API endpoints for frontendconsumption
+Draft
+SRS
+The system SHALL provide RESTful API endpoints forfrontend consumption
+-REQ-1164
+REQ-UI-002: The system SHALLprovide OpenAPI/Swagger documentation interface
+Draft
+SRS
+The system SHALL provide OpenAPI/Swaggerdocumentation interface
+-REQ-1165
+REQ-UI-003: The system SHALLsupport CORS for web application integration
+Draft
+SRS
+The system SHALL support CORS for web applicationintegration
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 3/169
+91
+.
+Hardware Interfaces
+-REQ-1166
+REQ-HW-001: The system SHALL runon standard x86-64 server hardware
+Draft
+SRS
+The system SHALL run on standard x86-64 serverhardware
+-REQ-1167
+REQ-HW-002: The system SHALLsupport containerized deployment environments
+Draft
+SRS
+The system SHALL support containerized deploymentenvironments
+-REQ-1168
+REQ-HW-003: The system SHALLefficiently utilize available CPU and memoryresources
+Draft
+SRS
+The system SHALL efficiently utilize available CPU andmemory resources
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 4/169
+92
+.
+Software Interfaces
+-REQ-1169
+REQ-SW-001: The system SHALLintegrate with SQL Server databases
+Draft
+SRS
+The system SHALL integrate with SQL Server databases
+-REQ-1170
+REQ-SW-002: The system SHALLintegrate with OAuth 2.0/OpenID Connect providers
+Draft
+SRS
+The system SHALL integrate with OAuth 2.0/OpenIDConnect providers
+-REQ-1171
+REQ-SW-003: The system SHALLsupport integration with external identity providers
+Draft
+SRS
+The system SHALL support integration with externalidentity providers
+-REQ-1172
+REQ-SW-004: The system SHALLprovide API endpoints for third-party tool integration
+Draft
+SRS
+The system SHALL provide API endpoints for third-partytool integration
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 5/169
+93
+.
+Communication Interfaces
+-REQ-1173
+REQ-COMM-001: The system SHALLcommunicate via HTTPS REST APIs
+Draft
+SRS
+The system SHALL communicate via HTTPS REST APIs
+-REQ-1174
+REQ-COMM-002: The system SHALLsupport JSON request/response formats
+Draft
+SRS
+The system SHALL support JSON request/responseformats
+-REQ-1175
+REQ-COMM-003: The system SHALLimplement standard HTTP status codes
+Draft
+SRS
+The system SHALL implement standard HTTP statuscodes
+-REQ-1176
+REQ-COMM-004: The system SHALLsupport WebSocket connections if needed for real-time updates
+Draft
+SRS
+The system SHALL support WebSocket connections ifneeded for real-time updates
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 6/169
+96
+.
+Testing Requirements
+-REQ-1177
+REQ-QA-001: The system SHALLinclude comprehensive unit tests (>80% coverage)
+Draft
+SRS
+The system SHALL include comprehensive unit tests(>80% coverage)
+-REQ-1178
+REQ-QA-002: The system SHALLinclude integration tests for all API endpoints
+Draft
+SRS
+The system SHALL include integration tests for all APIendpoints
+-REQ-1179
+REQ-QA-003: The system SHALLinclude performance testing under load
+Draft
+SRS
+The system SHALL include performance testing underload
+-REQ-1180
+REQ-QA-004: The system SHALLinclude security testing for vulnerabilities
+Draft
+SRS
+The system SHALL include security testing forvulnerabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 7/169
+97
+.
+Documentation Requirements
+-REQ-1181
+REQ-QA-005: The system SHALLmaintain up-to-date API documentation
+Draft
+SRS
+The system SHALL maintain up-to-date APIdocumentation
+-REQ-1182
+REQ-QA-006: The system SHALLinclude comprehensive code documentation
+Draft
+SRS
+The system SHALL include comprehensive codedocumentation
+-REQ-1183
+REQ-QA-007: The system SHALLprovide deployment and configuration guides
+Draft
+SRS
+The system SHALL provide deployment and configurationguides
+-REQ-1184
+REQ-QA-008: The system SHALLmaintain architecture decision records
+Draft
+SRS
+The system SHALL maintain architecture decision records
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 8/169
+104
+.
+User Operations
+-REQ-1017
+REQ-USER-001: The system SHALLprovide CRUD operations for user accounts
+Draft
+SRS
+The system SHALL provide CRUD operations for useraccounts
+-REQ-1018
+REQ-USER-002: The system SHALLstore user profile information (name, email,preferences)
+Draft
+SRS
+The system SHALL store user profile information (name,email, preferences)
+-REQ-1019
+REQ-USER-003: The system SHALLsupport user role assignment and modification
+Draft
+SRS
+The system SHALL support user role assignment andmodification
+-REQ-1020
+REQ-USER-004: The system SHALLprovide user search and filtering capabilities
+Draft
+SRS
+The system SHALL provide user search and filteringcapabilities
+-REQ-1021
+REQ-USER-005: The system SHALLtrack user activity for audit purposes
+Draft
+SRS
+The system SHALL track user activity for audit purposes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 9/169
+105
+.
+User Roles
+-REQ-1022
+REQ-USER-006: The system SHALLmanage role definitions and permissions
+Draft
+SRS
+The system SHALL manage role definitions andpermissions
+-REQ-1023
+REQ-USER-007: The system SHALLsupport hierarchical role inheritance
+Draft
+SRS
+The system SHALL support hierarchical role inheritance
+-REQ-1024
+REQ-USER-008: The system SHALLallow role-based data access restrictions
+Draft
+SRS
+The system SHALL allow role-based data accessrestrictions
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 10/169
+106
+.
+Project Operations
+-REQ-1025
+REQ-PROJ-001: The system SHALLprovide CRUD operations for projects
+Draft
+SRS
+The system SHALL provide CRUD operations for projects
+-REQ-1026
+REQ-PROJ-002: The system SHALLsupport project status tracking (Active, Archived,OnHold, Planning)
+Draft
+SRS
+The system SHALL support project status tracking(Active, Archived, OnHold, Planning)
+-REQ-1027
+REQ-PROJ-003: The system SHALLmaintain project metadata (name, description, dates,owner)
+Draft
+SRS
+The system SHALL maintain project metadata (name,description, dates, owner)
+-REQ-1028
+REQ-PROJ-004: The system SHALLsupport project team member management
+Draft
+SRS
+The system SHALL support project team membermanagement
+-REQ-1029
+REQ-PROJ-005: The system SHALLprovide project-level access control
+Draft
+SRS
+The system SHALL provide project-level access control
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 11/169
+107
+.
+Project Segmentation
+-REQ-1030
+REQ-PROJ-006: The system SHALLsupport data isolation between projects
+Draft
+SRS
+The system SHALL support data isolation betweenprojects
+-REQ-1031
+REQ-PROJ-007: The system SHALLensure users can only access authorized projects
+Draft
+SRS
+The system SHALL ensure users can only accessauthorized projects
+-REQ-1032
+REQ-PROJ-008: The system SHALLprovide cross-project reporting for authorized users
+Draft
+SRS
+The system SHALL provide cross-project reporting forauthorized users
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 12/169
+108
+.
+Requirement Types
+-REQ-1033
+REQ-RQM-001: The system SHALLsupport Customer Requirement Documents (CRD)
+Draft
+SRS
+The system SHALL support Customer RequirementDocuments (CRD)
+-REQ-1034
+REQ-RQM-002: The system SHALLsupport Product Requirement Documents (PRD)
+Draft
+SRS
+The system SHALL support Product RequirementDocuments (PRD)
+-REQ-1035
+REQ-RQM-003: The system SHALLsupport Software Requirement Specifications (SRS)
+Draft
+SRS
+The system SHALL support Software RequirementSpecifications (SRS)
+-REQ-1036
+REQ-RQM-004: The system SHALLsupport User Stories as a requirement type
+Draft
+SRS
+The system SHALL support User Stories as arequirement type
+-REQ-1037
+REQ-RQM-005: The system SHALLsupport Business Rules as a requirement type
+Draft
+SRS
+The system SHALL support Business Rules as arequirement type
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 13/169
+-REQ-1038
+REQ-RQM-006: The system SHALLsupport Entity Names as a requirement type
+Draft
+SRS
+The system SHALL support Entity Names as arequirement type
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 14/169
+109
+.
+Requirement Operations
+-REQ-1039
+REQ-RQM-007: The system SHALLprovide CRUD operations for all requirement types
+Draft
+SRS
+The system SHALL provide CRUD operations for allrequirement types
+-REQ-1040
+REQ-RQM-008: The system SHALLsupport hierarchical requirement relationships(parent-child)
+Draft
+SRS
+The system SHALL support hierarchical requirementrelationships (parent-child)
+-REQ-1041
+REQ-RQM-009: The system SHALLmaintain requirement status (Draft, Approved,Implemented, Verified)
+Draft
+SRS
+The system SHALL maintain requirement status (Draft,Approved, Implemented, Verified)
+-REQ-1042
+REQ-RQM-010: The system SHALLsupport requirement priority levels
+Draft
+SRS
+The system SHALL support requirement priority levels
+-REQ-1043
+REQ-RQM-011: The system SHALLprovide requirement search and filtering capabilities
+Draft
+SRS
+The system SHALL provide requirement search andfiltering capabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 15/169
+-REQ-1044
+REQ-RQM-012: The system SHALLsupport requirement bulk operations
+Draft
+SRS
+The system SHALL support requirement bulk operations
+-REQ-1045
+REQ-RQM-013: The system SHALLprovide paginated requirement listings with sorting
+Draft
+SRS
+The system SHALL provide paginated requirementlistings with sorting
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 16/169
+110
+.
+Requirement Versioning
+-REQ-1046
+REQ-RQM-014: The system SHALLmaintain complete version history for allrequirements
+Draft
+SRS
+The system SHALL maintain complete version history forall requirements
+-REQ-1047
+REQ-RQM-015: The system SHALLautomatically increment version numbers onchanges
+Draft
+SRS
+The system SHALL automatically increment versionnumbers on changes
+-REQ-1048
+REQ-RQM-016: The system SHALLsupport comparison between requirement versions
+Draft
+SRS
+The system SHALL support comparison betweenrequirement versions
+-REQ-1049
+REQ-RQM-017: The system SHALLsupport rollback to previous requirement versions
+Draft
+SRS
+The system SHALL support rollback to previousrequirement versions
+-REQ-1050
+REQ-RQM-018: The system SHALLtrack version change metadata (user, timestamp,reason)
+Draft
+SRS
+The system SHALL track version change metadata (user,timestamp, reason)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 17/169
+111
+.
+Requirement Traceability
+-REQ-1051
+REQ-RQM-019: The system SHALLsupport traceability links between requirements
+Draft
+SRS
+The system SHALL support traceability links betweenrequirements
+-REQ-1052
+REQ-RQM-020: The system SHALLsupport trace types: DerivedFrom, ImplementedBy,ValidatedBy, RelatedTo
+Draft
+SRS
+The system SHALL support trace types: DerivedFrom,ImplementedBy, ValidatedBy, RelatedTo
+-REQ-1053
+REQ-RQM-021: The system SHALLprovide traceability matrix generation
+Draft
+SRS
+The system SHALL provide traceability matrix generation
+-REQ-1054
+REQ-RQM-022: The system SHALLsupport bidirectional traceability navigation
+Draft
+SRS
+The system SHALL support bidirectional traceabilitynavigation
+-REQ-1055
+REQ-RQM-023: The system SHALLvalidate trace link integrity
+Draft
+SRS
+The system SHALL validate trace link integrity
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 18/169
+112
+.
+Document Operations
+-REQ-1056
+REQ-DOC-001: The system SHALLprovide CRUD operations for requirementdocuments
+Draft
+SRS
+The system SHALL provide CRUD operations forrequirement documents
+-REQ-1057
+REQ-DOC-002: The system SHALLsupport document types (CRD, PRD, SRS)
+Draft
+SRS
+The system SHALL support document types (CRD, PRD,SRS)
+-REQ-1058
+REQ-DOC-003: The system SHALLmaintain document status (Draft, InReview,Approved, Published)
+Draft
+SRS
+The system SHALL maintain document status (Draft,InReview, Approved, Published)
+-REQ-1059
+REQ-DOC-004: The system SHALLsupport document sections and hierarchicalstructure
+Draft
+SRS
+The system SHALL support document sections andhierarchical structure
+-REQ-1060
+REQ-DOC-005: The system SHALLprovide document version control
+Draft
+SRS
+The system SHALL provide document version control
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 19/169
+113
+.
+Document Sections
+-REQ-1061
+REQ-DOC-006: The system SHALLsupport hierarchical document sections
+Draft
+SRS
+The system SHALL support hierarchical documentsections
+-REQ-1062
+REQ-DOC-007: The system SHALLassociate requirements with document sections
+Draft
+SRS
+The system SHALL associate requirements withdocument sections
+-REQ-1063
+REQ-DOC-008: The system SHALLsupport section reordering and restructuring
+Draft
+SRS
+The system SHALL support section reordering andrestructuring
+-REQ-1064
+REQ-DOC-009: The system SHALLmaintain section numbering schemes
+Draft
+SRS
+The system SHALL maintain section numbering schemes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 20/169
+114
+.
+Redline Capabilities
+-REQ-1065
+REQ-DOC-010: The system SHALLgenerate redline comparisons between documentversions
+Draft
+SRS
+The system SHALL generate redline comparisonsbetween document versions
+-REQ-1066
+REQ-DOC-011: The system SHALLhighlight additions, deletions, and modifications
+Draft
+SRS
+The system SHALL highlight additions, deletions, andmodifications
+-REQ-1067
+REQ-DOC-012: The system SHALLsupport field-level change tracking
+Draft
+SRS
+The system SHALL support field-level change tracking
+-REQ-1068
+REQ-DOC-013: The system SHALLprovide redline export capabilities
+Draft
+SRS
+The system SHALL provide redline export capabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 21/169
+115
+.
+Test Suite Management
+-REQ-1069
+REQ-TEST-001: The system SHALLprovide CRUD operations for test suites
+Draft
+SRS
+The system SHALL provide CRUD operations for testsuites
+-REQ-1070
+REQ-TEST-002: The system SHALLsupport hierarchical test suite organization
+Draft
+SRS
+The system SHALL support hierarchical test suiteorganization
+-REQ-1071
+REQ-TEST-003: The system SHALLmaintain test suite metadata and descriptions
+Draft
+SRS
+The system SHALL maintain test suite metadata anddescriptions
+-REQ-1072
+REQ-TEST-004: The system SHALLsupport test suite categorization and tagging
+Draft
+SRS
+The system SHALL support test suite categorization andtagging
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 22/169
+116
+.
+Test Case Management
+-REQ-1073
+REQ-TEST-005: The system SHALLprovide CRUD operations for test cases
+Draft
+SRS
+The system SHALL provide CRUD operations for testcases
+-REQ-1074
+REQ-TEST-006: The system SHALLsupport test case priority levels (Low, Medium, High,Critical)
+Draft
+SRS
+The system SHALL support test case priority levels (Low,Medium, High, Critical)
+-REQ-1075
+REQ-TEST-007: The system SHALLmaintain test case steps with expected results
+Draft
+SRS
+The system SHALL maintain test case steps withexpected results
+-REQ-1076
+REQ-TEST-008: The system SHALLsupport test case versioning
+Draft
+SRS
+The system SHALL support test case versioning
+-REQ-1077
+REQ-TEST-009: The system SHALL linktest cases to requirements
+Draft
+SRS
+The system SHALL link test cases to requirements
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 23/169
+-REQ-1078
+REQ-TEST-010: The system SHALLsupport test case search and filtering
+Draft
+SRS
+The system SHALL support test case search and filtering
+117
+.
+Test Plan Management
+-REQ-1079
+REQ-TEST-011: The system SHALLprovide CRUD operations for test plans
+Draft
+SRS
+The system SHALL provide CRUD operations for testplans
+-REQ-1080
+REQ-TEST-012: The system SHALLsupport test plan types (UserValidation,SoftwareVerification)
+Draft
+SRS
+The system SHALL support test plan types(UserValidation, SoftwareVerification)
+-REQ-1081
+REQ-TEST-013: The system SHALLassociate test cases with test plans
+Draft
+SRS
+The system SHALL associate test cases with test plans
+-REQ-1082
+REQ-TEST-014: The system SHALLsupport test plan scheduling and assignment
+Draft
+SRS
+The system SHALL support test plan scheduling andassignment
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 24/169
+118
+.
+Test Execution
+-REQ-1083
+REQ-TEST-015: The system SHALLsupport test run session management
+Draft
+SRS
+The system SHALL support test run session management
+-REQ-1084
+REQ-TEST-016: The system SHALLtrack test execution results (Passed, Failed,Blocked, NotRun)
+Draft
+SRS
+The system SHALL track test execution results (Passed,Failed, Blocked, NotRun)
+-REQ-1085
+REQ-TEST-017: The system SHALLmaintain test execution history
+Draft
+SRS
+The system SHALL maintain test execution history
+-REQ-1086
+REQ-TEST-018: The system SHALLsupport test step-level execution tracking
+Draft
+SRS
+The system SHALL support test step-level executiontracking
+-REQ-1087
+REQ-TEST-019: The system SHALLallow attachment of evidence to test executions
+Draft
+SRS
+The system SHALL allow attachment of evidence to testexecutions
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 25/169
+-REQ-1088
+REQ-TEST-020: The system SHALLsupport test run status tracking (InProgress,Completed, Aborted, Paused)
+Draft
+SRS
+The system SHALL support test run status tracking(InProgress, Completed, Aborted, Paused)
+119
+.
+Test Case Linking
+-REQ-1089
+REQ-TEST-021: The system SHALL linktest cases to specific requirements
+Draft
+SRS
+The system SHALL link test cases to specificrequirements
+-REQ-1090
+REQ-TEST-022: The system SHALLsupport many-to-many requirement-test caserelationships
+Draft
+SRS
+The system SHALL support many-to-many requirement-test case relationships
+-REQ-1091
+REQ-TEST-023: The system SHALLmaintain link metadata and traceability
+Draft
+SRS
+The system SHALL maintain link metadata andtraceability
+-REQ-1092
+REQ-TEST-024: The system SHALLvalidate link consistency and integrity
+Draft
+SRS
+The system SHALL validate link consistency and integrity
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 26/169
+120
+.
+Dashboard Services
+-REQ-1093
+REQ-DASH-001: The system SHALLprovide project overview dashboard data
+Draft
+SRS
+The system SHALL provide project overview dashboarddata
+-REQ-1094
+REQ-DASH-002: The system SHALLcalculate requirement completion statistics
+Draft
+SRS
+The system SHALL calculate requirement completionstatistics
+-REQ-1095
+REQ-DASH-003: The system SHALLprovide test execution status summaries
+Draft
+SRS
+The system SHALL provide test execution statussummaries
+-REQ-1096
+REQ-DASH-004: The system SHALLtrack coverage metrics (requirements to test cases)
+Draft
+SRS
+The system SHALL track coverage metrics (requirementsto test cases)
+-REQ-1097
+REQ-DASH-005: The system SHALLsupport role-based dashboard customization
+Draft
+SRS
+The system SHALL support role-based dashboardcustomization
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 27/169
+121
+.
+Enhanced Reporting
+-REQ-1098
+REQ-DASH-006: The system SHALLprovide comprehensive test execution reports
+Draft
+SRS
+The system SHALL provide comprehensive test executionreports
+-REQ-1099
+REQ-DASH-007: The system SHALLgenerate requirement coverage reports
+Draft
+SRS
+The system SHALL generate requirement coveragereports
+-REQ-1100
+REQ-DASH-008: The system SHALLsupport trend analysis and historical reporting
+Draft
+SRS
+The system SHALL support trend analysis and historicalreporting
+-REQ-1101
+REQ-DASH-009: The system SHALLprovide project progress tracking
+Draft
+SRS
+The system SHALL provide project progress tracking
+-REQ-1102
+REQ-DASH-010: The system SHALLsupport custom report generation
+Draft
+SRS
+The system SHALL support custom report generation
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 28/169
+122
+.
+Database Operations
+-REQ-1103
+REQ-DATA-001: The system SHALLsupport Entity Framework Core migrations
+Draft
+SRS
+The system SHALL support Entity Framework Coremigrations
+-REQ-1104
+REQ-DATA-002: The system SHALLprovide database seeding capabilities
+Draft
+SRS
+The system SHALL provide database seeding capabilities
+-REQ-1105
+REQ-DATA-003: The system SHALLensure referential integrity across entities
+Draft
+SRS
+The system SHALL ensure referential integrity acrossentities
+-REQ-1106
+REQ-DATA-004: The system SHALLsupport transaction management
+Draft
+SRS
+The system SHALL support transaction management
+-REQ-1107
+REQ-DATA-005: The system SHALLprovide data validation and constraints
+Draft
+SRS
+The system SHALL provide data validation andconstraints
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 29/169
+123
+.
+API Design
+-REQ-1108
+REQ-API-001: The system SHALLprovide RESTful API endpoints for all entities
+Draft
+SRS
+The system SHALL provide RESTful API endpoints for allentities
+-REQ-1109
+REQ-API-002: The system SHALLsupport OpenAPI/Swagger documentation
+Draft
+SRS
+The system SHALL support OpenAPI/Swaggerdocumentation
+-REQ-1110
+REQ-API-003: The system SHALLimplement consistent error handling and responses
+Draft
+SRS
+The system SHALL implement consistent error handlingand responses
+-REQ-1111
+REQ-API-004: The system SHALLsupport pagination for large datasets
+Draft
+SRS
+The system SHALL support pagination for large datasets
+-REQ-1112
+REQ-API-005: The system SHALLprovide filtering and sorting capabilities
+Draft
+SRS
+The system SHALL provide filtering and sortingcapabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 30/169
+-REQ-1113
+REQ-API-006: The system SHALLsupport bulk operations where appropriate
+Draft
+SRS
+The system SHALL support bulk operations whereappropriate
+124
+.
+Shared Library Integration
+-REQ-1114
+REQ-API-007: The system SHALL useRqmtMgmtShared for all DTOs and contracts
+Draft
+SRS
+The system SHALL use RqmtMgmtShared for all DTOsand contracts
+-REQ-1115
+REQ-API-008: The system SHALLmaintain type safety between frontend and backend
+Draft
+SRS
+The system SHALL maintain type safety betweenfrontend and backend
+-REQ-1116
+REQ-API-009: The system SHALLsupport versioned shared library updates
+Draft
+SRS
+The system SHALL support versioned shared libraryupdates
+-REQ-1117
+REQ-API-010: The system SHALLprovide consistent data models across components
+Draft
+SRS
+The system SHALL provide consistent data modelsacross components
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 31/169
+125
+.
+Response Time
+-REQ-1118
+REQ-PERF-001: API endpoints SHALLrespond within 500ms for 95% of requests undernormal load
+Draft
+SRS
+API endpoints SHALL respond within 500ms for 95% ofrequests under normal load
+-REQ-1119
+REQ-PERF-002: Database queriesSHALL be optimized for performance withappropriate indexing
+Draft
+SRS
+Database queries SHALL be optimized for performancewith appropriate indexing
+-REQ-1120
+REQ-PERF-003: The system SHALLsupport concurrent user sessions withoutdegradation
+Draft
+SRS
+The system SHALL support concurrent user sessionswithout degradation
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 32/169
+126
+.
+Throughput
+-REQ-1121
+REQ-PERF-004: The system SHALLsupport at least 100 concurrent users
+Draft
+SRS
+The system SHALL support at least 100 concurrent users
+-REQ-1122
+REQ-PERF-005: The system SHALLhandle at least 1000 API requests per minute
+Draft
+SRS
+The system SHALL handle at least 1000 API requests perminute
+-REQ-1123
+REQ-PERF-006: The system SHALLsupport bulk operations efficiently
+Draft
+SRS
+The system SHALL support bulk operations efficiently
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 33/169
+127
+.
+Horizontal Scaling
+-REQ-1124
+REQ-SCALE-001: The system SHALLbe designed for horizontal scaling in containerizedenvironments
+Draft
+SRS
+The system SHALL be designed for horizontal scaling incontainerized environments
+-REQ-1125
+REQ-SCALE-002: The system SHALLsupport load balancing across multiple instances
+Draft
+SRS
+The system SHALL support load balancing acrossmultiple instances
+-REQ-1126
+REQ-SCALE-003: The system SHALLmaintain session-less design for scalability
+Draft
+SRS
+The system SHALL maintain session-less design forscalability
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 34/169
+128
+.
+Data Scaling
+-REQ-1127
+REQ-SCALE-004: The system SHALLefficiently handle databases with 100,000+requirements
+Draft
+SRS
+The system SHALL efficiently handle databases with100,000+ requirements
+-REQ-1128
+REQ-SCALE-005: The system SHALLsupport pagination and lazy loading for largedatasets
+Draft
+SRS
+The system SHALL support pagination and lazy loadingfor large datasets
+-REQ-1129
+REQ-SCALE-006: The system SHALLoptimize queries for large data volumes
+Draft
+SRS
+The system SHALL optimize queries for large datavolumes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 35/169
+129
+.
+Availability
+-REQ-1130
+REQ-REL-001: The system SHALLmaintain 99.5% uptime excluding scheduledmaintenance
+Draft
+SRS
+The system SHALL maintain 99.5% uptime excludingscheduled maintenance
+-REQ-1131
+REQ-REL-002: The system SHALLimplement graceful error handling and recovery
+Draft
+SRS
+The system SHALL implement graceful error handling andrecovery
+-REQ-1132
+REQ-REL-003: The system SHALLprovide meaningful error messages and statuscodes
+Draft
+SRS
+The system SHALL provide meaningful error messagesand status codes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 36/169
+130
+.
+Data Integrity
+-REQ-1133
+REQ-REL-004: The system SHALLensure ACID compliance for database transactions
+Draft
+SRS
+The system SHALL ensure ACID compliance for databasetransactions
+-REQ-1134
+REQ-REL-005: The system SHALLmaintain referential integrity across all entities
+Draft
+SRS
+The system SHALL maintain referential integrity across allentities
+-REQ-1135
+REQ-REL-006: The system SHALLimplement data validation at all entry points
+Draft
+SRS
+The system SHALL implement data validation at all entrypoints
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 37/169
+131
+.
+Authentication Security
+-REQ-1136
+REQ-SEC-001: The system SHALLenforce HTTPS for all API communications
+Draft
+SRS
+The system SHALL enforce HTTPS for all APIcommunications
+-REQ-1137
+REQ-SEC-002: The system SHALLvalidate JWT tokens for all protected endpoints
+Draft
+SRS
+The system SHALL validate JWT tokens for all protectedendpoints
+-REQ-1138
+REQ-SEC-003: The system SHALLimplement token expiration and refresh mechanisms
+Draft
+SRS
+The system SHALL implement token expiration andrefresh mechanisms
+-REQ-1139
+REQ-SEC-004: The system SHALLprotect against common security vulnerabilities(OWASP Top 10)
+Draft
+SRS
+The system SHALL protect against common securityvulnerabilities (OWASP Top 10)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 38/169
+132
+.
+Data Security
+-REQ-1140
+REQ-SEC-005: The system SHALLimplement input validation and sanitization
+Draft
+SRS
+The system SHALL implement input validation andsanitization
+-REQ-1141
+REQ-SEC-006: The system SHALLprotect against SQL injection attacks
+Draft
+SRS
+The system SHALL protect against SQL injection attacks
+-REQ-1142
+REQ-SEC-007: The system SHALLimplement appropriate CORS policies
+Draft
+SRS
+The system SHALL implement appropriate CORS policies
+-REQ-1143
+REQ-SEC-008: The system SHALL logsecurity events for audit purposes
+Draft
+SRS
+The system SHALL log security events for audit purposes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 39/169
+133
+.
+Access Control
+-REQ-1144
+REQ-SEC-009: The system SHALLenforce role-based access control at the API level
+Draft
+SRS
+The system SHALL enforce role-based access control atthe API level
+-REQ-1145
+REQ-SEC-010: The system SHALLimplement project-level data isolation
+Draft
+SRS
+The system SHALL implement project-level data isolation
+-REQ-1146
+REQ-SEC-011: The system SHALLvalidate user permissions for all operations
+Draft
+SRS
+The system SHALL validate user permissions for alloperations
+-REQ-1147
+REQ-SEC-012: The system SHALLprovide audit logging for all data modifications
+Draft
+SRS
+The system SHALL provide audit logging for all datamodifications
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 40/169
+134
+.
+Code Quality
+-REQ-1148
+REQ-MAINT-001: The system SHALLfollow .NET coding standards and best practices
+Draft
+SRS
+The system SHALL follow .NET coding standards andbest practices
+-REQ-1149
+REQ-MAINT-002: The system SHALLmaintain comprehensive XML documentation
+Draft
+SRS
+The system SHALL maintain comprehensive XMLdocumentation
+-REQ-1150
+REQ-MAINT-003: The system SHALLimplement dependency injection for testability
+Draft
+SRS
+The system SHALL implement dependency injection fortestability
+-REQ-1151
+REQ-MAINT-004: The system SHALLseparate concerns into distinct layers (Controllers,Services, Data)
+Draft
+SRS
+The system SHALL separate concerns into distinct layers(Controllers, Services, Data)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 41/169
+135
+.
+Testing
+-REQ-1152
+REQ-MAINT-005: The system SHALLmaintain minimum 80% code coverage with unittests
+Draft
+SRS
+The system SHALL maintain minimum 80% codecoverage with unit tests
+-REQ-1153
+REQ-MAINT-006: The system SHALLinclude integration tests for all API endpoints
+Draft
+SRS
+The system SHALL include integration tests for all APIendpoints
+-REQ-1154
+REQ-MAINT-007: The system SHALLsupport automated testing in CI/CD pipelines
+Draft
+SRS
+The system SHALL support automated testing in CI/CDpipelines
+-REQ-1155
+REQ-MAINT-008: The system SHALLprovide test data seeding for consistent testing
+Draft
+SRS
+The system SHALL provide test data seeding forconsistent testing
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 42/169
+136
+.
+Platform Independence
+-REQ-1156
+REQ-PORT-001: The system SHALL runon multiple operating systems (Windows, Linux,macOS)
+Draft
+SRS
+The system SHALL run on multiple operating systems(Windows, Linux, macOS)
+-REQ-1157
+REQ-PORT-002: The system SHALL becontainerized using Docker
+Draft
+SRS
+The system SHALL be containerized using Docker
+-REQ-1158
+REQ-PORT-003: The system SHALLsupport cloud deployment (Azure, AWS, GCP)
+Draft
+SRS
+The system SHALL support cloud deployment (Azure,AWS, GCP)
+-REQ-1159
+REQ-PORT-004: The system SHALLsupport Kubernetes orchestration
+Draft
+SRS
+The system SHALL support Kubernetes orchestration
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 43/169
+137
+.
+Database Portability
+-REQ-1160
+REQ-PORT-005: The system SHALLsupport multiple database providers through EntityFramework Core
+Draft
+SRS
+The system SHALL support multiple database providersthrough Entity Framework Core
+-REQ-1161
+REQ-PORT-006: The system SHALLuse database-agnostic queries and operations
+Draft
+SRS
+The system SHALL use database-agnostic queries andoperations
+-REQ-1162
+REQ-PORT-007: The system SHALLsupport both SQL Server and in-memory databasesfor testing
+Draft
+SRS
+The system SHALL support both SQL Server and in-memory databases for testing
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 44/169
+157
+.
+User Interfaces
+-REQ-1340
+REQ-UI-001: The system SHALLprovide RESTful API endpoints for frontendconsumption
+Draft
+SRS
+The system SHALL provide RESTful API endpoints forfrontend consumption
+-REQ-1341
+REQ-UI-002: The system SHALLprovide OpenAPI/Swagger documentation interface
+Draft
+SRS
+The system SHALL provide OpenAPI/Swaggerdocumentation interface
+-REQ-1342
+REQ-UI-003: The system SHALLsupport CORS for web application integration
+Draft
+SRS
+The system SHALL support CORS for web applicationintegration
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 45/169
+158
+.
+Hardware Interfaces
+-REQ-1343
+REQ-HW-001: The system SHALL runon standard x86-64 server hardware
+Draft
+SRS
+The system SHALL run on standard x86-64 serverhardware
+-REQ-1344
+REQ-HW-002: The system SHALLsupport containerized deployment environments
+Draft
+SRS
+The system SHALL support containerized deploymentenvironments
+-REQ-1345
+REQ-HW-003: The system SHALLefficiently utilize available CPU and memoryresources
+Draft
+SRS
+The system SHALL efficiently utilize available CPU andmemory resources
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 46/169
+159
+.
+Software Interfaces
+-REQ-1346
+REQ-SW-001: The system SHALLintegrate with SQL Server databases
+Draft
+SRS
+The system SHALL integrate with SQL Server databases
+-REQ-1347
+REQ-SW-002: The system SHALLintegrate with OAuth 2.0/OpenID Connect providers
+Draft
+SRS
+The system SHALL integrate with OAuth 2.0/OpenIDConnect providers
+-REQ-1348
+REQ-SW-003: The system SHALLsupport integration with external identity providers
+Draft
+SRS
+The system SHALL support integration with externalidentity providers
+-REQ-1349
+REQ-SW-004: The system SHALLprovide API endpoints for third-party tool integration
+Draft
+SRS
+The system SHALL provide API endpoints for third-partytool integration
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 47/169
+160
+.
+Communication Interfaces
+-REQ-1350
+REQ-COMM-001: The system SHALLcommunicate via HTTPS REST APIs
+Draft
+SRS
+The system SHALL communicate via HTTPS REST APIs
+-REQ-1351
+REQ-COMM-002: The system SHALLsupport JSON request/response formats
+Draft
+SRS
+The system SHALL support JSON request/responseformats
+-REQ-1352
+REQ-COMM-003: The system SHALLimplement standard HTTP status codes
+Draft
+SRS
+The system SHALL implement standard HTTP statuscodes
+-REQ-1353
+REQ-COMM-004: The system SHALLsupport WebSocket connections if needed for real-time updates
+Draft
+SRS
+The system SHALL support WebSocket connections ifneeded for real-time updates
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 48/169
+163
+.
+Testing Requirements
+-REQ-1354
+REQ-QA-001: The system SHALLinclude comprehensive unit tests (>80% coverage)
+Draft
+SRS
+The system SHALL include comprehensive unit tests(>80% coverage)
+-REQ-1355
+REQ-QA-002: The system SHALLinclude integration tests for all API endpoints
+Draft
+SRS
+The system SHALL include integration tests for all APIendpoints
+-REQ-1356
+REQ-QA-003: The system SHALLinclude performance testing under load
+Draft
+SRS
+The system SHALL include performance testing underload
+-REQ-1357
+REQ-QA-004: The system SHALLinclude security testing for vulnerabilities
+Draft
+SRS
+The system SHALL include security testing forvulnerabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 49/169
+164
+.
+Documentation Requirements
+-REQ-1358
+REQ-QA-005: The system SHALLmaintain up-to-date API documentation
+Draft
+SRS
+The system SHALL maintain up-to-date APIdocumentation
+-REQ-1359
+REQ-QA-006: The system SHALLinclude comprehensive code documentation
+Draft
+SRS
+The system SHALL include comprehensive codedocumentation
+-REQ-1360
+REQ-QA-007: The system SHALLprovide deployment and configuration guides
+Draft
+SRS
+The system SHALL provide deployment and configurationguides
+-REQ-1361
+REQ-QA-008: The system SHALLmaintain architecture decision records
+Draft
+SRS
+The system SHALL maintain architecture decision records
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 50/169
+169
+.
+User Authentication
+-REQ-1009
+REQ-AUTH-001: The system SHALLsupport JWT bearer token authentication
+Draft
+SRS
+The system SHALL support JWT bearer tokenauthentication
+-REQ-1186
+REQ-AUTH-001: The system SHALLsupport JWT bearer token authentication
+Draft
+SRS
+The system SHALL support JWT bearer tokenauthentication
+-REQ-1010
+REQ-AUTH-002: The system SHALLintegrate with OAuth 2.0/OpenID Connect providers(Azure AD, Okta, Google, Identity
+Draft
+SRS
+The system SHALL integrate with OAuth 2.0/OpenIDConnect providers (Azure AD, Okta, Google,IdentityServer)
+-REQ-1187
+REQ-AUTH-002: The system SHALLintegrate with OAuth 2.0/OpenID Connect providers(Azure AD, Okta, Google, Identity
+Draft
+SRS
+The system SHALL integrate with OAuth 2.0/OpenIDConnect providers (Azure AD, Okta, Google,IdentityServer)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 51/169
+-REQ-1011
+REQ-AUTH-003: The system SHALLvalidate JWT token signatures and expiration
+Draft
+SRS
+The system SHALL validate JWT token signatures andexpiration
+-REQ-1188
+REQ-AUTH-003: The system SHALLvalidate JWT token signatures and expiration
+Draft
+SRS
+The system SHALL validate JWT token signatures andexpiration
+-REQ-1012
+REQ-AUTH-004: The system SHALLsupport configurable authority and audiencevalidation
+Draft
+SRS
+The system SHALL support configurable authority andaudience validation
+-REQ-1189
+REQ-AUTH-004: The system SHALLsupport configurable authority and audiencevalidation
+Draft
+SRS
+The system SHALL support configurable authority andaudience validation
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 52/169
+169
+.
+User Authentication
+-REQ-1009
+REQ-AUTH-001: The system SHALLsupport JWT bearer token authentication
+Draft
+SRS
+The system SHALL support JWT bearer tokenauthentication
+-REQ-1186
+REQ-AUTH-001: The system SHALLsupport JWT bearer token authentication
+Draft
+SRS
+The system SHALL support JWT bearer tokenauthentication
+-REQ-1010
+REQ-AUTH-002: The system SHALLintegrate with OAuth 2.0/OpenID Connect providers(Azure AD, Okta, Google, Identity
+Draft
+SRS
+The system SHALL integrate with OAuth 2.0/OpenIDConnect providers (Azure AD, Okta, Google,IdentityServer)
+-REQ-1187
+REQ-AUTH-002: The system SHALLintegrate with OAuth 2.0/OpenID Connect providers(Azure AD, Okta, Google, Identity
+Draft
+SRS
+The system SHALL integrate with OAuth 2.0/OpenIDConnect providers (Azure AD, Okta, Google,IdentityServer)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 53/169
+-REQ-1011
+REQ-AUTH-003: The system SHALLvalidate JWT token signatures and expiration
+Draft
+SRS
+The system SHALL validate JWT token signatures andexpiration
+-REQ-1188
+REQ-AUTH-003: The system SHALLvalidate JWT token signatures and expiration
+Draft
+SRS
+The system SHALL validate JWT token signatures andexpiration
+-REQ-1012
+REQ-AUTH-004: The system SHALLsupport configurable authority and audiencevalidation
+Draft
+SRS
+The system SHALL support configurable authority andaudience validation
+-REQ-1189
+REQ-AUTH-004: The system SHALLsupport configurable authority and audiencevalidation
+Draft
+SRS
+The system SHALL support configurable authority andaudience validation
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 54/169
+170
+.
+Authorization
+-REQ-1013
+REQ-AUTH-005: The system SHALLimplement role-based access control (RBAC)
+Draft
+SRS
+The system SHALL implement role-based access control(RBAC)
+-REQ-1190
+REQ-AUTH-005: The system SHALLimplement role-based access control (RBAC)
+Draft
+SRS
+The system SHALL implement role-based access control(RBAC)
+-REQ-1014
+REQ-AUTH-006: The system SHALLsupport the following roles: Admin, Product Owner,QA Engineer, Developer, Viewer
+Draft
+SRS
+The system SHALL support the following roles: Admin,Product Owner, QA Engineer, Developer, Viewer
+-REQ-1191
+REQ-AUTH-006: The system SHALLsupport the following roles: Admin, Product Owner,QA Engineer, Developer, Viewer
+Draft
+SRS
+The system SHALL support the following roles: Admin,Product Owner, QA Engineer, Developer, Viewer
+-REQ-1015
+REQ-AUTH-007: The system SHALLenforce API endpoint access based on user roles
+Draft
+SRS
+The system SHALL enforce API endpoint access basedon user roles
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 55/169
+-REQ-1192
+REQ-AUTH-007: The system SHALLenforce API endpoint access based on user roles
+Draft
+SRS
+The system SHALL enforce API endpoint access basedon user roles
+-REQ-1016
+REQ-AUTH-008: The system SHALLmaintain user role assignments per project
+Draft
+SRS
+The system SHALL maintain user role assignments perproject
+-REQ-1193
+REQ-AUTH-008: The system SHALLmaintain user role assignments per project
+Draft
+SRS
+The system SHALL maintain user role assignments perproject
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 56/169
+170
+.
+Authorization
+-REQ-1013
+REQ-AUTH-005: The system SHALLimplement role-based access control (RBAC)
+Draft
+SRS
+The system SHALL implement role-based access control(RBAC)
+-REQ-1190
+REQ-AUTH-005: The system SHALLimplement role-based access control (RBAC)
+Draft
+SRS
+The system SHALL implement role-based access control(RBAC)
+-REQ-1014
+REQ-AUTH-006: The system SHALLsupport the following roles: Admin, Product Owner,QA Engineer, Developer, Viewer
+Draft
+SRS
+The system SHALL support the following roles: Admin,Product Owner, QA Engineer, Developer, Viewer
+-REQ-1191
+REQ-AUTH-006: The system SHALLsupport the following roles: Admin, Product Owner,QA Engineer, Developer, Viewer
+Draft
+SRS
+The system SHALL support the following roles: Admin,Product Owner, QA Engineer, Developer, Viewer
+-REQ-1015
+REQ-AUTH-007: The system SHALLenforce API endpoint access based on user roles
+Draft
+SRS
+The system SHALL enforce API endpoint access basedon user roles
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 57/169
+-REQ-1192
+REQ-AUTH-007: The system SHALLenforce API endpoint access based on user roles
+Draft
+SRS
+The system SHALL enforce API endpoint access basedon user roles
+-REQ-1016
+REQ-AUTH-008: The system SHALLmaintain user role assignments per project
+Draft
+SRS
+The system SHALL maintain user role assignments perproject
+-REQ-1193
+REQ-AUTH-008: The system SHALLmaintain user role assignments per project
+Draft
+SRS
+The system SHALL maintain user role assignments perproject
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 58/169
+171
+.
+User Operations
+-REQ-1194
+REQ-USER-001: The system SHALLprovide CRUD operations for user accounts
+Draft
+SRS
+The system SHALL provide CRUD operations for useraccounts
+-REQ-1195
+REQ-USER-002: The system SHALLstore user profile information (name, email,preferences)
+Draft
+SRS
+The system SHALL store user profile information (name,email, preferences)
+-REQ-1196
+REQ-USER-003: The system SHALLsupport user role assignment and modification
+Draft
+SRS
+The system SHALL support user role assignment andmodification
+-REQ-1197
+REQ-USER-004: The system SHALLprovide user search and filtering capabilities
+Draft
+SRS
+The system SHALL provide user search and filteringcapabilities
+-REQ-1198
+REQ-USER-005: The system SHALLtrack user activity for audit purposes
+Draft
+SRS
+The system SHALL track user activity for audit purposes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 59/169
+172
+.
+User Roles
+-REQ-1199
+REQ-USER-006: The system SHALLmanage role definitions and permissions
+Draft
+SRS
+The system SHALL manage role definitions andpermissions
+-REQ-1200
+REQ-USER-007: The system SHALLsupport hierarchical role inheritance
+Draft
+SRS
+The system SHALL support hierarchical role inheritance
+-REQ-1201
+REQ-USER-008: The system SHALLallow role-based data access restrictions
+Draft
+SRS
+The system SHALL allow role-based data accessrestrictions
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 60/169
+173
+.
+Project Operations
+-REQ-1202
+REQ-PROJ-001: The system SHALLprovide CRUD operations for projects
+Draft
+SRS
+The system SHALL provide CRUD operations for projects
+-REQ-1203
+REQ-PROJ-002: The system SHALLsupport project status tracking (Active, Archived,OnHold, Planning)
+Draft
+SRS
+The system SHALL support project status tracking(Active, Archived, OnHold, Planning)
+-REQ-1204
+REQ-PROJ-003: The system SHALLmaintain project metadata (name, description, dates,owner)
+Draft
+SRS
+The system SHALL maintain project metadata (name,description, dates, owner)
+-REQ-1205
+REQ-PROJ-004: The system SHALLsupport project team member management
+Draft
+SRS
+The system SHALL support project team membermanagement
+-REQ-1206
+REQ-PROJ-005: The system SHALLprovide project-level access control
+Draft
+SRS
+The system SHALL provide project-level access control
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 61/169
+174
+.
+Project Segmentation
+-REQ-1207
+REQ-PROJ-006: The system SHALLsupport data isolation between projects
+Draft
+SRS
+The system SHALL support data isolation betweenprojects
+-REQ-1208
+REQ-PROJ-007: The system SHALLensure users can only access authorized projects
+Draft
+SRS
+The system SHALL ensure users can only accessauthorized projects
+-REQ-1209
+REQ-PROJ-008: The system SHALLprovide cross-project reporting for authorized users
+Draft
+SRS
+The system SHALL provide cross-project reporting forauthorized users
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 62/169
+175
+.
+Requirement Types
+-REQ-1210
+REQ-RQM-001: The system SHALLsupport Customer Requirement Documents (CRD)
+Draft
+SRS
+The system SHALL support Customer RequirementDocuments (CRD)
+-REQ-1211
+REQ-RQM-002: The system SHALLsupport Product Requirement Documents (PRD)
+Draft
+SRS
+The system SHALL support Product RequirementDocuments (PRD)
+-REQ-1212
+REQ-RQM-003: The system SHALLsupport Software Requirement Specifications (SRS)
+Draft
+SRS
+The system SHALL support Software RequirementSpecifications (SRS)
+-REQ-1213
+REQ-RQM-004: The system SHALLsupport User Stories as a requirement type
+Draft
+SRS
+The system SHALL support User Stories as arequirement type
+-REQ-1214
+REQ-RQM-005: The system SHALLsupport Business Rules as a requirement type
+Draft
+SRS
+The system SHALL support Business Rules as arequirement type
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 63/169
+-REQ-1215
+REQ-RQM-006: The system SHALLsupport Entity Names as a requirement type
+Draft
+SRS
+The system SHALL support Entity Names as arequirement type
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 64/169
+176
+.
+Requirement Operations
+-REQ-1216
+REQ-RQM-007: The system SHALLprovide CRUD operations for all requirement types
+Draft
+SRS
+The system SHALL provide CRUD operations for allrequirement types
+-REQ-1217
+REQ-RQM-008: The system SHALLsupport hierarchical requirement relationships(parent-child)
+Draft
+SRS
+The system SHALL support hierarchical requirementrelationships (parent-child)
+-REQ-1218
+REQ-RQM-009: The system SHALLmaintain requirement status (Draft, Approved,Implemented, Verified)
+Draft
+SRS
+The system SHALL maintain requirement status (Draft,Approved, Implemented, Verified)
+-REQ-1219
+REQ-RQM-010: The system SHALLsupport requirement priority levels
+Draft
+SRS
+The system SHALL support requirement priority levels
+-REQ-1220
+REQ-RQM-011: The system SHALLprovide requirement search and filtering capabilities
+Draft
+SRS
+The system SHALL provide requirement search andfiltering capabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 65/169
+-REQ-1221
+REQ-RQM-012: The system SHALLsupport requirement bulk operations
+Draft
+SRS
+The system SHALL support requirement bulk operations
+-REQ-1222
+REQ-RQM-013: The system SHALLprovide paginated requirement listings with sorting
+Draft
+SRS
+The system SHALL provide paginated requirementlistings with sorting
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 66/169
+177
+.
+Requirement Versioning
+-REQ-1223
+REQ-RQM-014: The system SHALLmaintain complete version history for allrequirements
+Draft
+SRS
+The system SHALL maintain complete version history forall requirements
+-REQ-1224
+REQ-RQM-015: The system SHALLautomatically increment version numbers onchanges
+Draft
+SRS
+The system SHALL automatically increment versionnumbers on changes
+-REQ-1225
+REQ-RQM-016: The system SHALLsupport comparison between requirement versions
+Draft
+SRS
+The system SHALL support comparison betweenrequirement versions
+-REQ-1226
+REQ-RQM-017: The system SHALLsupport rollback to previous requirement versions
+Draft
+SRS
+The system SHALL support rollback to previousrequirement versions
+-REQ-1227
+REQ-RQM-018: The system SHALLtrack version change metadata (user, timestamp,reason)
+Draft
+SRS
+The system SHALL track version change metadata (user,timestamp, reason)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 67/169
+178
+.
+Requirement Traceability
+-REQ-1228
+REQ-RQM-019: The system SHALLsupport traceability links between requirements
+Draft
+SRS
+The system SHALL support traceability links betweenrequirements
+-REQ-1229
+REQ-RQM-020: The system SHALLsupport trace types: DerivedFrom, ImplementedBy,ValidatedBy, RelatedTo
+Draft
+SRS
+The system SHALL support trace types: DerivedFrom,ImplementedBy, ValidatedBy, RelatedTo
+-REQ-1230
+REQ-RQM-021: The system SHALLprovide traceability matrix generation
+Draft
+SRS
+The system SHALL provide traceability matrix generation
+-REQ-1231
+REQ-RQM-022: The system SHALLsupport bidirectional traceability navigation
+Draft
+SRS
+The system SHALL support bidirectional traceabilitynavigation
+-REQ-1232
+REQ-RQM-023: The system SHALLvalidate trace link integrity
+Draft
+SRS
+The system SHALL validate trace link integrity
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 68/169
+179
+.
+Document Operations
+-REQ-1233
+REQ-DOC-001: The system SHALLprovide CRUD operations for requirementdocuments
+Draft
+SRS
+The system SHALL provide CRUD operations forrequirement documents
+-REQ-1234
+REQ-DOC-002: The system SHALLsupport document types (CRD, PRD, SRS)
+Draft
+SRS
+The system SHALL support document types (CRD, PRD,SRS)
+-REQ-1235
+REQ-DOC-003: The system SHALLmaintain document status (Draft, InReview,Approved, Published)
+Draft
+SRS
+The system SHALL maintain document status (Draft,InReview, Approved, Published)
+-REQ-1236
+REQ-DOC-004: The system SHALLsupport document sections and hierarchicalstructure
+Draft
+SRS
+The system SHALL support document sections andhierarchical structure
+-REQ-1237
+REQ-DOC-005: The system SHALLprovide document version control
+Draft
+SRS
+The system SHALL provide document version control
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 69/169
+180
+.
+Document Sections
+-REQ-1238
+REQ-DOC-006: The system SHALLsupport hierarchical document sections
+Draft
+SRS
+The system SHALL support hierarchical documentsections
+-REQ-1239
+REQ-DOC-007: The system SHALLassociate requirements with document sections
+Draft
+SRS
+The system SHALL associate requirements withdocument sections
+-REQ-1240
+REQ-DOC-008: The system SHALLsupport section reordering and restructuring
+Draft
+SRS
+The system SHALL support section reordering andrestructuring
+-REQ-1241
+REQ-DOC-009: The system SHALLmaintain section numbering schemes
+Draft
+SRS
+The system SHALL maintain section numbering schemes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 70/169
+181
+.
+Redline Capabilities
+-REQ-1242
+REQ-DOC-010: The system SHALLgenerate redline comparisons between documentversions
+Draft
+SRS
+The system SHALL generate redline comparisonsbetween document versions
+-REQ-1243
+REQ-DOC-011: The system SHALLhighlight additions, deletions, and modifications
+Draft
+SRS
+The system SHALL highlight additions, deletions, andmodifications
+-REQ-1244
+REQ-DOC-012: The system SHALLsupport field-level change tracking
+Draft
+SRS
+The system SHALL support field-level change tracking
+-REQ-1245
+REQ-DOC-013: The system SHALLprovide redline export capabilities
+Draft
+SRS
+The system SHALL provide redline export capabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 71/169
+182
+.
+Test Suite Management
+-REQ-1246
+REQ-TEST-001: The system SHALLprovide CRUD operations for test suites
+Draft
+SRS
+The system SHALL provide CRUD operations for testsuites
+-REQ-1247
+REQ-TEST-002: The system SHALLsupport hierarchical test suite organization
+Draft
+SRS
+The system SHALL support hierarchical test suiteorganization
+-REQ-1248
+REQ-TEST-003: The system SHALLmaintain test suite metadata and descriptions
+Draft
+SRS
+The system SHALL maintain test suite metadata anddescriptions
+-REQ-1249
+REQ-TEST-004: The system SHALLsupport test suite categorization and tagging
+Draft
+SRS
+The system SHALL support test suite categorization andtagging
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 72/169
+183
+.
+Test Case Management
+-REQ-1250
+REQ-TEST-005: The system SHALLprovide CRUD operations for test cases
+Draft
+SRS
+The system SHALL provide CRUD operations for testcases
+-REQ-1251
+REQ-TEST-006: The system SHALLsupport test case priority levels (Low, Medium, High,Critical)
+Draft
+SRS
+The system SHALL support test case priority levels (Low,Medium, High, Critical)
+-REQ-1252
+REQ-TEST-007: The system SHALLmaintain test case steps with expected results
+Draft
+SRS
+The system SHALL maintain test case steps withexpected results
+-REQ-1253
+REQ-TEST-008: The system SHALLsupport test case versioning
+Draft
+SRS
+The system SHALL support test case versioning
+-REQ-1254
+REQ-TEST-009: The system SHALL linktest cases to requirements
+Draft
+SRS
+The system SHALL link test cases to requirements
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 73/169
+-REQ-1255
+REQ-TEST-010: The system SHALLsupport test case search and filtering
+Draft
+SRS
+The system SHALL support test case search and filtering
+184
+.
+Test Plan Management
+-REQ-1256
+REQ-TEST-011: The system SHALLprovide CRUD operations for test plans
+Draft
+SRS
+The system SHALL provide CRUD operations for testplans
+-REQ-1257
+REQ-TEST-012: The system SHALLsupport test plan types (UserValidation,SoftwareVerification)
+Draft
+SRS
+The system SHALL support test plan types(UserValidation, SoftwareVerification)
+-REQ-1258
+REQ-TEST-013: The system SHALLassociate test cases with test plans
+Draft
+SRS
+The system SHALL associate test cases with test plans
+-REQ-1259
+REQ-TEST-014: The system SHALLsupport test plan scheduling and assignment
+Draft
+SRS
+The system SHALL support test plan scheduling andassignment
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 74/169
+185
+.
+Test Execution
+-REQ-1260
+REQ-TEST-015: The system SHALLsupport test run session management
+Draft
+SRS
+The system SHALL support test run session management
+-REQ-1261
+REQ-TEST-016: The system SHALLtrack test execution results (Passed, Failed,Blocked, NotRun)
+Draft
+SRS
+The system SHALL track test execution results (Passed,Failed, Blocked, NotRun)
+-REQ-1262
+REQ-TEST-017: The system SHALLmaintain test execution history
+Draft
+SRS
+The system SHALL maintain test execution history
+-REQ-1263
+REQ-TEST-018: The system SHALLsupport test step-level execution tracking
+Draft
+SRS
+The system SHALL support test step-level executiontracking
+-REQ-1264
+REQ-TEST-019: The system SHALLallow attachment of evidence to test executions
+Draft
+SRS
+The system SHALL allow attachment of evidence to testexecutions
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 75/169
+-REQ-1265
+REQ-TEST-020: The system SHALLsupport test run status tracking (InProgress,Completed, Aborted, Paused)
+Draft
+SRS
+The system SHALL support test run status tracking(InProgress, Completed, Aborted, Paused)
+186
+.
+Test Case Linking
+-REQ-1266
+REQ-TEST-021: The system SHALL linktest cases to specific requirements
+Draft
+SRS
+The system SHALL link test cases to specificrequirements
+-REQ-1267
+REQ-TEST-022: The system SHALLsupport many-to-many requirement-test caserelationships
+Draft
+SRS
+The system SHALL support many-to-many requirement-test case relationships
+-REQ-1268
+REQ-TEST-023: The system SHALLmaintain link metadata and traceability
+Draft
+SRS
+The system SHALL maintain link metadata andtraceability
+-REQ-1269
+REQ-TEST-024: The system SHALLvalidate link consistency and integrity
+Draft
+SRS
+The system SHALL validate link consistency and integrity
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 76/169
+187
+.
+Dashboard Services
+-REQ-1270
+REQ-DASH-001: The system SHALLprovide project overview dashboard data
+Draft
+SRS
+The system SHALL provide project overview dashboarddata
+-REQ-1271
+REQ-DASH-002: The system SHALLcalculate requirement completion statistics
+Draft
+SRS
+The system SHALL calculate requirement completionstatistics
+-REQ-1272
+REQ-DASH-003: The system SHALLprovide test execution status summaries
+Draft
+SRS
+The system SHALL provide test execution statussummaries
+-REQ-1273
+REQ-DASH-004: The system SHALLtrack coverage metrics (requirements to test cases)
+Draft
+SRS
+The system SHALL track coverage metrics (requirementsto test cases)
+-REQ-1274
+REQ-DASH-005: The system SHALLsupport role-based dashboard customization
+Draft
+SRS
+The system SHALL support role-based dashboardcustomization
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 77/169
+188
+.
+Enhanced Reporting
+-REQ-1275
+REQ-DASH-006: The system SHALLprovide comprehensive test execution reports
+Draft
+SRS
+The system SHALL provide comprehensive test executionreports
+-REQ-1276
+REQ-DASH-007: The system SHALLgenerate requirement coverage reports
+Draft
+SRS
+The system SHALL generate requirement coveragereports
+-REQ-1277
+REQ-DASH-008: The system SHALLsupport trend analysis and historical reporting
+Draft
+SRS
+The system SHALL support trend analysis and historicalreporting
+-REQ-1278
+REQ-DASH-009: The system SHALLprovide project progress tracking
+Draft
+SRS
+The system SHALL provide project progress tracking
+-REQ-1279
+REQ-DASH-010: The system SHALLsupport custom report generation
+Draft
+SRS
+The system SHALL support custom report generation
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 78/169
+189
+.
+Database Operations
+-REQ-1280
+REQ-DATA-001: The system SHALLsupport Entity Framework Core migrations
+Draft
+SRS
+The system SHALL support Entity Framework Coremigrations
+-REQ-1281
+REQ-DATA-002: The system SHALLprovide database seeding capabilities
+Draft
+SRS
+The system SHALL provide database seeding capabilities
+-REQ-1282
+REQ-DATA-003: The system SHALLensure referential integrity across entities
+Draft
+SRS
+The system SHALL ensure referential integrity acrossentities
+-REQ-1283
+REQ-DATA-004: The system SHALLsupport transaction management
+Draft
+SRS
+The system SHALL support transaction management
+-REQ-1284
+REQ-DATA-005: The system SHALLprovide data validation and constraints
+Draft
+SRS
+The system SHALL provide data validation andconstraints
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 79/169
+190
+.
+API Design
+-REQ-1285
+REQ-API-001: The system SHALLprovide RESTful API endpoints for all entities
+Draft
+SRS
+The system SHALL provide RESTful API endpoints for allentities
+-REQ-1286
+REQ-API-002: The system SHALLsupport OpenAPI/Swagger documentation
+Draft
+SRS
+The system SHALL support OpenAPI/Swaggerdocumentation
+-REQ-1287
+REQ-API-003: The system SHALLimplement consistent error handling and responses
+Draft
+SRS
+The system SHALL implement consistent error handlingand responses
+-REQ-1288
+REQ-API-004: The system SHALLsupport pagination for large datasets
+Draft
+SRS
+The system SHALL support pagination for large datasets
+-REQ-1289
+REQ-API-005: The system SHALLprovide filtering and sorting capabilities
+Draft
+SRS
+The system SHALL provide filtering and sortingcapabilities
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 80/169
+-REQ-1290
+REQ-API-006: The system SHALLsupport bulk operations where appropriate
+Draft
+SRS
+The system SHALL support bulk operations whereappropriate
+191
+.
+Shared Library Integration
+-REQ-1291
+REQ-API-007: The system SHALL useRqmtMgmtShared for all DTOs and contracts
+Draft
+SRS
+The system SHALL use RqmtMgmtShared for all DTOsand contracts
+-REQ-1292
+REQ-API-008: The system SHALLmaintain type safety between frontend and backend
+Draft
+SRS
+The system SHALL maintain type safety betweenfrontend and backend
+-REQ-1293
+REQ-API-009: The system SHALLsupport versioned shared library updates
+Draft
+SRS
+The system SHALL support versioned shared libraryupdates
+-REQ-1294
+REQ-API-010: The system SHALLprovide consistent data models across components
+Draft
+SRS
+The system SHALL provide consistent data modelsacross components
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 81/169
+192
+.
+Response Time
+-REQ-1295
+REQ-PERF-001: API endpoints SHALLrespond within 500ms for 95% of requests undernormal load
+Draft
+SRS
+API endpoints SHALL respond within 500ms for 95% ofrequests under normal load
+-REQ-1296
+REQ-PERF-002: Database queriesSHALL be optimized for performance withappropriate indexing
+Draft
+SRS
+Database queries SHALL be optimized for performancewith appropriate indexing
+-REQ-1297
+REQ-PERF-003: The system SHALLsupport concurrent user sessions withoutdegradation
+Draft
+SRS
+The system SHALL support concurrent user sessionswithout degradation
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 82/169
+193
+.
+Throughput
+-REQ-1298
+REQ-PERF-004: The system SHALLsupport at least 100 concurrent users
+Draft
+SRS
+The system SHALL support at least 100 concurrent users
+-REQ-1299
+REQ-PERF-005: The system SHALLhandle at least 1000 API requests per minute
+Draft
+SRS
+The system SHALL handle at least 1000 API requests perminute
+-REQ-1300
+REQ-PERF-006: The system SHALLsupport bulk operations efficiently
+Draft
+SRS
+The system SHALL support bulk operations efficiently
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 83/169
+194
+.
+Horizontal Scaling
+-REQ-1301
+REQ-SCALE-001: The system SHALLbe designed for horizontal scaling in containerizedenvironments
+Draft
+SRS
+The system SHALL be designed for horizontal scaling incontainerized environments
+-REQ-1302
+REQ-SCALE-002: The system SHALLsupport load balancing across multiple instances
+Draft
+SRS
+The system SHALL support load balancing acrossmultiple instances
+-REQ-1303
+REQ-SCALE-003: The system SHALLmaintain session-less design for scalability
+Draft
+SRS
+The system SHALL maintain session-less design forscalability
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 84/169
+195
+.
+Data Scaling
+-REQ-1304
+REQ-SCALE-004: The system SHALLefficiently handle databases with 100,000+requirements
+Draft
+SRS
+The system SHALL efficiently handle databases with100,000+ requirements
+-REQ-1305
+REQ-SCALE-005: The system SHALLsupport pagination and lazy loading for largedatasets
+Draft
+SRS
+The system SHALL support pagination and lazy loadingfor large datasets
+-REQ-1306
+REQ-SCALE-006: The system SHALLoptimize queries for large data volumes
+Draft
+SRS
+The system SHALL optimize queries for large datavolumes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 85/169
+196
+.
+Availability
+-REQ-1307
+REQ-REL-001: The system SHALLmaintain 99.5% uptime excluding scheduledmaintenance
+Draft
+SRS
+The system SHALL maintain 99.5% uptime excludingscheduled maintenance
+-REQ-1308
+REQ-REL-002: The system SHALLimplement graceful error handling and recovery
+Draft
+SRS
+The system SHALL implement graceful error handling andrecovery
+-REQ-1309
+REQ-REL-003: The system SHALLprovide meaningful error messages and statuscodes
+Draft
+SRS
+The system SHALL provide meaningful error messagesand status codes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 86/169
+197
+.
+Data Integrity
+-REQ-1310
+REQ-REL-004: The system SHALLensure ACID compliance for database transactions
+Draft
+SRS
+The system SHALL ensure ACID compliance for databasetransactions
+-REQ-1311
+REQ-REL-005: The system SHALLmaintain referential integrity across all entities
+Draft
+SRS
+The system SHALL maintain referential integrity across allentities
+-REQ-1312
+REQ-REL-006: The system SHALLimplement data validation at all entry points
+Draft
+SRS
+The system SHALL implement data validation at all entrypoints
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 87/169
+198
+.
+Authentication Security
+-REQ-1313
+REQ-SEC-001: The system SHALLenforce HTTPS for all API communications
+Draft
+SRS
+The system SHALL enforce HTTPS for all APIcommunications
+-REQ-1314
+REQ-SEC-002: The system SHALLvalidate JWT tokens for all protected endpoints
+Draft
+SRS
+The system SHALL validate JWT tokens for all protectedendpoints
+-REQ-1315
+REQ-SEC-003: The system SHALLimplement token expiration and refresh mechanisms
+Draft
+SRS
+The system SHALL implement token expiration andrefresh mechanisms
+-REQ-1316
+REQ-SEC-004: The system SHALLprotect against common security vulnerabilities(OWASP Top 10)
+Draft
+SRS
+The system SHALL protect against common securityvulnerabilities (OWASP Top 10)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 88/169
+199
+.
+Data Security
+-REQ-1317
+REQ-SEC-005: The system SHALLimplement input validation and sanitization
+Draft
+SRS
+The system SHALL implement input validation andsanitization
+-REQ-1318
+REQ-SEC-006: The system SHALLprotect against SQL injection attacks
+Draft
+SRS
+The system SHALL protect against SQL injection attacks
+-REQ-1319
+REQ-SEC-007: The system SHALLimplement appropriate CORS policies
+Draft
+SRS
+The system SHALL implement appropriate CORS policies
+-REQ-1320
+REQ-SEC-008: The system SHALL logsecurity events for audit purposes
+Draft
+SRS
+The system SHALL log security events for audit purposes
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 89/169
+200
+.
+Access Control
+-REQ-1321
+REQ-SEC-009: The system SHALLenforce role-based access control at the API level
+Draft
+SRS
+The system SHALL enforce role-based access control atthe API level
+-REQ-1322
+REQ-SEC-010: The system SHALLimplement project-level data isolation
+Draft
+SRS
+The system SHALL implement project-level data isolation
+-REQ-1323
+REQ-SEC-011: The system SHALLvalidate user permissions for all operations
+Draft
+SRS
+The system SHALL validate user permissions for alloperations
+-REQ-1324
+REQ-SEC-012: The system SHALLprovide audit logging for all data modifications
+Draft
+SRS
+The system SHALL provide audit logging for all datamodifications
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 90/169
+201
+.
+Code Quality
+-REQ-1325
+REQ-MAINT-001: The system SHALLfollow .NET coding standards and best practices
+Draft
+SRS
+The system SHALL follow .NET coding standards andbest practices
+-REQ-1326
+REQ-MAINT-002: The system SHALLmaintain comprehensive XML documentation
+Draft
+SRS
+The system SHALL maintain comprehensive XMLdocumentation
+-REQ-1327
+REQ-MAINT-003: The system SHALLimplement dependency injection for testability
+Draft
+SRS
+The system SHALL implement dependency injection fortestability
+-REQ-1328
+REQ-MAINT-004: The system SHALLseparate concerns into distinct layers (Controllers,Services, Data)
+Draft
+SRS
+The system SHALL separate concerns into distinct layers(Controllers, Services, Data)
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 91/169
+202
+.
+Testing
+-REQ-1329
+REQ-MAINT-005: The system SHALLmaintain minimum 80% code coverage with unittests
+Draft
+SRS
+The system SHALL maintain minimum 80% codecoverage with unit tests
+-REQ-1330
+REQ-MAINT-006: The system SHALLinclude integration tests for all API endpoints
+Draft
+SRS
+The system SHALL include integration tests for all APIendpoints
+-REQ-1331
+REQ-MAINT-007: The system SHALLsupport automated testing in CI/CD pipelines
+Draft
+SRS
+The system SHALL support automated testing in CI/CDpipelines
+-REQ-1332
+REQ-MAINT-008: The system SHALLprovide test data seeding for consistent testing
+Draft
+SRS
+The system SHALL provide test data seeding forconsistent testing
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 92/169
+203
+.
+Platform Independence
+-REQ-1333
+REQ-PORT-001: The system SHALL runon multiple operating systems (Windows, Linux,macOS)
+Draft
+SRS
+The system SHALL run on multiple operating systems(Windows, Linux, macOS)
+-REQ-1334
+REQ-PORT-002: The system SHALL becontainerized using Docker
+Draft
+SRS
+The system SHALL be containerized using Docker
+-REQ-1335
+REQ-PORT-003: The system SHALLsupport cloud deployment (Azure, AWS, GCP)
+Draft
+SRS
+The system SHALL support cloud deployment (Azure,AWS, GCP)
+-REQ-1336
+REQ-PORT-004: The system SHALLsupport Kubernetes orchestration
+Draft
+SRS
+The system SHALL support Kubernetes orchestration
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 93/169
+204
+.
+Database Portability
+-REQ-1337
+REQ-PORT-005: The system SHALLsupport multiple database providers through EntityFramework Core
+Draft
+SRS
+The system SHALL support multiple database providersthrough Entity Framework Core
+-REQ-1338
+REQ-PORT-006: The system SHALLuse database-agnostic queries and operations
+Draft
+SRS
+The system SHALL use database-agnostic queries andoperations
+-REQ-1339
+REQ-PORT-007: The system SHALLsupport both SQL Server and in-memory databasesfor testing
+Draft
+SRS
+The system SHALL support both SQL Server and in-memory databases for testing
+205
+.
+3.2 User Management
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 94/169
+ Requirements Traceability Analysis
+Track requirement relationships and coverage for this Software
+Requirement Specification
+ Requirements
+Traceability Matrix
+Requirements in this document and what
+they trace TO for TestFlow Pro Backend
+Server - Software Requirements
+Specification
+
+Switch to
+Upstream
+ Show
+Uncovered
+Only
+355
+Total Requirements
+0
+Covered Requirements
+0%
+Coverage Percentage
+355
+Uncovered Requirements
+ Traceability Relationships
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-007
+REQ-AUTH-001:
+JWT Bearer Token
+Authentication
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 95/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1007
+Test Requirement
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1009
+REQ-AUTH-001:
+The system SHALL
+support JWT bearer
+token authentication
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1010
+REQ-AUTH-002:
+The system SHALL
+integrate with OAuth
+2.0/OpenID Connect
+providers (Azure
+AD, Okta, Google,
+Identity
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1011
+REQ-AUTH-003:
+The system SHALL
+validate JWT token
+signatures and
+expiration
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1012
+REQ-AUTH-004:
+The system SHALL
+support configurable
+authority and
+audience validation
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 96/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1013
+REQ-AUTH-005:
+The system SHALL
+implement rolebased
+access
+control (RBAC)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1014
+REQ-AUTH-006:
+The system SHALL
+support the
+following roles:
+Admin, Product
+Owner, QA
+Engineer,
+Developer, Viewer
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1015
+REQ-AUTH-007:
+The system SHALL
+enforce API
+endpoint access
+based on user roles
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1016
+REQ-AUTH-008:
+The system SHALL
+maintain user role
+assignments per
+project
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1017
+REQ-USER-001:
+The system SHALL
+provide CRUD
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 97/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+operations for user
+accounts
+SRS
+SRS-1018
+REQ-USER-002:
+The system SHALL
+store user profile
+information (name,
+email, preferences)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1019
+REQ-USER-003:
+The system SHALL
+support user role
+assignment and
+modification
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1020
+REQ-USER-004:
+The system SHALL
+provide user search
+and filtering
+capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1021
+REQ-USER-005:
+The system SHALL
+track user activity for
+audit purposes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1022
+REQ-USER-006:
+The system SHALL
+manage role
+definitions and
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 98/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+permissions
+SRS
+SRS-1023
+REQ-USER-007:
+The system SHALL
+support hierarchical
+role inheritance
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1024
+REQ-USER-008:
+The system SHALL
+allow role-based
+data access
+restrictions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1025
+REQ-PROJ-001:
+The system SHALL
+provide CRUD
+operations for
+projects
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1026
+REQ-PROJ-002:
+The system SHALL
+support project
+status tracking
+(Active, Archived,
+OnHold, Planning)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1027
+REQ-PROJ-003:
+The system SHALL
+maintain project
+metadata (name,
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 99/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+description, dates,
+owner)
+SRS
+SRS-1028
+REQ-PROJ-004:
+The system SHALL
+support project team
+member
+management
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1029
+REQ-PROJ-005:
+The system SHALL
+provide project-level
+access control
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1030
+REQ-PROJ-006:
+The system SHALL
+support data
+isolation between
+projects
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1031
+REQ-PROJ-007:
+The system SHALL
+ensure users can
+only access
+authorized projects
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1032
+REQ-PROJ-008:
+The system SHALL
+provide crossproject
+reporting for
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 100/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+authorized users
+SRS
+SRS-1033
+REQ-RQM-001: The
+system SHALL
+support Customer
+Requirement
+Documents (CRD)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1034
+REQ-RQM-002: The
+system SHALL
+support Product
+Requirement
+Documents (PRD)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1035
+REQ-RQM-003: The
+system SHALL
+support Software
+Requirement
+Specifications (SRS)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1036
+REQ-RQM-004: The
+system SHALL
+support User Stories
+as a requirement
+type
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1037
+REQ-RQM-005: The
+system SHALL
+support Business
+Rules as a
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 101/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+requirement type
+SRS
+SRS-1038
+REQ-RQM-006: The
+system SHALL
+support Entity
+Names as a
+requirement type
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1039
+REQ-RQM-007: The
+system SHALL
+provide CRUD
+operations for all
+requirement types
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1040
+REQ-RQM-008: The
+system SHALL
+support hierarchical
+requirement
+relationships
+(parent-child)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1041
+REQ-RQM-009: The
+system SHALL
+maintain
+requirement status
+(Draft, Approved,
+Implemented,
+Verified)
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 102/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1042
+REQ-RQM-010: The
+system SHALL
+support requirement
+priority levels
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1043
+REQ-RQM-011: The
+system SHALL
+provide requirement
+search and filtering
+capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1044
+REQ-RQM-012: The
+system SHALL
+support requirement
+bulk operations
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1045
+REQ-RQM-013: The
+system SHALL
+provide paginated
+requirement listings
+with sorting
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1046
+REQ-RQM-014: The
+system SHALL
+maintain complete
+version history for all
+requirements
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 103/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1047
+REQ-RQM-015: The
+system SHALL
+automatically
+increment version
+numbers on
+changes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1048
+REQ-RQM-016: The
+system SHALL
+support comparison
+between
+requirement
+versions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1049
+REQ-RQM-017: The
+system SHALL
+support rollback to
+previous
+requirement
+versions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1050
+REQ-RQM-018: The
+system SHALL track
+version change
+metadata (user,
+timestamp, reason)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1051
+REQ-RQM-019: The
+system SHALL
+support traceability
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 104/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+links between
+requirements
+SRS
+SRS-1052
+REQ-RQM-020: The
+system SHALL
+support trace types:
+DerivedFrom,
+ImplementedBy,
+ValidatedBy,
+RelatedTo
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1053
+REQ-RQM-021: The
+system SHALL
+provide traceability
+matrix generation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1054
+REQ-RQM-022: The
+system SHALL
+support bidirectional
+traceability
+navigation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1055
+REQ-RQM-023: The
+system SHALL
+validate trace link
+integrity
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1056
+REQ-DOC-001: The
+system SHALL
+provide CRUD
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 105/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+operations for
+requirement
+documents
+SRS
+SRS-1057
+REQ-DOC-002: The
+system SHALL
+support document
+types (CRD, PRD,
+SRS)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1058
+REQ-DOC-003: The
+system SHALL
+maintain document
+status (Draft,
+InReview, Approved,
+Published)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1059
+REQ-DOC-004: The
+system SHALL
+support document
+sections and
+hierarchical
+structure
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1060
+REQ-DOC-005: The
+system SHALL
+provide document
+version control
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 106/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1061
+REQ-DOC-006: The
+system SHALL
+support hierarchical
+document sections
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1062
+REQ-DOC-007: The
+system SHALL
+associate
+requirements with
+document sections
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1063
+REQ-DOC-008: The
+system SHALL
+support section
+reordering and
+restructuring
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1064
+REQ-DOC-009: The
+system SHALL
+maintain section
+numbering schemes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1065
+REQ-DOC-010: The
+system SHALL
+generate redline
+comparisons
+between document
+versions
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 107/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1066
+REQ-DOC-011: The
+system SHALL
+highlight additions,
+deletions, and
+modifications
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1067
+REQ-DOC-012: The
+system SHALL
+support field-level
+change tracking
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1068
+REQ-DOC-013: The
+system SHALL
+provide redline
+export capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1069
+REQ-TEST-001:
+The system SHALL
+provide CRUD
+operations for test
+suites
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1070
+REQ-TEST-002:
+The system SHALL
+support hierarchical
+test suite
+organization
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 108/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1071
+REQ-TEST-003:
+The system SHALL
+maintain test suite
+metadata and
+descriptions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1072
+REQ-TEST-004:
+The system SHALL
+support test suite
+categorization and
+tagging
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1073
+REQ-TEST-005:
+The system SHALL
+provide CRUD
+operations for test
+cases
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1074
+REQ-TEST-006:
+The system SHALL
+support test case
+priority levels (Low,
+Medium, High,
+Critical)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1075
+REQ-TEST-007:
+The system SHALL
+maintain test case
+steps with expected
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 109/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+results
+SRS
+SRS-1076
+REQ-TEST-008:
+The system SHALL
+support test case
+versioning
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1077
+REQ-TEST-009:
+The system SHALL
+link test cases to
+requirements
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1078
+REQ-TEST-010:
+The system SHALL
+support test case
+search and filtering
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1079
+REQ-TEST-011:
+The system SHALL
+provide CRUD
+operations for test
+plans
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 110/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1080
+REQ-TEST-012:
+The system SHALL
+support test plan
+types
+(UserValidation,
+SoftwareVerification)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1081
+REQ-TEST-013:
+The system SHALL
+associate test cases
+with test plans
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1082
+REQ-TEST-014:
+The system SHALL
+support test plan
+scheduling and
+assignment
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1083
+REQ-TEST-015:
+The system SHALL
+support test run
+session
+management
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1084
+REQ-TEST-016:
+The system SHALL
+track test execution
+results (Passed,
+Failed, Blocked,
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 111/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+NotRun)
+SRS
+SRS-1085
+REQ-TEST-017:
+The system SHALL
+maintain test
+execution history
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1086
+REQ-TEST-018:
+The system SHALL
+support test steplevel
+execution
+tracking
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1087
+REQ-TEST-019:
+The system SHALL
+allow attachment of
+evidence to test
+executions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1088
+REQ-TEST-020:
+The system SHALL
+support test run
+status tracking
+(InProgress,
+Completed, Aborted,
+Paused)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1089
+REQ-TEST-021:
+The system SHALL
+link test cases to
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 112/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+specific
+requirements
+SRS
+SRS-1090
+REQ-TEST-022:
+The system SHALL
+support many-tomany
+requirementtest
+case
+relationships
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1091
+REQ-TEST-023:
+The system SHALL
+maintain link
+metadata and
+traceability
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1092
+REQ-TEST-024:
+The system SHALL
+validate link
+consistency and
+integrity
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1093
+REQ-DASH-001:
+The system SHALL
+provide project
+overview dashboard
+data
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 113/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1094
+REQ-DASH-002:
+The system SHALL
+calculate
+requirement
+completion statistics
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1095
+REQ-DASH-003:
+The system SHALL
+provide test
+execution status
+summaries
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1096
+REQ-DASH-004:
+The system SHALL
+track coverage
+metrics
+(requirements to test
+cases)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1097
+REQ-DASH-005:
+The system SHALL
+support role-based
+dashboard
+customization
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1098
+REQ-DASH-006:
+The system SHALL
+provide
+comprehensive test
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 114/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+execution reports
+SRS
+SRS-1099
+REQ-DASH-007:
+The system SHALL
+generate
+requirement
+coverage reports
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1100
+REQ-DASH-008:
+The system SHALL
+support trend
+analysis and
+historical reporting
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1101
+REQ-DASH-009:
+The system SHALL
+provide project
+progress tracking
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1102
+REQ-DASH-010:
+The system SHALL
+support custom
+report generation
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 115/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1103
+REQ-DATA-001:
+The system SHALL
+support Entity
+Framework Core
+migrations
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1104
+REQ-DATA-002:
+The system SHALL
+provide database
+seeding capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1105
+REQ-DATA-003:
+The system SHALL
+ensure referential
+integrity across
+entities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1106
+REQ-DATA-004:
+The system SHALL
+support transaction
+management
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1107
+REQ-DATA-005:
+The system SHALL
+provide data
+validation and
+constraints
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 116/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1108
+REQ-API-001: The
+system SHALL
+provide RESTful API
+endpoints for all
+entities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1109
+REQ-API-002: The
+system SHALL
+support
+OpenAPI/Swagger
+documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1110
+REQ-API-003: The
+system SHALL
+implement
+consistent error
+handling and
+responses
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1111
+REQ-API-004: The
+system SHALL
+support pagination
+for large datasets
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1112
+REQ-API-005: The
+system SHALL
+provide filtering and
+sorting capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 117/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1113
+REQ-API-006: The
+system SHALL
+support bulk
+operations where
+appropriate
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1114
+REQ-API-007: The
+system SHALL use
+RqmtMgmtShared
+for all DTOs and
+contracts
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1115
+REQ-API-008: The
+system SHALL
+maintain type safety
+between frontend
+and backend
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1116
+REQ-API-009: The
+system SHALL
+support versioned
+shared library
+updates
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1117
+REQ-API-010: The
+system SHALL
+provide consistent
+data models across
+components
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 118/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1118
+REQ-PERF-001:
+API endpoints
+SHALL respond
+within 500ms for
+95% of requests
+under normal load
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1119
+REQ-PERF-002:
+Database queries
+SHALL be optimized
+for performance with
+appropriate indexing
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1120
+REQ-PERF-003:
+The system SHALL
+support concurrent
+user sessions
+without degradation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1121
+REQ-PERF-004:
+The system SHALL
+support at least 100
+concurrent users
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1122
+REQ-PERF-005:
+The system SHALL
+handle at least 1000
+API requests per
+minute
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 119/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1123
+REQ-PERF-006:
+The system SHALL
+support bulk
+operations efficiently
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1124
+REQ-SCALE-001:
+The system SHALL
+be designed for
+horizontal scaling in
+containerized
+environments
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1125
+REQ-SCALE-002:
+The system SHALL
+support load
+balancing across
+multiple instances
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1126
+REQ-SCALE-003:
+The system SHALL
+maintain sessionless
+design for
+scalability
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1127
+REQ-SCALE-004:
+The system SHALL
+efficiently handle
+databases with
+100,000+
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 120/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+requirements
+SRS
+SRS-1128
+REQ-SCALE-005:
+The system SHALL
+support pagination
+and lazy loading for
+large datasets
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1129
+REQ-SCALE-006:
+The system SHALL
+optimize queries for
+large data volumes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1130
+REQ-REL-001: The
+system SHALL
+maintain 99.5%
+uptime excluding
+scheduled
+maintenance
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1131
+REQ-REL-002: The
+system SHALL
+implement graceful
+error handling and
+recovery
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1132
+REQ-REL-003: The
+system SHALL
+provide meaningful
+error messages and
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 121/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+status codes
+SRS
+SRS-1133
+REQ-REL-004: The
+system SHALL
+ensure ACID
+compliance for
+database
+transactions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1134
+REQ-REL-005: The
+system SHALL
+maintain referential
+integrity across all
+entities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1135
+REQ-REL-006: The
+system SHALL
+implement data
+validation at all entry
+points
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1136
+REQ-SEC-001: The
+system SHALL
+enforce HTTPS for
+all API
+communications
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1137
+REQ-SEC-002: The
+system SHALL
+validate JWT tokens
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 122/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+for all protected
+endpoints
+SRS
+SRS-1138
+REQ-SEC-003: The
+system SHALL
+implement token
+expiration and
+refresh mechanisms
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1139
+REQ-SEC-004: The
+system SHALL
+protect against
+common security
+vulnerabilities
+(OWASP Top 10)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1140
+REQ-SEC-005: The
+system SHALL
+implement input
+validation and
+sanitization
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1141
+REQ-SEC-006: The
+system SHALL
+protect against SQL
+injection attacks
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1142
+REQ-SEC-007: The
+system SHALL
+implement
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 123/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+appropriate CORS
+policies
+SRS
+SRS-1143
+REQ-SEC-008: The
+system SHALL log
+security events for
+audit purposes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1144
+REQ-SEC-009: The
+system SHALL
+enforce role-based
+access control at the
+API level
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1145
+REQ-SEC-010: The
+system SHALL
+implement projectlevel
+data isolation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1146
+REQ-SEC-011: The
+system SHALL
+validate user
+permissions for all
+operations
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1147
+REQ-SEC-012: The
+system SHALL
+provide audit
+logging for all data
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 124/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+modifications
+SRS
+SRS-1148
+REQ-MAINT-001:
+The system SHALL
+follow .NET coding
+standards and best
+practices
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1149
+REQ-MAINT-002:
+The system SHALL
+maintain
+comprehensive XML
+documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1150
+REQ-MAINT-003:
+The system SHALL
+implement
+dependency
+injection for
+testability
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1151
+REQ-MAINT-004:
+The system SHALL
+separate concerns
+into distinct layers
+(Controllers,
+Services, Data)
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 125/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1152
+REQ-MAINT-005:
+The system SHALL
+maintain minimum
+80% code coverage
+with unit tests
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1153
+REQ-MAINT-006:
+The system SHALL
+include integration
+tests for all API
+endpoints
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1154
+REQ-MAINT-007:
+The system SHALL
+support automated
+testing in CI/CD
+pipelines
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1155
+REQ-MAINT-008:
+The system SHALL
+provide test data
+seeding for
+consistent testing
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1156
+REQ-PORT-001:
+The system SHALL
+run on multiple
+operating systems
+(Windows, Linux,
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 126/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+macOS)
+SRS
+SRS-1157
+REQ-PORT-002:
+The system SHALL
+be containerized
+using Docker
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1158
+REQ-PORT-003:
+The system SHALL
+support cloud
+deployment (Azure,
+AWS, GCP)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1159
+REQ-PORT-004:
+The system SHALL
+support Kubernetes
+orchestration
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1160
+REQ-PORT-005:
+The system SHALL
+support multiple
+database providers
+through Entity
+Framework Core
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1161
+REQ-PORT-006:
+The system SHALL
+use databaseagnostic
+queries
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 127/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+and operations
+SRS
+SRS-1162
+REQ-PORT-007:
+The system SHALL
+support both SQL
+Server and inmemory
+databases
+for testing
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1163
+REQ-UI-001: The
+system SHALL
+provide RESTful API
+endpoints for
+frontend
+consumption
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1164
+REQ-UI-002: The
+system SHALL
+provide
+OpenAPI/Swagger
+documentation
+interface
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1165
+REQ-UI-003: The
+system SHALL
+support CORS for
+web application
+integration
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 128/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1166
+REQ-HW-001: The
+system SHALL run
+on standard x86-64
+server hardware
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1167
+REQ-HW-002: The
+system SHALL
+support
+containerized
+deployment
+environments
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1168
+REQ-HW-003: The
+system SHALL
+efficiently utilize
+available CPU and
+memory resources
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1169
+REQ-SW-001: The
+system SHALL
+integrate with SQL
+Server databases
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1170
+REQ-SW-002: The
+system SHALL
+integrate with OAuth
+2.0/OpenID Connect
+providers
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 129/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1171
+REQ-SW-003: The
+system SHALL
+support integration
+with external identity
+providers
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1172
+REQ-SW-004: The
+system SHALL
+provide API
+endpoints for thirdparty
+tool integration
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1173
+REQ-COMM-001:
+The system SHALL
+communicate via
+HTTPS REST APIs
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1174
+REQ-COMM-002:
+The system SHALL
+support JSON
+request/response
+formats
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1175
+REQ-COMM-003:
+The system SHALL
+implement standard
+HTTP status codes
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 130/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1176
+REQ-COMM-004:
+The system SHALL
+support WebSocket
+connections if
+needed for real-time
+updates
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1177
+REQ-QA-001: The
+system SHALL
+include
+comprehensive unit
+tests (>80%
+coverage)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1178
+REQ-QA-002: The
+system SHALL
+include integration
+tests for all API
+endpoints
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1179
+REQ-QA-003: The
+system SHALL
+include performance
+testing under load
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1180
+REQ-QA-004: The
+system SHALL
+include security
+testing for
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 131/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+vulnerabilities
+SRS
+SRS-1181
+REQ-QA-005: The
+system SHALL
+maintain up-to-date
+API documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1182
+REQ-QA-006: The
+system SHALL
+include
+comprehensive
+code documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1183
+REQ-QA-007: The
+system SHALL
+provide deployment
+and configuration
+guides
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1184
+REQ-QA-008: The
+system SHALL
+maintain
+architecture decision
+records
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 132/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1185
+REQ-AUTH-001:
+The system SHALL
+support JWT bearer
+token authentication
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1186
+REQ-AUTH-001:
+The system SHALL
+support JWT bearer
+token authentication
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1187
+REQ-AUTH-002:
+The system SHALL
+integrate with OAuth
+2.0/OpenID Connect
+providers (Azure
+AD, Okta, Google,
+Identity
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1188
+REQ-AUTH-003:
+The system SHALL
+validate JWT token
+signatures and
+expiration
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1189
+REQ-AUTH-004:
+The system SHALL
+support configurable
+authority and
+audience validation
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 133/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1190
+REQ-AUTH-005:
+The system SHALL
+implement rolebased
+access
+control (RBAC)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1191
+REQ-AUTH-006:
+The system SHALL
+support the
+following roles:
+Admin, Product
+Owner, QA
+Engineer,
+Developer, Viewer
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1192
+REQ-AUTH-007:
+The system SHALL
+enforce API
+endpoint access
+based on user roles
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1193
+REQ-AUTH-008:
+The system SHALL
+maintain user role
+assignments per
+project
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1194
+REQ-USER-001:
+The system SHALL
+provide CRUD
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 134/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+operations for user
+accounts
+SRS
+SRS-1195
+REQ-USER-002:
+The system SHALL
+store user profile
+information (name,
+email, preferences)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1196
+REQ-USER-003:
+The system SHALL
+support user role
+assignment and
+modification
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1197
+REQ-USER-004:
+The system SHALL
+provide user search
+and filtering
+capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1198
+REQ-USER-005:
+The system SHALL
+track user activity for
+audit purposes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1199
+REQ-USER-006:
+The system SHALL
+manage role
+definitions and
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 135/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+permissions
+SRS
+SRS-1200
+REQ-USER-007:
+The system SHALL
+support hierarchical
+role inheritance
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1201
+REQ-USER-008:
+The system SHALL
+allow role-based
+data access
+restrictions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1202
+REQ-PROJ-001:
+The system SHALL
+provide CRUD
+operations for
+projects
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1203
+REQ-PROJ-002:
+The system SHALL
+support project
+status tracking
+(Active, Archived,
+OnHold, Planning)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1204
+REQ-PROJ-003:
+The system SHALL
+maintain project
+metadata (name,
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 136/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+description, dates,
+owner)
+SRS
+SRS-1205
+REQ-PROJ-004:
+The system SHALL
+support project team
+member
+management
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1206
+REQ-PROJ-005:
+The system SHALL
+provide project-level
+access control
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1207
+REQ-PROJ-006:
+The system SHALL
+support data
+isolation between
+projects
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1208
+REQ-PROJ-007:
+The system SHALL
+ensure users can
+only access
+authorized projects
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1209
+REQ-PROJ-008:
+The system SHALL
+provide crossproject
+reporting for
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 137/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+authorized users
+SRS
+SRS-1210
+REQ-RQM-001: The
+system SHALL
+support Customer
+Requirement
+Documents (CRD)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1211
+REQ-RQM-002: The
+system SHALL
+support Product
+Requirement
+Documents (PRD)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1212
+REQ-RQM-003: The
+system SHALL
+support Software
+Requirement
+Specifications (SRS)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1213
+REQ-RQM-004: The
+system SHALL
+support User Stories
+as a requirement
+type
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1214
+REQ-RQM-005: The
+system SHALL
+support Business
+Rules as a
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 138/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+requirement type
+SRS
+SRS-1215
+REQ-RQM-006: The
+system SHALL
+support Entity
+Names as a
+requirement type
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1216
+REQ-RQM-007: The
+system SHALL
+provide CRUD
+operations for all
+requirement types
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1217
+REQ-RQM-008: The
+system SHALL
+support hierarchical
+requirement
+relationships
+(parent-child)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1218
+REQ-RQM-009: The
+system SHALL
+maintain
+requirement status
+(Draft, Approved,
+Implemented,
+Verified)
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 139/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1219
+REQ-RQM-010: The
+system SHALL
+support requirement
+priority levels
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1220
+REQ-RQM-011: The
+system SHALL
+provide requirement
+search and filtering
+capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1221
+REQ-RQM-012: The
+system SHALL
+support requirement
+bulk operations
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1222
+REQ-RQM-013: The
+system SHALL
+provide paginated
+requirement listings
+with sorting
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1223
+REQ-RQM-014: The
+system SHALL
+maintain complete
+version history for all
+requirements
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 140/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1224
+REQ-RQM-015: The
+system SHALL
+automatically
+increment version
+numbers on
+changes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1225
+REQ-RQM-016: The
+system SHALL
+support comparison
+between
+requirement
+versions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1226
+REQ-RQM-017: The
+system SHALL
+support rollback to
+previous
+requirement
+versions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1227
+REQ-RQM-018: The
+system SHALL track
+version change
+metadata (user,
+timestamp, reason)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1228
+REQ-RQM-019: The
+system SHALL
+support traceability
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 141/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+links between
+requirements
+SRS
+SRS-1229
+REQ-RQM-020: The
+system SHALL
+support trace types:
+DerivedFrom,
+ImplementedBy,
+ValidatedBy,
+RelatedTo
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1230
+REQ-RQM-021: The
+system SHALL
+provide traceability
+matrix generation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1231
+REQ-RQM-022: The
+system SHALL
+support bidirectional
+traceability
+navigation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1232
+REQ-RQM-023: The
+system SHALL
+validate trace link
+integrity
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1233
+REQ-DOC-001: The
+system SHALL
+provide CRUD
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 142/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+operations for
+requirement
+documents
+SRS
+SRS-1234
+REQ-DOC-002: The
+system SHALL
+support document
+types (CRD, PRD,
+SRS)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1235
+REQ-DOC-003: The
+system SHALL
+maintain document
+status (Draft,
+InReview, Approved,
+Published)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1236
+REQ-DOC-004: The
+system SHALL
+support document
+sections and
+hierarchical
+structure
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1237
+REQ-DOC-005: The
+system SHALL
+provide document
+version control
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 143/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1238
+REQ-DOC-006: The
+system SHALL
+support hierarchical
+document sections
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1239
+REQ-DOC-007: The
+system SHALL
+associate
+requirements with
+document sections
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1240
+REQ-DOC-008: The
+system SHALL
+support section
+reordering and
+restructuring
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1241
+REQ-DOC-009: The
+system SHALL
+maintain section
+numbering schemes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1242
+REQ-DOC-010: The
+system SHALL
+generate redline
+comparisons
+between document
+versions
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 144/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1243
+REQ-DOC-011: The
+system SHALL
+highlight additions,
+deletions, and
+modifications
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1244
+REQ-DOC-012: The
+system SHALL
+support field-level
+change tracking
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1245
+REQ-DOC-013: The
+system SHALL
+provide redline
+export capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1246
+REQ-TEST-001:
+The system SHALL
+provide CRUD
+operations for test
+suites
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1247
+REQ-TEST-002:
+The system SHALL
+support hierarchical
+test suite
+organization
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 145/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1248
+REQ-TEST-003:
+The system SHALL
+maintain test suite
+metadata and
+descriptions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1249
+REQ-TEST-004:
+The system SHALL
+support test suite
+categorization and
+tagging
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1250
+REQ-TEST-005:
+The system SHALL
+provide CRUD
+operations for test
+cases
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1251
+REQ-TEST-006:
+The system SHALL
+support test case
+priority levels (Low,
+Medium, High,
+Critical)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1252
+REQ-TEST-007:
+The system SHALL
+maintain test case
+steps with expected
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 146/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+results
+SRS
+SRS-1253
+REQ-TEST-008:
+The system SHALL
+support test case
+versioning
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1254
+REQ-TEST-009:
+The system SHALL
+link test cases to
+requirements
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1255
+REQ-TEST-010:
+The system SHALL
+support test case
+search and filtering
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1256
+REQ-TEST-011:
+The system SHALL
+provide CRUD
+operations for test
+plans
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 147/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1257
+REQ-TEST-012:
+The system SHALL
+support test plan
+types
+(UserValidation,
+SoftwareVerification)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1258
+REQ-TEST-013:
+The system SHALL
+associate test cases
+with test plans
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1259
+REQ-TEST-014:
+The system SHALL
+support test plan
+scheduling and
+assignment
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1260
+REQ-TEST-015:
+The system SHALL
+support test run
+session
+management
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1261
+REQ-TEST-016:
+The system SHALL
+track test execution
+results (Passed,
+Failed, Blocked,
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 148/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+NotRun)
+SRS
+SRS-1262
+REQ-TEST-017:
+The system SHALL
+maintain test
+execution history
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1263
+REQ-TEST-018:
+The system SHALL
+support test steplevel
+execution
+tracking
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1264
+REQ-TEST-019:
+The system SHALL
+allow attachment of
+evidence to test
+executions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1265
+REQ-TEST-020:
+The system SHALL
+support test run
+status tracking
+(InProgress,
+Completed, Aborted,
+Paused)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1266
+REQ-TEST-021:
+The system SHALL
+link test cases to
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 149/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+specific
+requirements
+SRS
+SRS-1267
+REQ-TEST-022:
+The system SHALL
+support many-tomany
+requirementtest
+case
+relationships
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1268
+REQ-TEST-023:
+The system SHALL
+maintain link
+metadata and
+traceability
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1269
+REQ-TEST-024:
+The system SHALL
+validate link
+consistency and
+integrity
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1270
+REQ-DASH-001:
+The system SHALL
+provide project
+overview dashboard
+data
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 150/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1271
+REQ-DASH-002:
+The system SHALL
+calculate
+requirement
+completion statistics
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1272
+REQ-DASH-003:
+The system SHALL
+provide test
+execution status
+summaries
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1273
+REQ-DASH-004:
+The system SHALL
+track coverage
+metrics
+(requirements to test
+cases)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1274
+REQ-DASH-005:
+The system SHALL
+support role-based
+dashboard
+customization
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1275
+REQ-DASH-006:
+The system SHALL
+provide
+comprehensive test
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 151/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+execution reports
+SRS
+SRS-1276
+REQ-DASH-007:
+The system SHALL
+generate
+requirement
+coverage reports
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1277
+REQ-DASH-008:
+The system SHALL
+support trend
+analysis and
+historical reporting
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1278
+REQ-DASH-009:
+The system SHALL
+provide project
+progress tracking
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1279
+REQ-DASH-010:
+The system SHALL
+support custom
+report generation
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 152/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1280
+REQ-DATA-001:
+The system SHALL
+support Entity
+Framework Core
+migrations
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1281
+REQ-DATA-002:
+The system SHALL
+provide database
+seeding capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1282
+REQ-DATA-003:
+The system SHALL
+ensure referential
+integrity across
+entities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1283
+REQ-DATA-004:
+The system SHALL
+support transaction
+management
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1284
+REQ-DATA-005:
+The system SHALL
+provide data
+validation and
+constraints
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 153/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1285
+REQ-API-001: The
+system SHALL
+provide RESTful API
+endpoints for all
+entities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1286
+REQ-API-002: The
+system SHALL
+support
+OpenAPI/Swagger
+documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1287
+REQ-API-003: The
+system SHALL
+implement
+consistent error
+handling and
+responses
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1288
+REQ-API-004: The
+system SHALL
+support pagination
+for large datasets
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1289
+REQ-API-005: The
+system SHALL
+provide filtering and
+sorting capabilities
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 154/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1290
+REQ-API-006: The
+system SHALL
+support bulk
+operations where
+appropriate
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1291
+REQ-API-007: The
+system SHALL use
+RqmtMgmtShared
+for all DTOs and
+contracts
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1292
+REQ-API-008: The
+system SHALL
+maintain type safety
+between frontend
+and backend
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1293
+REQ-API-009: The
+system SHALL
+support versioned
+shared library
+updates
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1294
+REQ-API-010: The
+system SHALL
+provide consistent
+data models across
+components
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 155/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1295
+REQ-PERF-001:
+API endpoints
+SHALL respond
+within 500ms for
+95% of requests
+under normal load
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1296
+REQ-PERF-002:
+Database queries
+SHALL be optimized
+for performance with
+appropriate indexing
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1297
+REQ-PERF-003:
+The system SHALL
+support concurrent
+user sessions
+without degradation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1298
+REQ-PERF-004:
+The system SHALL
+support at least 100
+concurrent users
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1299
+REQ-PERF-005:
+The system SHALL
+handle at least 1000
+API requests per
+minute
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 156/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1300
+REQ-PERF-006:
+The system SHALL
+support bulk
+operations efficiently
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1301
+REQ-SCALE-001:
+The system SHALL
+be designed for
+horizontal scaling in
+containerized
+environments
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1302
+REQ-SCALE-002:
+The system SHALL
+support load
+balancing across
+multiple instances
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1303
+REQ-SCALE-003:
+The system SHALL
+maintain sessionless
+design for
+scalability
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1304
+REQ-SCALE-004:
+The system SHALL
+efficiently handle
+databases with
+100,000+
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 157/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+requirements
+SRS
+SRS-1305
+REQ-SCALE-005:
+The system SHALL
+support pagination
+and lazy loading for
+large datasets
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1306
+REQ-SCALE-006:
+The system SHALL
+optimize queries for
+large data volumes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1307
+REQ-REL-001: The
+system SHALL
+maintain 99.5%
+uptime excluding
+scheduled
+maintenance
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1308
+REQ-REL-002: The
+system SHALL
+implement graceful
+error handling and
+recovery
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1309
+REQ-REL-003: The
+system SHALL
+provide meaningful
+error messages and
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 158/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+status codes
+SRS
+SRS-1310
+REQ-REL-004: The
+system SHALL
+ensure ACID
+compliance for
+database
+transactions
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1311
+REQ-REL-005: The
+system SHALL
+maintain referential
+integrity across all
+entities
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1312
+REQ-REL-006: The
+system SHALL
+implement data
+validation at all entry
+points
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1313
+REQ-SEC-001: The
+system SHALL
+enforce HTTPS for
+all API
+communications
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1314
+REQ-SEC-002: The
+system SHALL
+validate JWT tokens
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 159/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+for all protected
+endpoints
+SRS
+SRS-1315
+REQ-SEC-003: The
+system SHALL
+implement token
+expiration and
+refresh mechanisms
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1316
+REQ-SEC-004: The
+system SHALL
+protect against
+common security
+vulnerabilities
+(OWASP Top 10)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1317
+REQ-SEC-005: The
+system SHALL
+implement input
+validation and
+sanitization
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1318
+REQ-SEC-006: The
+system SHALL
+protect against SQL
+injection attacks
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1319
+REQ-SEC-007: The
+system SHALL
+implement
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 160/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+appropriate CORS
+policies
+SRS
+SRS-1320
+REQ-SEC-008: The
+system SHALL log
+security events for
+audit purposes
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1321
+REQ-SEC-009: The
+system SHALL
+enforce role-based
+access control at the
+API level
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1322
+REQ-SEC-010: The
+system SHALL
+implement projectlevel
+data isolation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1323
+REQ-SEC-011: The
+system SHALL
+validate user
+permissions for all
+operations
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1324
+REQ-SEC-012: The
+system SHALL
+provide audit
+logging for all data
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 161/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+modifications
+SRS
+SRS-1325
+REQ-MAINT-001:
+The system SHALL
+follow .NET coding
+standards and best
+practices
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1326
+REQ-MAINT-002:
+The system SHALL
+maintain
+comprehensive XML
+documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1327
+REQ-MAINT-003:
+The system SHALL
+implement
+dependency
+injection for
+testability
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1328
+REQ-MAINT-004:
+The system SHALL
+separate concerns
+into distinct layers
+(Controllers,
+Services, Data)
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 162/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1329
+REQ-MAINT-005:
+The system SHALL
+maintain minimum
+80% code coverage
+with unit tests
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1330
+REQ-MAINT-006:
+The system SHALL
+include integration
+tests for all API
+endpoints
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1331
+REQ-MAINT-007:
+The system SHALL
+support automated
+testing in CI/CD
+pipelines
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1332
+REQ-MAINT-008:
+The system SHALL
+provide test data
+seeding for
+consistent testing
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1333
+REQ-PORT-001:
+The system SHALL
+run on multiple
+operating systems
+(Windows, Linux,
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 163/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+macOS)
+SRS
+SRS-1334
+REQ-PORT-002:
+The system SHALL
+be containerized
+using Docker
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1335
+REQ-PORT-003:
+The system SHALL
+support cloud
+deployment (Azure,
+AWS, GCP)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1336
+REQ-PORT-004:
+The system SHALL
+support Kubernetes
+orchestration
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1337
+REQ-PORT-005:
+The system SHALL
+support multiple
+database providers
+through Entity
+Framework Core
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1338
+REQ-PORT-006:
+The system SHALL
+use databaseagnostic
+queries
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 164/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+and operations
+SRS
+SRS-1339
+REQ-PORT-007:
+The system SHALL
+support both SQL
+Server and inmemory
+databases
+for testing
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1340
+REQ-UI-001: The
+system SHALL
+provide RESTful API
+endpoints for
+frontend
+consumption
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1341
+REQ-UI-002: The
+system SHALL
+provide
+OpenAPI/Swagger
+documentation
+interface
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1342
+REQ-UI-003: The
+system SHALL
+support CORS for
+web application
+integration
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 165/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1343
+REQ-HW-001: The
+system SHALL run
+on standard x86-64
+server hardware
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1344
+REQ-HW-002: The
+system SHALL
+support
+containerized
+deployment
+environments
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1345
+REQ-HW-003: The
+system SHALL
+efficiently utilize
+available CPU and
+memory resources
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1346
+REQ-SW-001: The
+system SHALL
+integrate with SQL
+Server databases
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1347
+REQ-SW-002: The
+system SHALL
+integrate with OAuth
+2.0/OpenID Connect
+providers
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 166/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1348
+REQ-SW-003: The
+system SHALL
+support integration
+with external identity
+providers
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1349
+REQ-SW-004: The
+system SHALL
+provide API
+endpoints for thirdparty
+tool integration
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1350
+REQ-COMM-001:
+The system SHALL
+communicate via
+HTTPS REST APIs
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1351
+REQ-COMM-002:
+The system SHALL
+support JSON
+request/response
+formats
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1352
+REQ-COMM-003:
+The system SHALL
+implement standard
+HTTP status codes
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 167/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+SRS-1353
+REQ-COMM-004:
+The system SHALL
+support WebSocket
+connections if
+needed for real-time
+updates
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1354
+REQ-QA-001: The
+system SHALL
+include
+comprehensive unit
+tests (>80%
+coverage)
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1355
+REQ-QA-002: The
+system SHALL
+include integration
+tests for all API
+endpoints
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1356
+REQ-QA-003: The
+system SHALL
+include performance
+testing under load
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1357
+REQ-QA-004: The
+system SHALL
+include security
+testing for
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 168/169
+Source
+Requirement
+Linked Target
+Requirements
+Coverage
+Status Actions
+vulnerabilities
+SRS
+SRS-1358
+REQ-QA-005: The
+system SHALL
+maintain up-to-date
+API documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1359
+REQ-QA-006: The
+system SHALL
+include
+comprehensive
+code documentation
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1360
+REQ-QA-007: The
+system SHALL
+provide deployment
+and configuration
+guides
+SRS
+No trace links  Not Covered 
+Add
+Link
+SRS-1361
+REQ-QA-008: The
+system SHALL
+maintain
+architecture decision
+records
+SRS
+No trace links  Not Covered 
+Add
+Link
+10/3/25, 2:03 PM TestFlow Pro Backend Server - Software Requirements Specification
+https://rqmtmgmt.local/projects/25/documents/11 169/169

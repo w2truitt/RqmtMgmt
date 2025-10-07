@@ -281,6 +281,109 @@ namespace backend.Controllers
         }
 
         #endregion
+
+        #region Enhanced Search Endpoints
+
+        /// <summary>
+        /// Searches for sections within a document using fuzzy or exact matching.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to search within.</param>
+        /// <param name="searchTerm">The search term to match against section titles.</param>
+        /// <param name="fuzzyMatch">Whether to use fuzzy matching (default: true).</param>
+        /// <param name="similarityThreshold">Minimum similarity score for fuzzy matches (0.0-1.0, default: 0.8).</param>
+        /// <param name="parentId">Optional parent section ID to limit search scope.</param>
+        /// <returns>A list of matching sections ordered by relevance.</returns>
+        /// <response code="200">Returns matching sections.</response>
+        /// <response code="400">If search parameters are invalid.</response>
+        [HttpGet("document/{documentId}/search")]
+        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> SearchSections(
+            int documentId,
+            [FromQuery] string searchTerm,
+            [FromQuery] bool fuzzyMatch = true,
+            [FromQuery] double similarityThreshold = 0.8,
+            [FromQuery] int? parentId = null)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return BadRequest("Search term is required");
+
+            if (similarityThreshold < 0.0 || similarityThreshold > 1.0)
+                return BadRequest("Similarity threshold must be between 0.0 and 1.0");
+
+            var results = await _documentSectionService.SearchSectionsAsync(documentId, searchTerm, fuzzyMatch, similarityThreshold);
+            
+            // Filter by parent if specified
+            if (parentId.HasValue)
+            {
+                results = results.Where(s => s.ParentSectionId == parentId.Value).ToList();
+            }
+
+            return Ok(results);
+        }
+
+        /// <summary>
+        /// Finds potential duplicate sections for a given title within a document.
+        /// Useful for preventing duplicate section creation during imports or manual entry.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to search within.</param>
+        /// <param name="title">The section title to check for duplicates.</param>
+        /// <param name="similarityThreshold">Minimum similarity score to consider a duplicate (0.0-1.0, default: 0.8).</param>
+        /// <param name="parentId">Optional parent section ID to limit search scope.</param>
+        /// <returns>A list of potential duplicate sections ordered by similarity.</returns>
+        /// <response code="200">Returns potential duplicates (empty list if none found).</response>
+        /// <response code="400">If parameters are invalid.</response>
+        [HttpGet("document/{documentId}/duplicates")]
+        public async Task<ActionResult<IEnumerable<DocumentSectionDto>>> FindPotentialDuplicates(
+            int documentId,
+            [FromQuery] string title,
+            [FromQuery] double similarityThreshold = 0.8,
+            [FromQuery] int? parentId = null)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return BadRequest("Title is required");
+
+            if (similarityThreshold < 0.0 || similarityThreshold > 1.0)
+                return BadRequest("Similarity threshold must be between 0.0 and 1.0");
+
+            var duplicates = await _documentSectionService.FindPotentialDuplicatesAsync(documentId, title, similarityThreshold);
+            
+            // Filter by parent if specified
+            if (parentId.HasValue)
+            {
+                duplicates = duplicates.Where(s => s.ParentSectionId == parentId.Value).ToList();
+            }
+
+            return Ok(duplicates);
+        }
+
+        /// <summary>
+        /// Finds the best matching existing section for import validation.
+        /// Returns the single best match or null if no suitable match is found.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to search within.</param>
+        /// <param name="title">The section title to find a match for.</param>
+        /// <param name="parentId">Optional parent section ID for hierarchical matching.</param>
+        /// <param name="similarityThreshold">Minimum similarity score to consider a match (0.0-1.0, default: 0.9).</param>
+        /// <returns>The best matching section or null if no match found.</returns>
+        /// <response code="200">Returns the best match or null.</response>
+        /// <response code="400">If parameters are invalid.</response>
+        [HttpGet("document/{documentId}/find-existing")]
+        public async Task<ActionResult<DocumentSectionDto?>> FindExistingSection(
+            int documentId,
+            [FromQuery] string title,
+            [FromQuery] int? parentId = null,
+            [FromQuery] double similarityThreshold = 0.9)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return BadRequest("Title is required");
+
+            if (similarityThreshold < 0.0 || similarityThreshold > 1.0)
+                return BadRequest("Similarity threshold must be between 0.0 and 1.0");
+
+            var existingSection = await _documentSectionService.FindExistingSectionAsync(documentId, title, parentId, similarityThreshold);
+            return Ok(existingSection);
+        }
+
+        #endregion
     }
 
     #region Request Models

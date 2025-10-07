@@ -651,5 +651,208 @@ namespace backend.Services
         }
 
         #endregion
+
+        #region Search and Duplicate Detection Operations
+
+        /// <summary>
+        /// Searches for sections within a document using fuzzy matching.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to search within.</param>
+        /// <param name="searchTerm">The search term to match against section titles.</param>
+        /// <param name="fuzzyMatch">Whether to use fuzzy matching or exact matching.</param>
+        /// <param name="similarityThreshold">The minimum similarity threshold for fuzzy matching (0.0 to 1.0).</param>
+        /// <returns>A list of matching sections ordered by relevance.</returns>
+        public async Task<List<DocumentSectionDto>> SearchSectionsAsync(int documentId, string searchTerm, bool fuzzyMatch = true, double similarityThreshold = 0.8)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return new List<DocumentSectionDto>();
+
+            var allSections = await GetAllSectionsForDocumentAsync(documentId);
+            var results = new List<(DocumentSection section, double score)>();
+
+            foreach (var section in allSections)
+            {
+                if (string.IsNullOrWhiteSpace(section.Title))
+                    continue;
+
+                double score;
+                if (fuzzyMatch)
+                {
+                    var normalizedSearchTerm = NormalizeTitle(searchTerm);
+                    var normalizedSectionTitle = NormalizeTitle(section.Title);
+                    score = CalculateStringSimilarity(normalizedSearchTerm, normalizedSectionTitle);
+                    if (score >= similarityThreshold)
+                    {
+                        results.Add((section, score));
+                    }
+                }
+                else
+                {
+                    if (section.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    {
+                        score = section.Title.Equals(searchTerm, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.8;
+                        results.Add((section, score));
+                    }
+                }
+            }
+
+            return results
+                .OrderByDescending(r => r.score)
+                .ThenBy(r => r.section.Title)
+                .Select(r => EntityToDto(r.section))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Finds potential duplicate sections based on title similarity.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to search within.</param>
+        /// <param name="title">The title to find duplicates for.</param>
+        /// <param name="similarityThreshold">The minimum similarity threshold (0.0 to 1.0).</param>
+        /// <returns>A list of potential duplicate sections ordered by similarity.</returns>
+        public async Task<List<DocumentSectionDto>> FindPotentialDuplicatesAsync(int documentId, string title, double similarityThreshold = 0.8)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return new List<DocumentSectionDto>();
+
+            var allSections = await GetAllSectionsForDocumentAsync(documentId);
+            var results = new List<(DocumentSection section, double score)>();
+
+            var normalizedTitle = NormalizeTitle(title);
+
+            foreach (var section in allSections)
+            {
+                if (string.IsNullOrWhiteSpace(section.Title))
+                    continue;
+
+                var normalizedSectionTitle = NormalizeTitle(section.Title);
+                var similarity = CalculateStringSimilarity(normalizedTitle, normalizedSectionTitle);
+
+                if (similarity >= similarityThreshold)
+                {
+                    results.Add((section, similarity));
+                }
+            }
+
+            return results
+                .OrderByDescending(r => r.score)
+                .Select(r => EntityToDto(r.section))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Finds an existing section that closely matches the given criteria.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to search within.</param>
+        /// <param name="title">The title to match.</param>
+        /// <param name="parentId">The parent section ID to match (optional).</param>
+        /// <param name="similarityThreshold">The minimum similarity threshold (0.0 to 1.0).</param>
+        /// <returns>The best matching existing section, or null if none found.</returns>
+        public async Task<DocumentSectionDto?> FindExistingSectionAsync(int documentId, string title, int? parentId = null, double similarityThreshold = 0.9)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return null;
+
+            var allSections = await GetAllSectionsForDocumentAsync(documentId);
+            var normalizedTitle = NormalizeTitle(title);
+            
+            DocumentSection? bestMatch = null;
+            double bestScore = 0.0;
+
+            foreach (var section in allSections)
+            {
+                // If parent ID is specified, only consider sections with matching parent
+                if (parentId.HasValue && section.ParentSectionId != parentId)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(section.Title))
+                    continue;
+
+                var normalizedSectionTitle = NormalizeTitle(section.Title);
+                var similarity = CalculateStringSimilarity(normalizedTitle, normalizedSectionTitle);
+
+                if (similarity >= similarityThreshold && similarity > bestScore)
+                {
+                    bestMatch = section;
+                    bestScore = similarity;
+                }
+            }
+
+            return bestMatch != null ? EntityToDto(bestMatch) : null;
+        }
+
+        /// <summary>
+        /// Calculates string similarity using Levenshtein distance algorithm.
+        /// </summary>
+        /// <param name="s1">First string to compare.</param>
+        /// <param name="s2">Second string to compare.</param>
+        /// <returns>Similarity score between 0.0 and 1.0.</returns>
+        private static double CalculateStringSimilarity(string s1, string s2)
+        {
+            if (string.IsNullOrEmpty(s1) && string.IsNullOrEmpty(s2))
+                return 1.0;
+            
+            if (string.IsNullOrEmpty(s1) || string.IsNullOrEmpty(s2))
+                return 0.0;
+
+            var maxLength = Math.Max(s1.Length, s2.Length);
+            var distance = CalculateLevenshteinDistance(s1, s2);
+            
+            return 1.0 - (double)distance / maxLength;
+        }
+
+        /// <summary>
+        /// Calculates the Levenshtein distance between two strings.
+        /// </summary>
+        /// <param name="s1">First string.</param>
+        /// <param name="s2">Second string.</param>
+        /// <returns>The Levenshtein distance.</returns>
+        private static int CalculateLevenshteinDistance(string s1, string s2)
+        {
+            var matrix = new int[s1.Length + 1, s2.Length + 1];
+
+            for (int i = 0; i <= s1.Length; i++)
+                matrix[i, 0] = i;
+            
+            for (int j = 0; j <= s2.Length; j++)
+                matrix[0, j] = j;
+
+            for (int i = 1; i <= s1.Length; i++)
+            {
+                for (int j = 1; j <= s2.Length; j++)
+                {
+                    var cost = s1[i - 1] == s2[j - 1] ? 0 : 1;
+                    matrix[i, j] = Math.Min(
+                        Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
+                        matrix[i - 1, j - 1] + cost);
+                }
+            }
+
+            return matrix[s1.Length, s2.Length];
+        }
+
+        /// <summary>
+        /// Normalizes a title for comparison by removing common prefixes, numbers, and extra whitespace.
+        /// </summary>
+        /// <param name="title">The title to normalize.</param>
+        /// <returns>The normalized title.</returns>
+        private static string NormalizeTitle(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                return string.Empty;
+
+            // Convert to lowercase and trim
+            var normalized = title.ToLowerInvariant().Trim();
+
+            // Remove common section number patterns (e.g., "3.1", "3.1.1", etc.)
+            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"^\d+(\.\d+)*\s*", "");
+
+            // Remove extra whitespace
+            normalized = System.Text.RegularExpressions.Regex.Replace(normalized, @"\s+", " ").Trim();
+
+            return normalized;
+        }
+
+        #endregion
     }
 }

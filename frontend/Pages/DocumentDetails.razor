@@ -143,20 +143,21 @@
             </div>
         }
 
-        <!-- Document Sections with Requirements using DocumentSection Component -->
+        <!-- Document Sections with Requirements using Recursive Component -->
         @if (sections.Any())
         {
-            @foreach (var docSection in sections.OrderBy(s => s.SectionOrder))
+            @foreach (var rootSection in sections.Where(s => s.ParentSectionId == null).OrderBy(s => s.SectionOrder))
             {
-                var sectionRequirements = requirements.Where(r => r.SectionId == docSection.Id).ToList();
-                <DocumentSection 
-                    Section="docSection" 
-                    SectionRequirements="sectionRequirements" 
+                <RecursiveDocumentSection 
+                    Section="rootSection" 
+                    AllRequirements="requirements"
                     IsReadingMode="isReadingMode"
-                    OnEditSection="() => EditSection(docSection.Id)"
+                    OnEditSection="EditSection"
                     OnEditRequirement="ViewRequirement"
-                    OnAddRequirement="() => AddRequirementToSection(docSection.Id)" />
+                    OnAddRequirement="AddRequirementToSection"
+                    Level="0" />
             }
+        }
         }
 
         <!-- Standalone Requirements (not assigned to sections) -->
@@ -244,7 +245,7 @@
             if (document != null)
             {
                 // Load sections and requirements in parallel
-                var sectionsTask = DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
+                var sectionsTask = DocumentSectionsService.GetSectionHierarchyAsync(DocumentId);
                 var requirementsTask = RequirementsService.GetByDocumentIdAsync(DocumentId);
                 
                 await Task.WhenAll(sectionsTask, requirementsTask);
@@ -351,7 +352,7 @@
     private async Task OnSectionsChanged()
     {
         // Reload sections when they change
-        sections = await DocumentSectionsService.GetByDocumentIdAsync(DocumentId);
+        sections = await DocumentSectionsService.GetSectionHierarchyAsync(DocumentId);
         StateHasChanged();
     }
 

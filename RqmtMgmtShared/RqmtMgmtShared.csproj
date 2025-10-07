@@ -4,9 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.40</Version>
-    <PackageVersion>1.0.40</PackageVersion>
-    <PackageReleaseNotes>Added hierarchical section service methods - query hierarchy, move sections, validate references, generate section numbers</PackageReleaseNotes>
+    <Version>1.0.42</Version>
+    <PackageVersion>1.0.42</PackageVersion>
+    <PackageReleaseNotes>Added Enhanced Search functionality - fuzzy matching, duplicate detection, existing section finder with Levenshtein distance algorithm. Frontend service integration complete.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

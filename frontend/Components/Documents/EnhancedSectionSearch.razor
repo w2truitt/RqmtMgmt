@@ -1,0 +1,320 @@
+@using RqmtMgmtShared
+@using frontend.Services
+@inject IDocumentSectionService DocumentSectionsService
+@inject IJSRuntime JSRuntime
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-search me-2"></i>
+            Enhanced Section Search
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Search Input -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label for="searchTerm" class="form-label">Search Term</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchTerm" class="form-control" 
+                           @bind="searchTerm" @onkeypress="OnKeyPress"
+                           placeholder="Search sections by title..." />
+                    <button class="btn btn-primary" @onclick="SearchSections" disabled="@isSearching">
+                        @if (isSearching)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Search
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="fuzzyMatch" class="form-label">Search Type</label>
+                <select id="fuzzyMatch" class="form-select" @bind="fuzzyMatch">
+                    <option value="false">Exact Match</option>
+                    <option value="true">Fuzzy Match</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="similarityThreshold" class="form-label">Similarity Threshold</label>
+                <input type="range" id="similarityThreshold" class="form-range" 
+                       @bind="similarityThreshold" min="0.5" max="1.0" step="0.1" />
+                <small class="text-muted">@(similarityThreshold.ToString("P0"))</small>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        @if (hasSearched)
+        {
+            <div class="search-results">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-list-ul me-2"></i>
+                        Search Results (@searchResults.Count found)
+                    </h6>
+                    @if (searchResults.Any())
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ClearSearch">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Clear
+                        </button>
+                    }
+                </div>
+
+                @if (!searchResults.Any())
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-search display-4 text-muted"></i>
+                        <h6 class="mt-2">No sections found</h6>
+                        <p class="text-muted small">
+                            Try adjusting your search term or using fuzzy matching with a lower similarity threshold.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var item in searchResults)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="badge bg-primary me-2">@(item.SectionNumber)</span>
+                                            <h6 class="mb-0">@(item.Title)</h6>
+                                            @if (item.IsNotApplicable)
+                                            {
+                                                <span class="badge bg-warning text-dark ms-2">N/A</span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(item.Description))
+                                        {
+                                            <p class="text-muted small mb-1">@(item.Description)</p>
+                                        }
+                                        <div class="text-muted small">
+                                            <i class="bi bi-folder me-1"></i>
+                                            @if (item.ParentSectionId.HasValue)
+                                            {
+                                                <text>Child item (Parent ID: @(item.ParentSectionId))</text>
+                                            }
+                                            else
+                                            {
+                                                <text>Root item</text>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewSection(item)">
+                                            <i class="bi bi-eye me-1"></i>
+                                            View
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Duplicate Detection -->
+        <hr class="my-4" />
+        
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label for="duplicateTitle" class="form-label">Check for Duplicates</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-files"></i></span>
+                    <input type="text" id="duplicateTitle" class="form-control" 
+                           @bind="duplicateCheckTitle" 
+                           placeholder="Enter title to check for duplicates..." />
+                    <button class="btn btn-warning" @onclick="CheckDuplicates" disabled="@isCheckingDuplicates">
+                        @if (isCheckingDuplicates)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Check Duplicates
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label for="duplicateThreshold" class="form-label">Duplicate Threshold</label>
+                <input type="range" id="duplicateThreshold" class="form-range" 
+                       @bind="duplicateThreshold" min="0.6" max="1.0" step="0.1" />
+                <small class="text-muted">@(duplicateThreshold.ToString("P0"))</small>
+            </div>
+        </div>
+
+        <!-- Duplicate Results -->
+        @if (hasDuplicateCheck)
+        {
+            <div class="mt-3">
+                <h6 class="mb-2">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Potential Duplicates (@duplicateResults.Count found)
+                </h6>
+                
+                @if (!duplicateResults.Any())
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        No duplicates found! This title appears to be unique.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Found @duplicateResults.Count potential duplicate(s). Consider reviewing these before creating a new item.
+                    </div>
+                    
+                    <div class="list-group mt-2">
+                        @foreach (var duplicate in duplicateResults)
+                        {
+                            <div class="list-group-item border-warning">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@(duplicate.Title)</strong>
+                                        @if (!string.IsNullOrEmpty(duplicate.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@(duplicate.Description)</small>
+                                        }
+                                    </div>
+                                    <span class="badge bg-warning text-dark">ID: @(duplicate.Id)</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int DocumentId { get; set; }
+    [Parameter] public EventCallback<DocumentSectionDto> OnSectionSelected { get; set; }
+
+    // Search parameters
+    private string searchTerm = "";
+    private bool fuzzyMatch = true;
+    private double similarityThreshold = 0.8;
+    
+    // Duplicate check parameters  
+    private string duplicateCheckTitle = "";
+    private double duplicateThreshold = 0.8;
+    
+    // State
+    private bool isSearching = false;
+    private bool isCheckingDuplicates = false;
+    private bool hasSearched = false;
+    private bool hasDuplicateCheck = false;
+    
+    // Results
+    private List<DocumentSectionDto> searchResults = new();
+    private List<DocumentSectionDto> duplicateResults = new();
+
+    private async Task OnKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await SearchSections();
+        }
+    }
+
+    private async Task SearchSections()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm) || DocumentId <= 0)
+            return;
+
+        isSearching = true;
+        try
+        {
+            searchResults = await DocumentSectionsService.SearchSectionsAsync(
+                DocumentId, 
+                searchTerm.Trim(), 
+                fuzzyMatch, 
+                similarityThreshold);
+            hasSearched = true;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Search failed: {ex.Message}");
+            searchResults = new();
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private async Task CheckDuplicates()
+    {
+        if (string.IsNullOrWhiteSpace(duplicateCheckTitle) || DocumentId <= 0)
+            return;
+
+        isCheckingDuplicates = true;
+        try
+        {
+            duplicateResults = await DocumentSectionsService.FindPotentialDuplicatesAsync(
+                DocumentId, 
+                duplicateCheckTitle.Trim(), 
+                duplicateThreshold);
+            hasDuplicateCheck = true;
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Duplicate check failed: {ex.Message}");
+            duplicateResults = new();
+        }
+        finally
+        {
+            isCheckingDuplicates = false;
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = "";
+        searchResults = new();
+        hasSearched = false;
+    }
+
+    private async Task ViewSection(DocumentSectionDto sectionItem)
+    {
+        if (OnSectionSelected.HasDelegate)
+        {
+            await OnSectionSelected.InvokeAsync(sectionItem);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", 
+                $"Item: {sectionItem.Title}\nID: {sectionItem.Id}\nDescription: {sectionItem.Description ?? "No description"}");
+        }
+    }
+}
+
+<style>
+    .search-results {
+        border-top: 1px solid #dee2e6;
+        padding-top: 1rem;
+    }
+    
+    .list-group-item {
+        transition: all 0.2s ease;
+    }
+    
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .form-range {
+        width: 100%;
+    }
+    
+    .input-group .btn {
+        border-left: 0;
+    }
+</style>
