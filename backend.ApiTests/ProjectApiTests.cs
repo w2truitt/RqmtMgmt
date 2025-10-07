@@ -608,7 +608,8 @@ namespace backend.ApiTests
                 Description = "Test requirement for search and sort testing",
                 ProjectId = project.Id,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                SectionId = 1  // Use existing section ID from database
             };
             var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
             reqResponse.EnsureSuccessStatusCode();

@@ -28,6 +28,7 @@ public class RequirementDocumentContextTests : ComponentTestBase
         var section = new DocumentSectionDto
         {
             Id = 1,
+            ProjectId = 1,
             Title = "Test Section",
             SectionOrder = 1
         };
@@ -68,7 +69,8 @@ public class RequirementDocumentContextTests : ComponentTestBase
         {
             Id = 1,
             Title = "Test Requirement",
-            DocumentId = 1
+            DocumentId = 1,
+            SectionId = 1 // Required field, use 1 as default section
         };
         
         // Act
@@ -96,6 +98,7 @@ public class RequirementDocumentContextTests : ComponentTestBase
         var section = new DocumentSectionDto
         {
             Id = 1,
+            ProjectId = 1,
             Title = "Requirements Section",
             SectionOrder = 3
         };
@@ -128,7 +131,7 @@ public class RequirementDocumentContextTests : ComponentTestBase
             Id = 1,
             Title = "Standalone Requirement",
             DocumentId = null,
-            SectionId = null
+            SectionId = 0 // Use 0 to indicate no section (since it's now required)
         };
         
         // Act
@@ -156,7 +159,7 @@ public class RequirementDocumentContextTests : ComponentTestBase
             Id = 1,
             Title = "Test Requirement",
             DocumentId = 1,
-            SectionId = null
+            SectionId = 0 // Use 0 to indicate no section (since it's now required)
         };
         
         // Act

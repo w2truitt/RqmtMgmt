@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RqmtMgmt: Requirements & Test Management Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            display: none;
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @media screen {
+            .slide {
+                display: none;
+            }
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #0066cc;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #0066cc;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.3em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            margin-top: 30px;
+        }
+
+        ul {
+            list-style: none;
+            margin-left: 20px;
+        }
+
+        li {
+            margin: 15px 0;
+            font-size: 1.2em;
+            line-height: 1.6;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #0066cc;
+            font-weight: bold;
+        }
+
+        .screenshot {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .screenshot img {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .screenshot-caption {
+            margin-top: 15px;
+            font-style: italic;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1em;
+            color: #0066cc;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .terminal {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5f56;
+            box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+        }
+
+        .terminal-header {
+            color: #858585;
+            margin-bottom: 15px;
+            padding-top: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .terminal-prompt {
+            color: #98c379;
+        }
+
+        .terminal-command {
+            color: #61afef;
+        }
+
+        .terminal-output {
+            color: #d4d4d4;
+            margin-left: 0;
+        }
+
+        .terminal-comment {
+            color: #5c6370;
+        }
+
+        .terminal-success {
+            color: #98c379;
+        }
+
+        .terminal-label {
+            color: #e5c07b;
+        }
+
+        @media print {
+            @page {
+                size: landscape;
+                margin: 0;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+            
+            .presentation {
+                display: block;
+                background: none;
+            }
+            
+            .slide {
+                display: block !important;
+                page-break-after: always;
+                page-break-inside: avoid;
+                width: 100%;
+                height: 100vh;
+                min-height: 7.5in;
+                margin: 0;
+                padding: 40px 60px;
+                background: white;
+                box-shadow: none;
+                border-radius: 0;
+                animation: none;
+            }
+            
+            .slide:last-child {
+                page-break-after: auto;
+            }
+            
+            .controls, .slide-number {
+                display: none !important;
+            }
+            
+            /* Ensure screenshots fit on page */
+            .screenshot img {
+                max-height: 5in;
+                page-break-inside: avoid;
+            }
+            
+            /* Terminal styling for print */
+            .terminal {
+                page-break-inside: avoid;
+            }
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>RqmtMgmt</h1>
+            <h1 style="font-size: 2em;">Requirements & Test Management Platform</h1>
+            <div class="subtitle">
+                Enterprise-Grade Solution Built with .NET & AI-Powered Development<br>
+                Version 1.0.15
+            </div>
+            <div style="text-align: center; margin-top: 80px; font-size: 1.3em; color: #666;">
+                🚀 Modern Architecture • 🔒 Secure Authentication • 🧪 732 Tests • ☁️ Kubernetes Ready
+            </div>
+        </div>
+
+        <!-- Slide 2: Project Overview -->
+        <div class="slide">
+            <h2>Project Overview</h2>
+            <div class="content">
+                <ul>
+                    <li>Web-based enterprise tool for managing requirements and test cases</li>
+                    <li>Built for Product Owners, Engineers, and QA Teams</li>
+                    <li>Modern architecture: <span class="highlight">Blazor WebAssembly + .NET 8 Web API</span></li>
+                    <li>Deployed on <span class="highlight">Kubernetes (Rancher Desktop)</span></li>
+                    <li>Comprehensive test coverage: <span class="highlight">732 automated tests</span></li>
+                    <li>Full traceability from requirements to test execution</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 3: Architecture -->
+        <div class="slide">
+            <h2>Technical Architecture</h2>
+            <div class="content">
+                <ul>
+                    <li><strong>Frontend:</strong> Blazor WebAssembly (C#) - Modern SPA framework</li>
+                    <li><strong>Backend:</strong> .NET 8 Web API - High-performance RESTful API</li>
+                    <li><strong>Database:</strong> SQL Server with Entity Framework Core</li>
+                    <li><strong>Authentication:</strong> Duende IdentityServer with OAuth 2.0/OIDC</li>
+                    <li><strong>Containerization:</strong> Docker containers orchestrated by Kubernetes</li>
+                    <li><strong>Security:</strong> HTTPS/TLS with certificate management</li>
+                    <li><strong>Shared Library:</strong> RqmtMgmtShared for type-safe DTOs</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 4: Dashboard Screenshot -->
+        <div class="slide">
+            <h2>Application Dashboard</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/dashboard.png" alt="Dashboard">
+                <div class="screenshot-caption">Modern, responsive UI built with Blazor WebAssembly</div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Projects Management -->
+        <div class="slide">
+            <h2>Project Management</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/projects.png" alt="Projects">
+                <div class="screenshot-caption">Organize requirements and tests by project with comprehensive search and filtering</div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Requirements Management -->
+        <div class="slide">
+            <h2>Requirements Management</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/requirements.png" alt="Requirements">
+                <div class="screenshot-caption">Hierarchical requirements with versioning and traceability</div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Document Management -->
+        <div class="slide">
+            <h2>Document Management</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/documents-project25.png" alt="Documents">
+                <div class="screenshot-caption">Attach and manage specification documents with requirement linking</div>
+            </div>
+        </div>
+
+        <!-- Slide 7b: Document Details View -->
+        <div class="slide">
+            <h2>Document Details & Requirements</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/document-srs-project25.png" alt="Document Details">
+                <div class="screenshot-caption">View document contents and link requirements to specific sections</div>
+            </div>
+        </div>
+
+        <!-- Slide 7c: Authentication & Identity Server -->
+        <div class="slide">
+            <h2>Authentication & Security</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/documents.png" alt="Authentication">
+                <div class="screenshot-caption">Secure authentication with Duende IdentityServer using OAuth 2.0 / OpenID Connect</div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Test Case Management -->
+        <div class="slide">
+            <h2>Test Case Management</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/testcases-project25.png" alt="Test Cases">
+                <div class="screenshot-caption">Comprehensive test case management with execution tracking</div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Kubernetes Deployment -->
+        <div class="slide">
+            <h2>Kubernetes Deployment</h2>
+            <div class="content">
+                <p style="font-size: 1.2em; margin-bottom: 20px;">Running on <strong>Rancher Desktop Kubernetes cluster</strong> in namespace: <code>rqmtmgmt</code></p>
+                
+                <div class="terminal">
+                    <div class="terminal-header">wtruitt@rancher-desktop ~ </div>
+<span class="terminal-prompt">$</span> <span class="terminal-command">kubectl get pods -n rqmtmgmt</span>
+<span class="terminal-output">NAME                              READY   STATUS    RESTARTS   AGE
+backend-67cd869c47-fb4lc          1/1     <span class="terminal-success">Running</span>   0          141m
+frontend-64cbfff58c-9l948         1/1     <span class="terminal-success">Running</span>   0          4h6m
+identityserver-7d69c95f89-cx7sb   1/1     <span class="terminal-success">Running</span>   5          6d4h
+mssql-0                           1/1     <span class="terminal-success">Running</span>   5          7d</span>
+
+<span class="terminal-prompt">$</span> <span class="terminal-command">kubectl get services -n rqmtmgmt</span>
+<span class="terminal-output">NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+backend-service          ClusterIP   10.43.184.190   &lt;none&gt;        80/TCP     12d
+frontend-service         ClusterIP   10.43.106.137   &lt;none&gt;        80/TCP     12d
+identityserver-service   ClusterIP   10.43.232.135   &lt;none&gt;        80/TCP     12d
+mssql-service            ClusterIP   10.43.114.158   &lt;none&gt;        1433/TCP   7d23h</span>
+
+<span class="terminal-prompt">$</span> <span class="terminal-command">kubectl get ingress -n rqmtmgmt</span>
+<span class="terminal-output">NAME               CLASS     HOSTS            ADDRESS         PORTS     AGE
+rqmtmgmt-ingress   traefik   rqmtmgmt.local   192.168.127.2   80, 443   12d</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Swagger API -->
+        <div class="slide">
+            <h2>RESTful API with Swagger</h2>
+            <div class="screenshot">
+                <img src="presentation-assets/swagger-api.png" alt="Swagger API">
+                <div class="screenshot-caption">Comprehensive API documentation with OAuth 2.0 authentication</div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Testing Excellence -->
+        <div class="slide">
+            <h2>Comprehensive Test Coverage - 732 Tests</h2>
+            <div class="content">
+                <ul>
+                    <li><strong>Frontend Component Tests (73):</strong> bUnit-based isolation testing</li>
+                    <li><strong>End-to-End Tests (53):</strong> Playwright browser automation</li>
+                    <li><strong>Backend Unit Tests (499):</strong> Service and business logic validation</li>
+                    <li><strong>Backend API Tests (160):</strong> Integration testing with real database</li>
+                </ul>
+                <div style="margin-top: 40px; padding: 20px; background: #e8f4fd; border-radius: 10px;">
+                    <p style="font-size: 1.2em;">✅ <strong>CI/CD Integration:</strong> All tests run automatically on commits</p>
+                    <p style="font-size: 1.2em; margin-top: 10px;">✅ <strong>Test Isolation:</strong> Each test runs in isolated context</p>
+                    <p style="font-size: 1.2em; margin-top: 10px;">✅ <strong>Performance:</strong> Optimized fixture sharing reduces test time</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: AI-Powered Development -->
+        <div class="slide">
+            <h2>AI-Enhanced Development Process</h2>
+            <div class="content">
+                <ul>
+                    <li>🤖 <strong>GitHub Copilot:</strong> Code generation and completion throughout development</li>
+                    <li>🏗️ <strong>AI-Assisted Architecture:</strong> Design decisions validated by AI models</li>
+                    <li>🔍 <strong>Automated Code Review:</strong> AI-powered analysis for quality and security</li>
+                    <li>🧪 <strong>Test Generation:</strong> AI-suggested test cases and edge case detection</li>
+                    <li>📚 <strong>Documentation:</strong> AI-assisted technical documentation creation</li>
+                    <li>♻️ <strong>Refactoring:</strong> AI-guided code improvements and pattern recognition</li>
+                </ul>
+                <div style="margin-top: 40px; text-align: center; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px; font-size: 1.3em;">
+                    <strong>Result:</strong> Accelerated development with enterprise-quality output<br>
+                    732 comprehensive tests all generated with AI assistance
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Key Features -->
+        <div class="slide">
+            <h2>Key Features & Capabilities</h2>
+            <div class="content">
+                <ul>
+                    <li><strong>Hierarchical Requirements:</strong> Parent-child relationships with full traceability</li>
+                    <li><strong>Version Control:</strong> Complete audit history for all requirements and tests</li>
+                    <li><strong>Test Execution:</strong> Track test runs, results, and metrics over time</li>
+                    <li><strong>Document Management:</strong> Link specifications to requirements</li>
+                    <li><strong>Role-Based Access:</strong> Secure authentication with IdentityServer</li>
+                    <li><strong>Real-time Collaboration:</strong> Multi-user support with concurrent editing</li>
+                    <li><strong>Search & Filter:</strong> Advanced querying across all entities</li>
+                    <li><strong>Export & Reporting:</strong> Generate compliance documentation</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 14: Future Roadmap -->
+        <div class="slide">
+            <h2>Future Enhancements</h2>
+            <div class="content">
+                <ul>
+                    <li>🤖 AI-Powered Test Generation from requirements</li>
+                    <li>📄 Automated Redline Document Generation for version comparison</li>
+                    <li>📊 Advanced Analytics and Dashboards</li>
+                    <li>🔄 Integration with CI/CD pipelines for automated test execution</li>
+                    <li>📱 Mobile-responsive UI improvements</li>
+                    <li>🔗 Azure DevOps and Jira integration</li>
+                    <li>🏢 Multi-tenancy for enterprise deployment</li>
+                    <li>🔔 Real-time notifications and collaboration features</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
+        <button id="nextBtn" onclick="changeSlide(1)">Next →</button>
+    </div>
+
+    <div class="slide-number" id="slideNumber">1 / 16</div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            
+            document.getElementById('slideNumber').textContent = `${currentSlide + 1} / ${totalSlides}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+</html>

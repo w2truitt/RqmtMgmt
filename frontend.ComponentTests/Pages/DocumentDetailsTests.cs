@@ -85,8 +85,8 @@ public class DocumentDetailsTests : ComponentTestBase
         var document = new DocumentDto { Id = 1, Title = "Test Document" };
         var sections = new List<DocumentSectionDto>
         {
-            new DocumentSectionDto { Id = 1, Title = "Overview", SectionOrder = 1 },
-            new DocumentSectionDto { Id = 2, Title = "Requirements", SectionOrder = 2 }
+            new DocumentSectionDto { Id = 1, ProjectId = 1, Title = "Overview", SectionOrder = 1 },
+            new DocumentSectionDto { Id = 2, ProjectId = 1, Title = "Requirements", SectionOrder = 2 }
         };
         SetupMockServices(document, sections);
         
@@ -106,8 +106,8 @@ public class DocumentDetailsTests : ComponentTestBase
         var document = new DocumentDto { Id = 1, Title = "Test Document" };
         var requirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Req 1", Type = RequirementType.CRD },
-            new RequirementDto { Id = 2, Title = "Req 2", Type = RequirementType.PRD }
+            new RequirementDto { Id = 1, Title = "Req 1", Type = RequirementType.CRD, SectionId = 0 },
+            new RequirementDto { Id = 2, Title = "Req 2", Type = RequirementType.PRD, SectionId = 0 }
         };
         SetupMockServices(document, null, requirements);
         
@@ -159,12 +159,12 @@ public class DocumentDetailsTests : ComponentTestBase
         var document = new DocumentDto { Id = 1, Title = "Test Document" };
         var sections = new List<DocumentSectionDto>
         {
-            new DocumentSectionDto { Id = 1, Title = "Section 1" }
+            new DocumentSectionDto { Id = 1, ProjectId = 1, Title = "Section 1" }
         };
         var requirements = new List<RequirementDto>
         {
-            new RequirementDto { Id = 1, Title = "Req 1" },
-            new RequirementDto { Id = 2, Title = "Req 2" }
+            new RequirementDto { Id = 1, Title = "Req 1", SectionId = 0 },
+            new RequirementDto { Id = 2, Title = "Req 2", SectionId = 0 }
         };
         SetupMockServices(document, sections, requirements);
         
@@ -189,7 +189,7 @@ public class DocumentDetailsTests : ComponentTestBase
             .ReturnsAsync(document);
             
         _mockSectionService
-            .Setup(s => s.GetByDocumentIdAsync(It.IsAny<int>()))
+            .Setup(s => s.GetSectionHierarchyAsync(It.IsAny<int>()))
             .ReturnsAsync(sections);
             
         _mockRequirementService

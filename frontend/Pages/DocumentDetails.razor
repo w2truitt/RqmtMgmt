@@ -42,7 +42,7 @@
         <div class="document-header d-flex justify-content-between align-items-start mb-4 @(isReadingMode ? "d-print-block" : "no-print")">
             <div class="flex-grow-1">
                 <div class="d-flex align-items-center mb-2">
-                    <span class="badge @GetDocumentTypeBadgeClass(document.Type) me-2">@GetDocumentTypeDisplayName(document.Type)</span>
+                    <span class="badge @GetDocumentTypeBadgeClass(document.Type) me-2">@GetDocumentTypeDisplayName(document!.Type)</span>
                     <span class="badge @GetStatusBadgeClass(document.Status) me-2">@document.Status</span>
                     <small class="text-muted">Version @(document.Version)</small>
                 </div>
@@ -77,7 +77,7 @@
             <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="metadata-item">
-                        <strong>Document Type:</strong> @GetDocumentTypeDisplayName(document.Type)
+                        <strong>Document Type:</strong> @GetDocumentTypeDisplayName(document!.Type)
                     </div>
                     <div class="metadata-item">
                         <strong>Status:</strong> @document.Status
@@ -161,9 +161,9 @@
         }
 
         <!-- Standalone Requirements (not assigned to sections) -->
-        @if (requirements.Where(r => r.SectionId == null).Any())
+        @if (requirements.Where(r => r.SectionId == 0).Any())
         {
-            var standaloneRequirements = requirements.Where(r => r.SectionId == null).ToList();
+            var standaloneRequirements = requirements.Where(r => r.SectionId == 0).ToList();
             <div class="document-section mb-5">
                 <h2 class="section-header">Additional Requirements</h2>
                 <p class="section-description">Requirements not assigned to specific sections</p>
@@ -206,7 +206,7 @@
                     Requirements Traceability Analysis
                 </h2>
                 <p class="section-description">
-                    Track requirement relationships and coverage for this @GetDocumentTypeDisplayName(document.Type)
+                    Track requirement relationships and coverage for this @GetDocumentTypeDisplayName(document!.Type)
                 </p>
                 
                 <TraceabilityMatrix DocumentId="DocumentId" />
@@ -250,8 +250,8 @@
                 
                 await Task.WhenAll(sectionsTask, requirementsTask);
                 
-                sections = await sectionsTask;
-                requirements = await requirementsTask;
+                sections = await sectionsTask ?? new List<DocumentSectionDto>();
+                requirements = await requirementsTask ?? new List<RequirementDto>();
             }
         }
         catch (Exception ex)
@@ -352,7 +352,7 @@
     private async Task OnSectionsChanged()
     {
         // Reload sections when they change
-        sections = await DocumentSectionsService.GetSectionHierarchyAsync(DocumentId);
+        sections = await DocumentSectionsService.GetSectionHierarchyAsync(DocumentId) ?? new List<DocumentSectionDto>();
         StateHasChanged();
     }
 

@@ -6,6 +6,7 @@ namespace backend.Models
     /// <summary>
     /// Represents a requirement (CRD, PRD, or SRS) in the requirements management system.
     /// Supports hierarchical relationships and links to test cases.
+    /// All requirements must belong to a document section for proper organization.
     /// </summary>
     public class Requirement
     {
@@ -75,9 +76,9 @@ namespace backend.Models
         public int? DocumentId { get; set; }
 
         /// <summary>
-        /// Gets or sets the ID of the document section this requirement belongs to.
+        /// Gets or sets the ID of the document section this requirement belongs to. This field is required.
         /// </summary>
-        public int? SectionId { get; set; }
+        public int SectionId { get; set; }
 
         /// <summary>
         /// Gets or sets the parent requirement for hierarchy navigation.

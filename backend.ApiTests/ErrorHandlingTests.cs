@@ -105,7 +105,8 @@ namespace backend.ApiTests
                 Description = largeDescription,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var response = await _client.PostAsJsonAsync("/api/requirement", requirement, _jsonOptions);
@@ -128,7 +129,8 @@ namespace backend.ApiTests
                 Description = "Parent for circular test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var parentResponse = await _client.PostAsJsonAsync("/api/requirement", parentReq, _jsonOptions);
@@ -145,7 +147,8 @@ namespace backend.ApiTests
                 ParentId = createdParent!.Id,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var childResponse = await _client.PostAsJsonAsync("/api/requirement", childReq, _jsonOptions);
@@ -175,7 +178,8 @@ namespace backend.ApiTests
                 Description = "For concurrent modification test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", requirement, _jsonOptions);

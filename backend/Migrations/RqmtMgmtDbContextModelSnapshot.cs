@@ -167,6 +167,9 @@ namespace backend.Migrations
                     b.Property<int?>("ParentSectionId")
                         .HasColumnType("int");
 
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
                     b.Property<string>("SectionNumber")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -185,6 +188,8 @@ namespace backend.Migrations
 
                     b.HasIndex("Level")
                         .HasDatabaseName("IX_DocumentSections_Level");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("DocumentId", "SectionOrder")
                         .HasDatabaseName("IX_DocumentSections_DocumentId_SectionOrder");
@@ -942,9 +947,17 @@ namespace backend.Migrations
                         .HasForeignKey("ParentSectionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("backend.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Document");
 
                     b.Navigation("ParentSection");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("backend.Models.Project", b =>

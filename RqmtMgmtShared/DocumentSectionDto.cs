@@ -16,6 +16,12 @@ namespace RqmtMgmtShared
         public int Id { get; set; }
 
         /// <summary>
+        /// Gets or sets the ID of the project this section belongs to. This field is required.
+        /// </summary>
+        [Required(ErrorMessage = "Project ID is required")]
+        public int ProjectId { get; set; }
+
+        /// <summary>
         /// Gets or sets the ID of the parent document. Null for subsections that only have a parent section.
         /// </summary>
         public int? DocumentId { get; set; }

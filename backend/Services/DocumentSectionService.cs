@@ -532,7 +532,7 @@ namespace backend.Services
             descendantIds.Add(sectionId);
 
             return await _context.Requirements
-                .CountAsync(r => descendantIds.Contains(r.SectionId ?? 0));
+                .CountAsync(r => descendantIds.Contains(r.SectionId));
         }
 
         #endregion

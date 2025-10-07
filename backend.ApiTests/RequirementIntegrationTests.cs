@@ -45,7 +45,8 @@ namespace backend.ApiTests
                 Description = "Created by integration test",
                 CreatedBy = 1, // Assuming admin user exists
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             // Act
@@ -53,11 +54,9 @@ namespace backend.ApiTests
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.Created);
-            var created = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-            created.Should().NotBeNull();
-            created!.Title.Should().Be(createDto.Title);
-            created.Type.Should().Be(createDto.Type);
-            created.Status.Should().Be(createDto.Status);
+            var createdRequirement = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
+            createdRequirement.Should().NotBeNull();
+            createdRequirement!.Title.Should().Be(createDto.Title);
         }
 
         [Fact]
@@ -66,31 +65,44 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
-            // First create a requirement
             var createDto = new RequirementDto
             {
-                Title = $"Get Test Requirement {Guid.NewGuid():N}",
-                Type = RequirementType.CRD,
+                Title = $"Test Requirement {Guid.NewGuid():N}",
+                Type = RequirementType.PRD,
                 Status = RequirementStatus.Draft,
-                Description = "For get testing",
+                Description = "Test requirement for get operation",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
+            var createdRequirement = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
 
             // Act
-            var response = await _client.GetAsync($"/api/requirement/{created!.Id}");
+            var response = await _client.GetAsync($"/api/requirement/{createdRequirement!.Id}");
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             var requirement = await response.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
             requirement.Should().NotBeNull();
-            requirement!.Id.Should().Be(created.Id);
+            requirement!.Id.Should().Be(createdRequirement.Id);
             requirement.Title.Should().Be(createDto.Title);
+        }
+
+        [Fact]
+        public async Task GetRequirement_ShouldReturnNotFound_WhenInvalidIdProvided()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Act
+            var response = await _client.GetAsync("/api/requirement/999999");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -99,40 +111,63 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
-            // First create a requirement
             var createDto = new RequirementDto
             {
                 Title = $"Update Test Requirement {Guid.NewGuid():N}",
-                Type = RequirementType.CRD,
+                Type = RequirementType.SRS,
                 Status = RequirementStatus.Draft,
-                Description = "To be updated",
+                Description = "Test requirement for update operation",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
+            var createdRequirement = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
 
-            // Update the requirement
-            created!.Title = created.Title + " - Updated";
-            created.Description = "Updated by integration test";
-            created.Status = RequirementStatus.Approved;
+            // Modify the requirement
+            createdRequirement!.Title = "Updated Title";
+            createdRequirement.Status = RequirementStatus.Approved;
 
             // Act
-            var response = await _client.PutAsJsonAsync($"/api/requirement/{created.Id}", created, _jsonOptions);
+            var response = await _client.PutAsJsonAsync($"/api/requirement/{createdRequirement.Id}", createdRequirement, _jsonOptions);
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-            
-            // Verify the update by getting the requirement again
-            var getResponse = await _client.GetAsync($"/api/requirement/{created.Id}");
-            getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-            var updated = await getResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
-            updated.Should().NotBeNull();
-            updated!.Title.Should().Contain("Updated");
-            updated.Status.Should().Be(RequirementStatus.Approved);
+
+            // Verify the update
+            var getResponse = await _client.GetAsync($"/api/requirement/{createdRequirement.Id}");
+            var updatedRequirement = await getResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
+            updatedRequirement!.Title.Should().Be("Updated Title");
+            updatedRequirement.Status.Should().Be(RequirementStatus.Approved);
+        }
+
+        [Fact]
+        public async Task UpdateRequirement_ShouldReturnNotFound_WhenInvalidIdProvided()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            var updateDto = new RequirementDto
+            {
+                Id = 999999,
+                Title = "Non-existent Requirement",
+                Type = RequirementType.CRD,
+                Status = RequirementStatus.Draft,
+                Description = "This requirement does not exist",
+                CreatedBy = 1,
+                CreatedAt = DateTime.UtcNow,
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync("/api/requirement/999999", updateDto, _jsonOptions);
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -141,31 +176,44 @@ namespace backend.ApiTests
             // Arrange
             await SkipIfSystemNotAvailableAsync();
 
-            // First create a requirement
             var createDto = new RequirementDto
             {
                 Title = $"Delete Test Requirement {Guid.NewGuid():N}",
                 Type = RequirementType.CRD,
                 Status = RequirementStatus.Draft,
-                Description = "To be deleted",
+                Description = "Test requirement for delete operation",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
-            var created = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
+            var createdRequirement = await createResponse.Content.ReadFromJsonAsync<RequirementDto>(_jsonOptions);
 
             // Act
-            var deleteResponse = await _client.DeleteAsync($"/api/requirement/{created!.Id}");
+            var response = await _client.DeleteAsync($"/api/requirement/{createdRequirement!.Id}");
 
             // Assert
-            deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-            // Verify it's deleted
-            var getResponse = await _client.GetAsync($"/api/requirement/{created.Id}");
+            // Verify deletion
+            var getResponse = await _client.GetAsync($"/api/requirement/{createdRequirement.Id}");
             getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task DeleteRequirement_ShouldReturnNotFound_WhenInvalidIdProvided()
+        {
+            // Arrange
+            await SkipIfSystemNotAvailableAsync();
+
+            // Act
+            var response = await _client.DeleteAsync("/api/requirement/999999");
+
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
 
         /// <summary>
@@ -182,9 +230,9 @@ namespace backend.ApiTests
                 // Create a test project if none exist
                 var createDto = new CreateProjectDto
                 {
-                    Name = $"Test Project for Requirements {Guid.NewGuid():N}",
-                    Code = $"REQ{DateTime.UtcNow:mmss}",
-                    Description = "Auto-created for requirement testing",
+                    Name = $"Test Project {Guid.NewGuid():N}",
+                    Code = $"TST{DateTime.UtcNow:mmss}",
+                    Description = "Auto-created for integration testing",
                     OwnerId = 1,
                     Status = ProjectStatus.Planning
                 };

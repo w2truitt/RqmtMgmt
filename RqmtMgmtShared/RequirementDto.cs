@@ -90,8 +90,9 @@ namespace RqmtMgmtShared
         public int? DocumentId { get; set; }
 
         /// <summary>
-        /// Gets or sets the ID of the document section this requirement belongs to.
+        /// Gets or sets the ID of the document section this requirement belongs to. This field is required.
         /// </summary>
-        public int? SectionId { get; set; }
+        [Required(ErrorMessage = "Section ID is required")]
+        public int SectionId { get; set; }
     }
 }

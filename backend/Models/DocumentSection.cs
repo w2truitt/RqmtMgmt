@@ -7,6 +7,7 @@ namespace backend.Models
     /// <summary>
     /// Represents a section within a requirement document.
     /// Supports hierarchical organization with parent-child section relationships.
+    /// All sections must belong to a project for proper organization and security.
     /// </summary>
     public class DocumentSection
     {
@@ -14,6 +15,12 @@ namespace backend.Models
         /// Gets or sets the unique identifier for the document section.
         /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ID of the project this section belongs to. This field is required.
+        /// </summary>
+        [Required]
+        public int ProjectId { get; set; }
 
         /// <summary>
         /// Gets or sets the ID of the parent document. Null for subsections that only have a parent section.
@@ -66,6 +73,11 @@ namespace backend.Models
         /// Gets or sets the timestamp when the section was last updated.
         /// </summary>
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Gets or sets the project this section belongs to.
+        /// </summary>
+        public Project? Project { get; set; }
 
         /// <summary>
         /// Gets or sets the parent document (for root sections).

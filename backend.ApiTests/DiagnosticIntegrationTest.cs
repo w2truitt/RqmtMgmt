@@ -51,7 +51,8 @@ namespace backend.ApiTests
                     Description = "Testing requirement creation",
                     CreatedBy = 1,
                     CreatedAt = DateTime.UtcNow,
-                    ProjectId = projectId
+                    ProjectId = projectId,
+                    SectionId = 1  // Use existing section ID from database
                 };
 
                 var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);

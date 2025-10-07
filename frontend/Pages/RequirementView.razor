@@ -78,7 +78,7 @@
                                 </a>
                             </div>
 
-                            @if (requirement.SectionId.HasValue && associatedSection != null)
+                            @if (requirement.SectionId > 0 && associatedSection != null)
                             {
                                 <div>
                                     <small class="text-muted d-block">Document Section</small>
@@ -316,9 +316,9 @@
             }
             
             // Load associated section if exists
-            if (requirement.SectionId.HasValue)
+            if (requirement.SectionId > 0)
             {
-                associatedSection = await DocumentSectionsService.GetByIdAsync(requirement.SectionId.Value);
+                associatedSection = await DocumentSectionsService.GetByIdAsync(requirement.SectionId);
             }
 
             // TODO: Load child requirements

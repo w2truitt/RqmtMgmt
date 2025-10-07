@@ -30,7 +30,8 @@ namespace backend.ApiTests
                 Description = "A requirement for integration testing",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);
@@ -45,7 +46,7 @@ namespace backend.ApiTests
                 Description = "Test suite for integration testing",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
             };
 
             var suiteResponse = await _client.PostAsJsonAsync("/api/testsuite", testSuiteDto, _jsonOptions);
@@ -102,7 +103,7 @@ namespace backend.ApiTests
                 Type = "UserValidation",
                 CreatedBy = 1,
                     CreatedAt = DateTime.UtcNow,
-                    ProjectId = await GetValidProjectIdAsync()
+                    ProjectId = await GetValidProjectIdAsync(),
             };
 
             var planResponse = await _client.PostAsJsonAsync("/api/testplan", testPlanDto, _jsonOptions);
@@ -196,7 +197,8 @@ namespace backend.ApiTests
                 Description = "Parent requirement for hierarchy test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var parentResponse = await _client.PostAsJsonAsync("/api/requirement", parentRequirement, _jsonOptions);
@@ -214,7 +216,8 @@ namespace backend.ApiTests
                 ParentId = createdParent.Id,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = createdParent.ProjectId
+                ProjectId = createdParent.ProjectId,
+                SectionId = 1  // Use existing section ID from database
             };
 
             var child1Response = await _client.PostAsJsonAsync("/api/requirement", childRequirement1, _jsonOptions);
@@ -232,7 +235,8 @@ namespace backend.ApiTests
                 ParentId = createdParent.Id,
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = createdParent.ProjectId
+                ProjectId = createdParent.ProjectId,
+                SectionId = 1  // Use existing section ID from database
             };
 
             var child2Response = await _client.PostAsJsonAsync("/api/requirement", childRequirement2, _jsonOptions);

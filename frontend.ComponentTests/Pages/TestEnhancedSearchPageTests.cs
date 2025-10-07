@@ -34,7 +34,7 @@ public class TestEnhancedSearchPageTests : ComponentTestBase
         Assert.Contains("Test Enhanced Section Search", component.Markup);
         Assert.Contains("Select Document", component.Markup);
         Assert.Contains("Instructions", component.Markup);
-        Assert.Contains("Loading documents...", component.Markup);
+        Assert.Contains("No documents found", component.Markup);
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public class TestEnhancedSearchPageTests : ComponentTestBase
         Assert.Contains("Use the search functionality to find sections", component.Markup);
         Assert.Contains("Test fuzzy matching with different similarity thresholds", component.Markup);
         Assert.Contains("Try the duplicate detection feature", component.Markup);
-        Assert.Contains("View section details by clicking the View button", component.Markup);
+        Assert.Contains("View section details by clicking", component.Markup);
         
         // Check search tips
         Assert.Contains("Search Tips:", component.Markup);

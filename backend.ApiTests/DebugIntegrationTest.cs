@@ -27,7 +27,8 @@ namespace backend.ApiTests
                 Description = "A requirement for debugging",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
+                SectionId = 1  // Use existing section ID from database
             };
 
             var reqResponse = await _client.PostAsJsonAsync("/api/requirement", requirementDto, _jsonOptions);

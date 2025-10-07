@@ -39,7 +39,8 @@ namespace backend.ApiTests
                     Description = $"Performance test requirement number {i}",
                     CreatedBy = 1,
                     CreatedAt = DateTime.UtcNow,
-                    ProjectId = projectId
+                    ProjectId = projectId,
+                    SectionId = 1  // Use existing section ID from database
                 };
 
                 tasks.Add(_client.PostAsJsonAsync("/api/requirement", requirement, _jsonOptions));
@@ -94,7 +95,8 @@ namespace backend.ApiTests
                 Description = "For versioning performance test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = projectId
+                ProjectId = projectId,
+                    SectionId = 1  // Use existing section ID from database
             };
 
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", requirement, _jsonOptions);

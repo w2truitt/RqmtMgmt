@@ -47,7 +47,8 @@ namespace backend.ApiTests
                 Description = "For link test",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = project.Id
+                ProjectId = project.Id,
+                SectionId = 1  // Use existing section ID from database
             };
             var reqResp = await _client.PostAsJsonAsync("/api/requirement", reqDto, _jsonOptions);
             reqResp.EnsureSuccessStatusCode();

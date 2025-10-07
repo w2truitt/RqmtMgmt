@@ -310,7 +310,7 @@
     private async Task OnDocumentChanged()
     {
         availableSections = null;
-        requirement.SectionId = null;
+        requirement.SectionId = 0;
         
         if (requirement.DocumentId.HasValue)
         {
@@ -336,7 +336,7 @@
         try
         {
             // Validate document/section relationship
-            if (requirement.DocumentId.HasValue && !requirement.SectionId.HasValue)
+            if (requirement.DocumentId.HasValue && requirement.SectionId == 0)
             {
                 errorMessage = "Please select a document section when a document is selected.";
                 return;

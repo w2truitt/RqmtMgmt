@@ -56,7 +56,8 @@ namespace backend.ApiTests
                 Description = "Test requirement for version history",
                 ProjectId = projectId,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                SectionId = 1  // Use existing section ID from database
             };
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
@@ -113,7 +114,8 @@ namespace backend.ApiTests
                 Description = "Test for single version retrieval",
                 ProjectId = projectId,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                SectionId = 1  // Use existing section ID from database
             };
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
@@ -168,7 +170,8 @@ namespace backend.ApiTests
                 Description = "Original description",
                 ProjectId = projectId,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                SectionId = 1  // Use existing section ID from database
             };
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
@@ -243,7 +246,8 @@ namespace backend.ApiTests
                 Description = "Test comparing same version to itself",
                 ProjectId = projectId,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                SectionId = 1  // Use existing section ID from database
             };
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();
@@ -286,7 +290,8 @@ namespace backend.ApiTests
                 Description = "Test mixed valid/invalid version IDs",
                 ProjectId = projectId,
                 CreatedBy = 1,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                SectionId = 1  // Use existing section ID from database
             };
             var createResponse = await _client.PostAsJsonAsync("/api/requirement", createDto, _jsonOptions);
             createResponse.EnsureSuccessStatusCode();

@@ -64,11 +64,11 @@
 
     private string? GetSectionTitle()
     {
-        if (Sections != null && Requirement.SectionId.HasValue)
+        if (Sections != null && Requirement.SectionId > 0)
         {
             foreach (var section in Sections)
             {
-                if (section.Id == Requirement.SectionId.Value)
+                if (section.Id == Requirement.SectionId)
                 {
                     return section.Title;
                 }
@@ -79,11 +79,11 @@
 
     private int GetSectionOrder()
     {
-        if (Sections != null && Requirement.SectionId.HasValue)
+        if (Sections != null && Requirement.SectionId > 0)
         {
             foreach (var section in Sections)
             {
-                if (section.Id == Requirement.SectionId.Value)
+                if (section.Id == Requirement.SectionId)
                 {
                     return section.SectionOrder;
                 }

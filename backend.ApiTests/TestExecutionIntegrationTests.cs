@@ -184,7 +184,7 @@ namespace backend.ApiTests
                 Description = "Created for integration testing",
                 CreatedBy = 1,
                 CreatedAt = DateTime.UtcNow,
-                ProjectId = await GetValidProjectIdAsync()
+                ProjectId = await GetValidProjectIdAsync(),
             };
 
             var createResponse = await _client.PostAsJsonAsync("/api/testplan", createTestPlanDto, _jsonOptions);
